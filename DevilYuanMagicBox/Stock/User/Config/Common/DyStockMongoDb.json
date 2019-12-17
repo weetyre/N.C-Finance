@@ -1,0 +1,23 @@
+{
+    "Connection": {
+        "Host": "localhost",
+        "Port": 27017
+    },
+    "CommonDays": {
+        "Wind": {
+            "stockCommonDb": "stockCommonDb",
+            "tradeDayTableName": "tradeDayTable",
+            "codeTableName": "codeTable",
+            "stockDaysDb": "stockDaysDb"
+        },
+        "TuShare": {
+            "stockCommonDb": "stockCommonDbTuShare",
+            "tradeDayTableName": "tradeDayTableTuShare",
+            "codeTableName": "codeTableTuShare",
+            "stockDaysDb": "stockDaysDbTuShare"
+        }
+    },
+    "Ticks": {
+        "db": "stockTicksDb"
+    }
+}

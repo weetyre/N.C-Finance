@@ -1,0 +1,12 @@
+tushare
+pytdx
+pymongo
+qdarkstyle
+pytesseract
+pywinauto
+talib
+aiohttp
+mpl_finance
+pypng
+PyQt5
+pyqt5-tools
