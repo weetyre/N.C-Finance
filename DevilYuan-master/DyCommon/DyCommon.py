@@ -83,7 +83,6 @@ class DyErrorInfo(object):
     def initProgress(self):
         pass
 
-
 class DyErrorProgressInfo(DyInfo):
     """ 只打印错误和警告信息，及进度条显示 """
 
@@ -99,7 +98,7 @@ class DyErrorProgressInfo(DyInfo):
 
 
 class DyQueueInfo:
-
+    """ 队列信息显示，只有错误和警告得队列信息显示 """
     def __init__(self, outQueue):
         self._outQueue = outQueue
 
@@ -121,7 +120,7 @@ class DyQueueInfo:
 
 
 class DyDummyInfo:
-
+    """测试dummy引擎"""
     def __init__(self):
         pass
 
@@ -152,7 +151,7 @@ class DySubInfo:
         self._progressTotal = 0
 
         self._enabled = True
-
+        """子log事件触发，发给监听得engine"""
     def print(self, description, type=DyLogData.info):
         if not self._enabled and type != DyLogData.error and type != DyLogData.warning: return
 
@@ -397,7 +396,7 @@ class DyMatplotlib:
                 plt.figure(fig)
                 DyMatplotlib.curFigNums.append(fig)
                 return
-
+        #为了画图不发生混乱，需要把第一幅图删了，在画，然后加到后面。
         fig = DyMatplotlib.curFigNums[0]
         plt.close(fig)
         plt.figure(fig)
@@ -405,12 +404,12 @@ class DyMatplotlib:
         del DyMatplotlib.curFigNums[0]
         DyMatplotlib.curFigNums.append(fig)
 
-
+#进度条处理组件，结合Dyinfo一起工作，这里主要侧重于请求数量得处理，以及减少，以及进度条得更新，以及重置
 class DyProgress(object):
-
+    #引入的是Dyinfo
     def __init__(self, info, printConsole=False):
         self._info = info
-        self._printConsole = printConsole
+        self._printConsole = printConsole #默认不打印到控制台
 
         # Ui progress related
         self._totalReqNbr = 0
@@ -426,17 +425,17 @@ class DyProgress(object):
             @totalUpdateUiStep: each @totalUpdateUiStep percent update total progress UI. Must be between 1 ~ 100.
         """
         self._totalReqNbr = totalReqNbr
-        self._singleReqNbr = totalReqNbr//100
+        self._singleReqNbr = totalReqNbr//100 #整数除法
 
         self._totalReqCount = totalReqNbr
         self._singleReqCount = self._singleReqNbr
 
         # init Ui progress
         percent = 100 if self._singleReqCount == 0 else 0
-        self._info.progressSingle(percent)
+        self._info.progressSingle(percent)#调用Dyinfo进度条函数
 
         percent = 100 if self._totalReqCount == 0 else 0
-        self._info.progressTotal(percent)
+        self._info.progressTotal(percent)#调用Dyinfo进度条函数
 
         self._singleUpdateUiStep = singleUpdateUiStep
         self._totalUpdateUiStep = totalUpdateUiStep
@@ -533,7 +532,7 @@ class DyCommon:
                 pass
 
         return v
-
+    #转换成FLOAT
     def toFloat(value, default=0):
         try:
             value = float(value)
@@ -541,14 +540,14 @@ class DyCommon:
             value = default
 
         return value
-
+    #负责在主目录之外加目录
     def createPath(path):
         """
             @path: like 'Stock/User/Config', use linux format
         """
         parentPath = DyCommon.exePath
-        parentPathList = parentPath.split(os.path.sep)
-        parentPath = os.path.sep.join(parentPathList[:-1])
+        parentPathList = parentPath.split(os.path.sep)#当前系统得路径分隔符，以适应于多平台
+        parentPath = os.path.sep.join(parentPathList[:-1])#不同list之间加对应得分割符
 
         pathList = path.split('/')
         for path in ['DevilYuanMagicBox'] + pathList:
@@ -572,3 +571,4 @@ class DyJsonEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return super().default(obj)
+        #什么都不是，那就默认转换
