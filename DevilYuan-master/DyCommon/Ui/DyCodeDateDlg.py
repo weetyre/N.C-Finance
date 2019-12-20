@@ -2,7 +2,7 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+#股票数据，历史日线，手动更新UI
 class DyCodeDateDlg(QDialog):
 
     def __init__(self, codeLabelText, data, parent=None):

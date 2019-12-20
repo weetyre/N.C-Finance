@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+#进程设置对话框
 class DyProcessNbrDlg(QDialog):
 
     def __init__(self, data, parent=None):

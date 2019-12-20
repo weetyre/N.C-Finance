@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+#所有单行数据编辑处理类都用找个
 class DySingleEditDlg(QDialog):
 
     def __init__(self, data, title, label, default='', parent=None):

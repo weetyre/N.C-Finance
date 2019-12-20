@@ -9,7 +9,7 @@ from DyCommon.DyCommon import *
 from DyCommon.Ui.DyTableWidget import *
 from DyCommon.Ui.DyDataFrameWindow import *
 
-
+#这个类主要处理表格的相关函数：1. 右键菜单
 class DyStatsTableWidget(DyTableWidget):
 
     def __init__(self, parent=None, readOnly=False, index=True, floatCut=True, autoScroll=True, floatRound=2):
@@ -22,16 +22,16 @@ class DyStatsTableWidget(DyTableWidget):
         # 设置表头右键菜单事件
         headers = self.horizontalHeader()
         headers.setContextMenuPolicy(Qt.CustomContextMenu)
-        headers.customContextMenuRequested.connect(self._showHeaderContextMenu)
+        headers.customContextMenuRequested.connect(self._showHeaderContextMenu)#设置自定义显示菜单的方式，点击表头和item显示的方式不一样
 
         # 创建菜单
         self._headerMenu = QMenu(self)
         
-        # 创建操作
+        # 创建操作，一定和和当前实例相关，所以会有self参数
         action = QAction('设为自动前景色关键列', self)
-        action.triggered.connect(self._setAutoForegroundColAct)
+        action.triggered.connect(self._setAutoForegroundColAct)#设置点击后链接的函数，用指针相关联
         self._headerMenu.addAction(action)
-
+        #添加一个分隔符
         self._headerMenu.addSeparator()
 
         action = QAction('描述统计', self)
@@ -42,8 +42,8 @@ class DyStatsTableWidget(DyTableWidget):
         action.triggered.connect(self._scatterMatrixAct)
         self._headerMenu.addAction(action)
 
-        # 列跟列之间的散列图，根据列名动态创建
-        self.__scatterMenu = self._headerMenu.addMenu('散列图')
+        # 列跟列之间的散列图，根据列名动态创建 __为了防止子类覆盖
+        self.__scatterMenu = self._headerMenu.addMenu('散列图')#菜单里加了菜单
         self.__scatterActions = []
 
         action = QAction('概率分布', self)
@@ -54,16 +54,17 @@ class DyStatsTableWidget(DyTableWidget):
         action.triggered.connect(self._wordStatsAct)
         self._headerMenu.addAction(action)
 
+    #点击表头和item显示的方式不一样
     def _showHeaderContextMenu(self, position):
-        self._rightClickHeaderCol = self.horizontalHeader().logicalIndexAt(position)
-        self._rightClickHeaderItem = self.horizontalHeaderItem(self._rightClickHeaderCol)
+        self._rightClickHeaderCol = self.horizontalHeader().logicalIndexAt(position)#用来获得表头的坐标。
+        self._rightClickHeaderItem = self.horizontalHeaderItem(self._rightClickHeaderCol)#继承表头事件
 
         # 动态创建每个列的散列图操作
         self.__createScatterActions()
 
         # call virtual method so that child class can customize the context menu of headers
         self.customizeHeaderContextMenu(self._rightClickHeaderItem)
-
+        #根据光标位置来显示菜单
         self._headerMenu.popup(QCursor.pos())
 
     def customizeHeaderContextMenu(self, headerItem):
@@ -77,7 +78,7 @@ class DyStatsTableWidget(DyTableWidget):
         for action in self.__scatterActions:
             self.__scatterMenu.removeAction(action)
             del action
-
+        #先删除已有的action
         self.__scatterActions = []
 
         colNames = self.getColNames()
@@ -88,9 +89,9 @@ class DyStatsTableWidget(DyTableWidget):
 
             action = QAction(name, self)
             action.triggered.connect(self.__scatterAct)
-            action.setCheckable(True)
+            action.setCheckable(True)#checkbox添加
             self.__scatterMenu.addAction(action)
-
+            #为了以后删除这些action，释放内存空间
             self.__scatterActions.append(action)
 
     def __countQuadrant(self, xName, yName, data):
@@ -254,6 +255,7 @@ class DyStatsTableWidget(DyTableWidget):
 
         f.show()
 
+    #散列图画图操作
     def __scatterAct(self):
         for action in self.__scatterActions:
             if not action.isChecked():
@@ -281,6 +283,7 @@ class DyStatsTableWidget(DyTableWidget):
 
         return False
 
+    #可以获得具体的一列位置坐标index
     def _setAutoForegroundColAct(self):
         self.updateAutoForegroundCol(self._rightClickHeaderCol)
 

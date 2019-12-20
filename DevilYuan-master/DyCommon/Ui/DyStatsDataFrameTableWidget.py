@@ -4,7 +4,7 @@ import pandas as pd
 
 from DyCommon.Ui.DyStatsTableWidget import *
 
-
+#只显示DF的列
 class DyStatsDataFrameTableWidget(DyStatsTableWidget):
     """
         只显示DF的列，index需要用户自己转换成列

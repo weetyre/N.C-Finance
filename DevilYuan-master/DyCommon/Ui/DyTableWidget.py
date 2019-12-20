@@ -10,7 +10,7 @@ import pandas as pd
 from DyCommon.DyCommon import *
 from .DySingleEditDlg import *
 
-
+#自己系统的表格ITEM继承Pyqt5的Item
 class DyTableWidgetItem(QTableWidgetItem):
 
     def __init__(self, role):
@@ -27,9 +27,9 @@ class DyTableWidgetItem(QTableWidgetItem):
         except Exception as ex:
             return super().__lt__(other)
 
-
+#自己系统的表格继承Pyqt5的表格
 class DyTableWidget(QTableWidget):
-    highlightBackground = QColor('#FFD700')
+    highlightBackground = QColor('#FFD700')#高亮金色
 
     def __init__(self, parent=None, readOnly=False, index=True, floatCut=True, autoScroll=True, floatRound=2):
         """
@@ -38,14 +38,14 @@ class DyTableWidget(QTableWidget):
         """
         super().__init__(parent)
 
-        self.setSortingEnabled(True)
-        self.verticalHeader().setVisible(False)
+        self.setSortingEnabled(True)# 实现点击表头自动排序，并且支持顺序和逆序：
+        self.verticalHeader().setVisible(False)# 隐藏列表头
 
         if readOnly:
-            self.setEditTriggers(QTableWidget.NoEditTriggers)
-            self.setSelectionBehavior(QAbstractItemView.SelectRows) 
+            self.setEditTriggers(QTableWidget.NoEditTriggers)#不允许改，没有任何触发器
+            self.setSelectionBehavior(QAbstractItemView.SelectRows) # 选中那个就选中整行
 
-        self._role = Qt.DisplayRole if readOnly else Qt.EditRole
+        self._role = Qt.DisplayRole if readOnly else Qt.EditRole #每一个单元格的角色，是显示还是编辑
         self.__index = index # 原始插入的行索引
         self._floatCut = floatCut
         self._floatRoundFormat = '%.{0}f'.format(floatRound)
@@ -85,7 +85,7 @@ class DyTableWidget(QTableWidget):
         self._mark(self._markedItem)
 
         self._clearHighlight()
-
+    #获得项目
     def __getitem__(self, indices):
         row, col = indices
 
@@ -94,7 +94,7 @@ class DyTableWidget(QTableWidget):
             return None
 
         return DyCommon.toNumber(item.data(self._role))
-
+    #被获得项目调用的函数
     def _getItem(self, row, col):
         # row
         if isinstance(row, str):
@@ -524,7 +524,7 @@ class DyTableWidget(QTableWidget):
         autoForegroundCol = self._autoForegroundCol - 1 if self.__index else self._autoForegroundCol
 
         return self.getColName(autoForegroundCol)
-
+    #先改变TF,然后改变菜单文字
     def _autoScrollAct(self):
         self._enableAutoScroll = not self._enableAutoScroll
 
@@ -549,7 +549,7 @@ class DyTableWidget(QTableWidget):
     def _setMark(self):
         row = self._markedItem.row()
 
-        markBg = QColor(Qt.yellow)
+        markBg = QColor(Qt.yellow)#标记色黄色
         self.setRowBackground(row, markBg)
 
         for col in range(self.columnCount()):
@@ -561,7 +561,7 @@ class DyTableWidget(QTableWidget):
             fg = item.foreground().color()
             
             # only change qdarkstyle default foreground
-            if fg == QColor(0, 0, 0) or fg == QColor(192, 192, 192):
+            if fg == QColor(0, 0, 0) or fg == QColor(192, 192, 192):#灰色或者黑色
                 item.setForeground(QColor(0, 0, 0))
 
             # for qdarkstyle default foreground
@@ -597,7 +597,7 @@ class DyTableWidget(QTableWidget):
 
             item.setBackground(self.highlightBackground)
 
-            # save
+            # save 设置完之后的颜色
             highlightedItemsForeground.append(fg)
             highlightedItemsBackground.append(bg)
 
@@ -816,7 +816,7 @@ class DyTableWidget(QTableWidget):
         item = self.itemAt(self._rightClickPoint)
 
         self._tableCountAction.setText('行: {0}, 列: {1}'.format(self.rowCount(), self.columnCount()))
-
+        #不开这两个菜单
         if item is None:
             self._markAction.setEnabled(False)
             self._highlightAction.setEnabled(False)
@@ -1012,8 +1012,9 @@ class DyTableWidget(QTableWidget):
 
         self.setSortingEnabled(True)
 
+    #根据数据大于零小于零等于零跟新前景色
     def _updateAutoForegroundColForeground(self, row):
-        item = self.item(row, self._autoForegroundCol)
+        item = self.item(row, self._autoForegroundCol)#根据行数以及自动列前景色取出那个item（一个）
         if item is None: return
 
         try:
@@ -1029,9 +1030,9 @@ class DyTableWidget(QTableWidget):
             if item.background() == Qt.white: # for qdarkstyle
                 color = Qt.black
             else:
-                color = QColor('#C0C0C0')
+                color = QColor('#C0C0C0')#灰色，如果底色是黑色的话
 
-        item.setForeground(color)
+        item.setForeground(color)#设置前景色
 
     def updateAutoForegroundCol(self, colAbs):
         """
@@ -1043,14 +1044,15 @@ class DyTableWidget(QTableWidget):
             self._autoForegroundCol = colAbs
 
         if self._autoForegroundCol is None: return
-
+        
+        #一行一行的跟新前景色
         for row in range(self.rowCount()):
             # upate foreground of auto foreground column item
-            self._updateAutoForegroundColForeground(row)
+            self._updateAutoForegroundColForeground(row)#row是数字
 
             refItem = self.item(row, self._autoForegroundCol)
             if refItem is None: continue
-
+            #那一行的所有列设置前景色
             for col in range(self.columnCount()):
                 if self.__index and col == 0: # ignore 'Org.' column
                     continue
@@ -1059,7 +1061,7 @@ class DyTableWidget(QTableWidget):
                 if item is None: continue
 
                 item.setForeground(refItem.foreground())
-
+    #    
     def getForegroundOverride(self, value):
         """
             可由子类重载，这样可以根据不同的值设置不同的前景色

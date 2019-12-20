@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout
 from PyQt5.QtGui import QFont
 
-
+#消息UI，此类只负责label显示和布局得设置
 class DyInfoDlg(QDialog):
     """显示信息"""
 

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+#股票数据，历史日线，强制更新UI
 class DyDateDlg(QDialog):
 
     def __init__(self, data, parent=None):
@@ -15,7 +15,7 @@ class DyDateDlg(QDialog):
     def _initUi(self):
         self.setWindowTitle('日期')
  
-        # 控件
+        # 控件，具体日期是每个类得实例所以放到self
         startDateLable = QLabel('开始日期')
         self._startDateLineEdit = QLineEdit(datetime.now().strftime("%Y-%m-%d"))
 

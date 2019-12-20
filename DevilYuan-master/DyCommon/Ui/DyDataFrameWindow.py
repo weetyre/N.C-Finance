@@ -14,8 +14,8 @@ class DyDataFrameWindow(DyDataFrameTableWidget):
     def _initUi(self, title):
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.Window)
-        self.resize(QApplication.desktop().size().width()//2, QApplication.desktop().size().height()//2)
+        self.resize(QApplication.desktop().size().width()//2, QApplication.desktop().size().height()//2)#窗口大小一半
 
         self.show()
-
+        #居中显示
         self.move((QApplication.desktop().size().width() - self.width())//2, (QApplication.desktop().size().height() - self.height())//2)

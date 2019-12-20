@@ -4,7 +4,7 @@ import pandas as pd
 
 from DyCommon.Ui.DyTableWidget import *
 
-
+#DataFrame 和 自身自创Table相关联。
 class DyDataFrameTableWidget(DyTableWidget):
 
     def __init__(self, df, parent=None):
