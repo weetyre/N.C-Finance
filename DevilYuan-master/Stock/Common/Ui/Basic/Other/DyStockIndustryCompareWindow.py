@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QTabWidget
 
-
+#
 class DyStockIndustryCompareWindow(QTabWidget):
     """ 股票行业比较窗口 """
 
@@ -16,18 +16,18 @@ class DyStockIndustryCompareWindow(QTabWidget):
         self._targetCode = targetCode
         self._targetName = targetName
         self._baseDate = baseDate
-
+    #添加一个类别
     def addCategorys(self, dfs):
         for category, df in dfs.items():
             header = list(df.columns)
             data = df.values.tolist()
 
-            widget = self._tableCls(self._eventEngine, name=category, baseDate=self._baseDate)
+            widget = self._tableCls(self._eventEngine, name=category, baseDate=self._baseDate)# 再次调用构造函数，改变name
             widget.appendStocks(data, header, autoForegroundColName=header[-1])
 
             widget.markByData('名称', self._targetName)
 
-            self.addTab(widget, category)
+            self.addTab(widget, category)# 加的组件以及对应的字符串。
 
 
 

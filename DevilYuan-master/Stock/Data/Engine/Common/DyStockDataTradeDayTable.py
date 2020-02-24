@@ -2,7 +2,7 @@ from datetime import *
 
 from DyCommon.DyCommon import *
 
-
+#股票数据交易日表格
 class DyStockDataTradeDayTable:
 
     # table format
@@ -21,7 +21,7 @@ class DyStockDataTradeDayTable:
     def _init(self):
         self._table = {}
         self._compactTable = []
-
+    #
     def _buildIndex(self, date):
         year, month, day = date.split('-')
 
@@ -31,8 +31,8 @@ class DyStockDataTradeDayTable:
             if date < tradeDay: break
             i += 1
 
-        self._table[year][month][day][1] = i - 1
-
+        self._table[year][month][day][1] = i - 1#相对于压缩表的索引值的建立
+    #更新指数
     def _updateIndex(self):
         self._compactTable.sort()
 
@@ -40,35 +40,35 @@ class DyStockDataTradeDayTable:
         oldest = None
         date = None # will be latest after loop
 
-        years = sorted(self._table)
+        years = sorted(self._table)#升序年排序
         for year in years:
-            months = sorted(self._table[year])
+            months = sorted(self._table[year])#升序月份排序
             for month in months:
-                days = sorted(self._table[year][month])
+                days = sorted(self._table[year][month])#升序天数排序
                 for day in days:
                     date = year + '-' + month + '-' + day
 
-                    if not oldest: oldest = date
+                    if not oldest: oldest = date#第一天，最早的那一天
 
                     # index should be built based on continous days
                     if preDate:
                         if DyTime.getDateStr(preDate, 1) != date:
                             self._info.print("Days in TradeDay Table aren't continous!", DyLogData.error)
                             return False
-                    preDate = date
+                    preDate = date # 付给前一天看看是不是属于递进的一天
 
                     # build index for day
                     self._buildIndex(date)
 
         return True
-
+    #转换交易日的格式，并且递增排列
     def _convertTradeDays(self, tradeDays):
         tradeDays = [doc['datetime'].strftime("%Y-%m-%d") for doc in tradeDays]
 
         tradeDays.sort()
 
         return tradeDays
-
+    #有偏移的日期,只返回数据表为T
     def _load3(self, startDate, endDate, n):
         # 分部分载入
         # front part
@@ -113,10 +113,10 @@ class DyStockDataTradeDayTable:
             endDateNew = endDate
 
         return  startDateNew, endDateNew, tradeDays
-
+    #只返回交易日数据表中为True的数据
     def _load2(self, startDate, endDate):
-        if isinstance(endDate, int):
-            tradeDays = self._mongoDbEngine.getTradeDaysByRelative(startDate, endDate)
+        if isinstance(endDate, int):#有偏移的情况，因为会有n的正负得情况
+            tradeDays = self._mongoDbEngine.getTradeDaysByRelative(startDate, endDate) # 交易日（只返回数据表为T）
             if tradeDays is None: return None, None, None
 
             assert(tradeDays)
@@ -125,23 +125,23 @@ class DyStockDataTradeDayTable:
 
             startDateNew = tradeDays[0]
             endDateNew = tradeDays[-1]
-
+            #因为偏移有正负
             if startDate > endDateNew:
                 endDateNew = startDate
 
             elif startDate < startDateNew:
                 startDateNew = startDate
 
-            return  startDateNew, endDateNew, tradeDays
+            return  startDateNew, endDateNew, tradeDays #这个new是基于新的交易日Date(从此返回的为偏移后的)
 
-        else:
+        else:#通过绝对日期获取
             tradeDays = self._mongoDbEngine.getTradeDaysByAbsolute(startDate, endDate)
             if tradeDays is None: return None, None, None
 
             tradeDays = self._convertTradeDays(tradeDays)
 
             return  startDate, endDate, tradeDays
-
+    #载入交易日数据（输入参数起始日期-截止日期）
     def load(self, dates):
         self._info.print("开始载入交易日数据{0}...".format(dates))
 
@@ -163,13 +163,13 @@ class DyStockDataTradeDayTable:
         self._info.print("交易日数据[{0}, {1}]载入完成".format(startDate, endDate))
 
         return True
-
+    #获得最后一天
     def tLatestDay(self):
         return self._compactTable[-1] if self._compactTable else None
-
+    #获得第一天
     def tOldestDay(self):
         return self._compactTable[0] if self._compactTable else None
-
+    #根据偏移在压缩格式的表里获取日期
     def tDaysOffset(self, base, n):
         if isinstance(base, datetime):
             base = base.strftime("%Y-%m-%d")
@@ -183,11 +183,11 @@ class DyStockDataTradeDayTable:
         else:
             # find it
             nIndex = index + n
-            if nIndex >= 0 and nIndex < len(self._compactTable):
+            if nIndex >= 0 and nIndex < len(self._compactTable):#在正常的范围内
                 return self._compactTable[nIndex]
 
         return None
-
+    #判断给你一个日期区间，他是否在table里面
     def isIn(self, start, end):
         dates = DyTime.getDates(start, end)
 
@@ -201,7 +201,7 @@ class DyStockDataTradeDayTable:
                 return False
 
         return True
-
+    #
     def get(self, start, end):
         """ @return: [trade day] """
 
@@ -214,11 +214,11 @@ class DyStockDataTradeDayTable:
             if date[0] in self._table:
                 if date[1] in self._table[date[0]]:
                     if date[2] in self._table[date[0]][date[1]]:
-                        if self._table[date[0]][date[1]][date[2]][0]:
+                        if self._table[date[0]][date[1]][date[2]][0]: #bool 来判断是否是交易日
                             tradeDays.append(dateSave)
 
         return tradeDays
-
+    #
     def _update2Db(self, startDate, endDate, tradeDays):
 
         # convert to MongoDB format
@@ -235,19 +235,19 @@ class DyStockDataTradeDayTable:
 
             datesForDb.append(doc)
 
-        # update into DB
+        # update into DB 包括 T,F 是否是交易日
         return self._mongoDbEngine.updateTradeDays(datesForDb)
-
+    #
     def _set(self, startDate, endDate, tradeDays):
         return self._set2Table(startDate, endDate, tradeDays) and self._update2Db(startDate, endDate, tradeDays)
-
+    #设置到Table表里面
     def _set2Table(self, start, end, tradeDays):
         """ [@start, @end] is range """
 
         dates = DyTime.getDates(start, end)
 
         dates = [x.strftime("%Y-%m-%d")  for x in dates]
-        days = tradeDays
+        days = tradeDays #
 
         for day in dates:
             dayTemp = day.split('-')
@@ -263,10 +263,10 @@ class DyStockDataTradeDayTable:
             else:
                 self._table[dayTemp[0]][dayTemp[1]][dayTemp[2]] = [False, -1]
 
-        self._compactTable.extend(days)
+        self._compactTable.extend(days) #里面放的是实打实的交易日，所以是压缩表，而Table里面什么都会有（全部日期）
 
-        return self._updateIndex()
-
+        return self._updateIndex()#table相对于压缩表的索引更新
+    #
     def update(self, startDate, endDate):
         self._info.print('开始更新交易日数据...')
 
@@ -283,19 +283,19 @@ class DyStockDataTradeDayTable:
 
         self._info.print('交易日数据更新完成')
         return True
-
+    #
     def getLatestDateInDb(self):
         date = self._mongoDbEngine.getDaysLatestDate()
         if date is None: return None
 
         return date['datetime'].strftime("%Y-%m-%d")
-
+    #
     def getLatestTradeDayInDb(self):
         date = self._mongoDbEngine.getDaysLatestTradeDay()
         if date is None: return None
 
         return date['datetime'].strftime("%Y-%m-%d")
-
+    #从数据库（加t日偏移）
     def tDaysOffsetInDb(self, base, n=0):
         startDate, endDate, tradeDays = self._load2(base, n)
         if startDate is None: return None
@@ -309,7 +309,7 @@ class DyStockDataTradeDayTable:
             day = None
 
         return day
-
+    #
     def tDaysCountInDb(self, startDate=None, endDate=None):
         """
             从数据库获取指定日期范围的交易日数

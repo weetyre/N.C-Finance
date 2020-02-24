@@ -8,6 +8,7 @@ from .DyEvent import *
 #第三层，专门为时间事件设计的特殊的守护者线程，这个线程按照interval 来动态注册解注册，第四层同样有他自己的映射。
 #第五层最大环境的整体映射，eventMap，不管是不是时间类，都在里面，第六层就是所有事件都在event这个队列里。
 #引擎可以理解为daboss，资源分发者，首先肯定给了好多event，给了hand数目，最后根据是否有已占用hand减少hand数目，进行合理分配，从此运行起来。
+#最后调用start函数开始运行，只有一个timerhand，
 
 class DyTimerHand(threading.Thread):
     def __init__(self, queue, eventEngine):
@@ -68,7 +69,7 @@ class DyEventHand(threading.Thread):
                 self._processUnregisterEvent(event.data['type'], event.data['handler'])
             else:
                 self._processOtherEvent(event)
-
+    #注册和解注册的目的就是添加函数映射，以及接触函数映射
     def _processRegisterEvent(self, type, handler):
         if type not in self._handlers:
             self._handlers[type] = []
@@ -83,11 +84,11 @@ class DyEventHand(threading.Thread):
 
                 if not self._handlers[type]:
                     del self._handlers[type]
-
+    #真正执行的在这里
     def _processOtherEvent(self, event):
         if event.type in self._handlers:
             for handler in self._handlers[event.type]:
-                handler(event)
+                handler(event)#handler 是具体的每一个函数
 
 
 class DyEventEngine(threading.Thread):
@@ -123,7 +124,7 @@ class DyEventEngine(threading.Thread):
 
         self._timerMap = {} # {interval:{hand:[handlers]}}
 
-        # hands
+        # hands类实例
         self._hands = []
         self._handQueues = [] # each hand maps to one element in list, [Queue()]
 
@@ -136,18 +137,18 @@ class DyEventEngine(threading.Thread):
     def _initHands(self):
         for i in range(self._handNbr):
             queue_ = queue.Queue()
-            self._handQueues.append(queue_)
+            self._handQueues.append(queue_)#队列里加入了很多类得实例
 
             self._hands.append(DyEventHand(queue_))
-
+    #倒数第二部run函数调用的，都把他们放到eventengine里面
         #事件相关的解注册以及注册
         #把他们想象成牧羊人，不同牧羊人养着不同的羊就行。
     def _processUnregister(self, data):
         """ @data: {'type':,'handler':, 'hand':}
         """
         type = data['type']
-        handler = data['handler']
-        hand = data['hand']
+        handler = data['handler']#函数指针
+        hand = data['hand']#类的实例
 
         event = DyEvent(DyEventType.unregister)
         event.data['type'] = type
@@ -169,12 +170,12 @@ class DyEventEngine(threading.Thread):
                     del self._eventMap[type]
 
     def _processRegister(self, data):
-        """ @data: {'type':,'handler':, 'hand':}
+        """ @data: {'type':,'handler':, 'hand':}#记住这是重点，每一个事件，会携带队列得hand的数字序号索引，以及相应的函数指针
         """
         type = data['type']
         handler = data['handler']
         hand = data['hand']
-
+        #再次第二次建立event实例，也是注册类型，data里的type是具体的type
         event = DyEvent(DyEventType.register)
         event.data['type'] = type
         event.data['handler'] = handler
@@ -247,7 +248,7 @@ class DyEventEngine(threading.Thread):
                     event.data = interval
 
                     self._timerHandQueue.put(event)
-
+    #这是倒数第二步，从eventengine取出来
     def run(self):
         while True:
             event = self._engineQueue.get()
@@ -263,19 +264,19 @@ class DyEventEngine(threading.Thread):
 
             elif event.type == DyEventType.unregister:
                 self._processUnregister(event.data)
-
+            # 通过应用，直接交互过来的事件，比如点击回测
             else: # event for applications
                 hands = self._eventMap.get(event.type)
                 if hands is not None:
                     for hand in hands: # hand which is listening this event
                         self._handQueues[hand].put(event)
-
+    #第一步运行4组，放入eventengine（一般外部调用第一）
     def registerTimer(self, handler, hand=None, interval=1):
         if hand is None:
             hand = self._handNbr - 1
 
         event = DyEvent(DyEventType.registerTimer)
-        event.data = dict(hand=hand, handler=handler, interval=interval)
+        event.data = dict(hand=hand, handler=handler, interval=interval)#这句话是重点
 
         self.put(event)
 
@@ -283,8 +284,9 @@ class DyEventEngine(threading.Thread):
         if hand is None:
             hand = self._handNbr - 1
 
+        #首先evnt外面的type属性他是一个注册的事件，但是data这个字典里，type是对应具体的事件类型（列如，单进度条事件）
         event = DyEvent(DyEventType.register)
-        event.data = dict(type=type, handler=handler, hand=hand)
+        event.data = dict(type=type, handler=handler, hand=hand)#这个hand的确是个数字，因为这是number-1下来的
 
         self.put(event)
 
@@ -305,13 +307,13 @@ class DyEventEngine(threading.Thread):
         event.data = dict(hand=hand, handler=handler, interval=interval)
 
         self.put(event)
-
+    #外部调用第二，他会把具体注册的事件类型放进去
     def put(self, event):
         self._engineQueue.put(event)
 
     def stop(self):
         pass
-
+    #第二：start
     def start(self):
         for hand in self._hands:
             hand.start()

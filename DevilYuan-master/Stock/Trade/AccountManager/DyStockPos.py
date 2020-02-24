@@ -1,6 +1,6 @@
 from ..DyStockTradeCommon import *
 
-
+#
 class DyStockPos:
     """
         一只股票的持仓，一只股票对应一个实例
@@ -24,7 +24,7 @@ class DyStockPos:
         self.high = price # 持有期内最高价格
         self.closeHigh = None # 持有期内收盘最高价格
         self.cost = (price*volume + tradeCost)/volume # 持有期内每股成本价，算上手续费。实盘时，成本会更新成券商账户的持仓成本，由CTA引擎更新。
-        self.price = price # 现价
+        self.price = price # 现价 可以认为时委托价格
 
         self.pnlRatio = 0 # 当前盈亏比
         self.maxPnlRatio = 0 # 持有周期内的最大盈利比，回测时有效
@@ -38,20 +38,20 @@ class DyStockPos:
         self._updatePrice(price)
 
         self._curInit()
-
+    #
     def _curInit(self):
         """
             初始化当日相关的数据，主要是除复权相关的数据。
         """
         self.preClose = None # 昨日收盘价，回测时有效
-        self.sync = False # 主要是除复权导致。若是策略持仓，则是券商账户管理持仓跟策略持仓同步，若是账户管理持仓，则是券商接口账户持仓跟账户管理持仓。
+        self.sync = False # 主要是除复权导致。若是策略持仓，则是 券商账户管理持仓 跟 策略持仓同步，若是账户管理持仓，则是 券商接口账户持仓 跟账户管理持仓。
 
         # 复权因子。分成价格和持仓量的原因是，实盘时，有些股票只除息了，这时成本价格变了，但持仓量不变。
         # 对回测来讲，这两个值一样。
-        # 回测时根据当日第一个tick或者bar推算出来。实盘时则由Broker驱动。
+        # 回测时根据 当日 第一个tick或者bar推算出来。实盘时则由Broker驱动。
         self.priceAdjFactor = None # 当日价格复权因子，
         self.volumeAdjFactor = None # 当日持仓量复权因子
-
+    #
     def _updatePrice(self, price, high=None, low=None):
         """
             更新跟当前价格，最高价，最低价相关的持仓数据。这里假设price，high，low数据没有错误。
@@ -78,20 +78,20 @@ class DyStockPos:
             self.high = max(self.high, price)
         else:
             self.high = max(self.high, high)
-
+    #增加持仓
     def addPos(self, datetime, strategyCls, price, volume, tradeCost=0):
         #self.datetime = datetime
         #self.strategyCls = strategyCls
 
-        self.cost = (self.cost*self.totalVolume + price*volume + tradeCost)/(self.totalVolume + volume)
+        self.cost = (self.cost*self.totalVolume + price*volume + tradeCost)/(self.totalVolume + volume)# 新的每股成本
 
-        self.totalVolume += volume
-        if not DyStockTradeCommon.T1:
+        self.totalVolume += volume # 总量可变，最后可total 赋给available 因为当日已结束
+        if not DyStockTradeCommon.T1:# 当日的量不能立即发生变化，因为今天不能交易，第二天才可以
             self.availVolume += volume
 
-        self._updatePrice(price)
-
-    def removePos(self, price, volume, tradeCost=0, removeAvailVolume=True):
+        self._updatePrice(price)# 更新当前成交价
+    # 减少持仓
+    def removePos(self, price, volume, tradeCost=0, removeAvailVolume=True): # 减的话根据后面的进行减
         """
             Note: !!!cost isn't recalculated, which is different with 炒股软件
         """
@@ -108,21 +108,21 @@ class DyStockPos:
         pnlRatio = pnl/(self.cost*volume)*100
 
         return pnl, pnlRatio
-
+    #
     def onOpen(self, date, dataEngine):
         """
             持仓开盘前的操作。
             回测时有效。由于实盘时，账户的仓位依赖于券商，所以实盘时不调用此接口。
         """
         daysEngine = dataEngine.daysEngine
-
+        # 当日初始化
         self._curInit()
 
         # 市场前一交易日
-        preDate = daysEngine.tDaysOffsetInDb(date, -1)
+        preDate = daysEngine.tDaysOffsetInDb(date, -1) # 这个是从交易日表获得的交易日期
 
         # 载入股票昨日数据，由于可能发生停牌，采用相对日期载入
-        if not daysEngine.loadCode(self.code, [preDate, 0], latestAdjFactorInDb=False):
+        if not daysEngine.loadCode(self.code, [preDate, 0], latestAdjFactorInDb=False): # 基于昨日获取的股票，会基于昨日向前前复权，所以self.preClose 和 tick.preClose 会不一样
             return False
 
         # 为了检测当日有没有除权除息，获取昨日收盘
@@ -137,18 +137,18 @@ class DyStockPos:
         self.holdingPeriod += 1
 
         return True
-
+    #
     def _processAdj(self, tick):
         # 回测时@self.preClose不是None，不考虑首日开盘的股票。
         # 实盘时，持仓的同步则由Broker驱动。
-        if self.preClose is None:
+        if self.preClose is None: # 在调用 onopen 的时候就已经赋值了，调用days数据库获取前日收盘价
             return
-
+        # 已同步的话不用除权
         if self.sync:
             return
 
         assert tick.preClose is not None
-
+        # 还未同步
         if tick.preClose != self.preClose:
             # !!!一定要跟DyStockCtaTemplate的同步策略持仓的复权因子计算方法一致
             priceAdjFactor = self.preClose/tick.preClose
@@ -159,35 +159,35 @@ class DyStockPos:
 
             self.availVolume *= priceAdjFactor
             self.totalVolume *= priceAdjFactor
-
+            # 已经做过除息除权
             self.xrd = True
-
+            # 对于回测而言两者一样
             self.priceAdjFactor = priceAdjFactor
             self.volumeAdjFactor = priceAdjFactor
-
+            #更新 昨日收盘价
             # set back so that don't need to adjust factor in loop
-            self.preClose = tick.preClose
+            self.preClose = tick.preClose # 同步
 
-        else:
+        else:# 证明已经同步，就都是1
             self.priceAdjFactor = 1
             self.volumeAdjFactor = 1
-
+        # 已同步
         self.sync = True
-
+    # 
     def onTick(self, tick):
         self._processAdj(tick)
-            
+        # 更新一系列信息
         self._updatePrice(tick.price, tick.high, tick.low)
-
+    #
     def onBar(self, bar):
         self.onTick(bar)
-
+    #
     def onClose(self):
         """ T+1，收盘后更新持仓 """
         self.availVolume = self.totalVolume
 
         self.closeHigh = self.price if self.closeHigh is None else max(self.price, self.closeHigh)
-
+    #
     @classmethod
     def restorePos(cls, pos, strategyCls=None):
         """
@@ -218,7 +218,7 @@ class DyStockPos:
         newPos.price = pos.get('price',  pos['cost'])
 
         return newPos
-
+    #
     def getSavedData(self):
         """
             获取策略持仓收盘要保存的数据

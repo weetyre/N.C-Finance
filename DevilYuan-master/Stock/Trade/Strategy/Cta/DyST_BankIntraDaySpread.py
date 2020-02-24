@@ -2,7 +2,7 @@ from ..DyStockCtaTemplate import *
 
 
 class DyST_BankIntraDaySpread(DyStockCtaTemplate):
-
+    # 子类覆盖父类的属性以及方法
     name = 'DyST_BankIntraDaySpread'
     chName = '银行日内价差'
 
@@ -15,18 +15,18 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
     spread = 0.5
 
 
-    def __init__(self, ctaEngine, info, state, strategyParam=None):
-        super().__init__(ctaEngine, info, state, strategyParam)
+    def __init__(self, ctaEngine, info, state, strategyParam=None): # 那么这个策略状态也是回测
+        super().__init__(ctaEngine, info, state, strategyParam)# 如果是回测，那么这个CT引擎就是回测CTA引擎
 
         self._curInit()
 
     def _onOpenConfig(self):
-        self._monitoredStocks.extend(self.codes)
-
+        self._monitoredStocks.extend(self.codes)# 扩充list
+    # 模板已经初始化过了，所以自己就不用特殊的初始化了。
     def _curInit(self, date=None):
         pass
 
-    @DyStockCtaTemplate.onOpenWrapper
+    @DyStockCtaTemplate.onOpenWrapper# 调用完父类调用子类
     def onOpen(self, date, codes=None):
         # 当日初始化
         self._curInit(date)
@@ -34,7 +34,7 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
         self._onOpenConfig()
 
         return True
-
+    #
     def onTicks(self, ticks):
         """
             收到行情TICKs推送
@@ -67,11 +67,11 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
                 self.closePos(ticks.get(code))
 
                 self.buyByRatio(ticks.get(codes[0]), 50, self.cAccountLeftCashRatio)
-                    
+        # 刚回测时没有当前持仓
         else:
             increases = {}
             for code in self.codes:
-                tick = ticks.get(code)
+                tick = ticks.get(code) # 
                 if tick is None:
                     continue
 
@@ -80,6 +80,6 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
             codes = sorted(increases, key=lambda k: increases[k])
             if codes:
                 self.buyByRatio(ticks.get(codes[0]), 50, self.cAccountLeftCashRatio)
-            
+    # 
     def onBars(self, bars):
         self.onTicks(bars)

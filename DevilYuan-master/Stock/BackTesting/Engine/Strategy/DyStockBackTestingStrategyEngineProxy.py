@@ -5,7 +5,7 @@ import queue
 from .DyStockBackTestingStrategyEngineProcess import *
 from Stock.Config.DyStockConfig import DyStockConfig
 
-
+#
 class DyStockBackTestingStrategyEngineProxy(threading.Thread):
     """ 以进程方式启动一个周期的策略回测 """
 
@@ -14,7 +14,7 @@ class DyStockBackTestingStrategyEngineProxy(threading.Thread):
 
         self._eventEngine = eventEngine
 
-        self._ctx = multiprocessing.get_context('spawn')
+        self._ctx = multiprocessing.get_context('spawn') # 使用此方式启动的进程，只会执行和 target 参数或者 run() 方法相关的代码
         self._queue = self._ctx.Queue() # queue to receive event from child processes
 
         self._processes = []
@@ -27,7 +27,7 @@ class DyStockBackTestingStrategyEngineProxy(threading.Thread):
             event = self._queue.get()
 
             self._eventEngine.put(event)
-
+    #子进程开始回测
     def startBackTesting(self, reqData):
         childQueue = self._ctx.Queue()
         self._childQueues.append(childQueue)
@@ -38,7 +38,7 @@ class DyStockBackTestingStrategyEngineProxy(threading.Thread):
 
         self._processes.append(p)
 
-
+#
 class DyStockBackTestingStrategyEngineProxyThread(threading.Thread):
     """ 以线程方式启动一个周期的策略回测, 主要做调试用 """
 
@@ -59,7 +59,7 @@ class DyStockBackTestingStrategyEngineProxyThread(threading.Thread):
             event = self._queue.get()
 
             self._eventEngine.put(event)
-
+    # 子线程用来回测
     def startBackTesting(self, reqData):
         childQueue = queue.Queue()
         self._childQueues.append(childQueue)

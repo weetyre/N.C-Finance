@@ -35,7 +35,7 @@ class DyProgressWidget(QWidget):
         vbox.addStretch()
 
         self.setLayout(vbox)
-
+    #对应的handler函数，输入参数是evnt实例，对应后面类的Dyeventhand 里面函数的handler（event）
     def _updateProgressSingle(self, event):
         self._progressSingle.setValue(event.data)
 
@@ -44,9 +44,9 @@ class DyProgressWidget(QWidget):
 
     def _registerEvent(self):
         """连接Signal（处理函数）"""
-        self.signalSingle.connect(self._updateProgressSingle)
+        self.signalSingle.connect(self._updateProgressSingle)#handler
         self.signalTotal.connect(self._updateProgressTotal)
         """然后给注册给引擎 """
-        self._eventEngine.register(DyEventType.progressSingle, self.signalSingle.emit)
+        self._eventEngine.register(DyEventType.progressSingle, self.signalSingle.emit)#这个就是指的handler函数指针，然后把type传过去
         self._eventEngine.register(DyEventType.progressTotal, self.signalTotal.emit)
 

@@ -98,7 +98,7 @@ class DyEventType:
     stockOnDeal = 'eStockOnDeal' # 股票成交回报推送事件
 
     # 股票持仓同步（更新）事件，一旦券商账户（DyStockAccountManager）有持仓更新，则发送此事件。
-    # 主要目的是推送持仓成本价，这样策略可以根据成本价做停损处理。
+    # 主要目的是推送持仓 成本价，这样策略可以根据成本价做停损处理。
     # !!!若多个策略持有同一只股票，但成本价只有一个。
     stockOnPos = 'eStockOnPos' # format: @event.data are {'broker': broker, 'pos': positions}
 

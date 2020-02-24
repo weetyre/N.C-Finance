@@ -3,7 +3,7 @@ from EventEngine.DyEvent import *
 from ..DyStockDataCommon import *
 from .Common.DyStockDataCommonEngine import *
 
-
+#
 class DyStockDataDaysEngine(object):
     """ 股票（指数）历史日线数据，包含股票代码表和交易日数据 """
 
@@ -22,7 +22,7 @@ class DyStockDataDaysEngine(object):
         
         if registerEvent:
             self._registerEvent()
-
+    #载入股票交易数据到codeDaysDf中
     def _loadDays(self, startDate, endDate, indicators):
         self._info.print('开始载入{0}只股票(指数,基金)的日线数据[{1}, {2}]...'.format(len(self.stockAllCodesFunds), startDate, endDate))
 
@@ -42,7 +42,7 @@ class DyStockDataDaysEngine(object):
 
         self._info.print('股票(指数,基金)的日线数据载入完成')
         return True
-
+    #输入交易日，根据数据库日期的存储状况，获取相对于数据库不存在的日期交易数据（相对于现在他是临时的）
     def _getDaysNotInDb(self, tradeDays, codes, indicators):
         """ @tradeDays: [trade day]
             @codes: {code: name}
@@ -63,13 +63,13 @@ class DyStockDataDaysEngine(object):
             self._progress.update()
         
         return data if data else None
-
+    #一个功能暂时不用，就是更新板块成分代码表，这个功能不用
     def _updateHistDaysBasic(self, startDate, endDate):
         """
             更新全部A股代码表，交易日数据及板块成分代码表
         """
         return self._commonEngine.updateCodes() and self._commonEngine.updateTradeDays(startDate, endDate)# and self._commonEngine.updateAllSectorCodes(startDate, endDate)
-
+    #
     def _getUpdatedCodes(self, startDate, endDate, indicators, isForced, codes=None):
         """
             @return: {code: {indicator: [trade day]}}
@@ -104,11 +104,11 @@ class DyStockDataDaysEngine(object):
                 return None
 
         return codes
-
+    #更新数据库中不存在的历史日线数据
     def _updateHistDays(self, startDate, endDate, indicators, isForced=False, codes=None):
 
         # get updated codes data info
-        codes = self._getUpdatedCodes(startDate, endDate, indicators, isForced, codes)
+        codes = self._getUpdatedCodes(startDate, endDate, indicators, isForced, codes)#这些数据是数据库中不存在的数据，需要更新的数据
         if codes is None: return
 
         # init
@@ -123,7 +123,7 @@ class DyStockDataDaysEngine(object):
         event.data = codes
 
         self._eventEngine.put(event)
-
+    #
     def _update(self, startDate, endDate, indicators, isForced=False, codes=None):
         # update all stock A code table, trade day table and sector code table firstly
         if not self._updateHistDaysBasic(startDate, endDate):
@@ -140,10 +140,10 @@ class DyStockDataDaysEngine(object):
 
         # 更新日线数据
         self._updateHistDays(startDate, endDate, indicators, isForced, codes)
-
+    #
     def _autoUpdate(self):
         # get latest date from DB
-        latestDate = self._commonEngine.getLatestDateInDb()
+        latestDate = self._commonEngine.getLatestDateInDb() # 不管TF，就是最新的交易日的消息
 
         if latestDate is None:
             self._info.print("数据库里没有日线数据", DyLogData.error)
@@ -168,7 +168,7 @@ class DyStockDataDaysEngine(object):
         startDate = DyTime.getDateStr(latestDate, 1) # next date after latest date in DB
 
         # compare dates
-        if endDate < startDate:
+        if endDate < startDate: # T的话说明就是今天
             # update progress UI
             self._progress.init(0)
 
@@ -177,7 +177,7 @@ class DyStockDataDaysEngine(object):
             return
 
         self._update(startDate, endDate, DyStockDataCommon.dayIndicators)
-
+    #引擎操纵函数
     def _updateStockHistDaysHandler(self, event):
 
         self._progress.reset()
@@ -195,10 +195,10 @@ class DyStockDataDaysEngine(object):
 
             # update
             self._update(startDate, endDate, indicators, isForced, codes)
-
+    #停止更新请求
     def _stopReqHandler(self, event):
         self._isStopped = True
-
+    #更新板块代码表
     def _updateStockSectorCodesHandler(self, event):
         sectorCodeList = event.data['sectorCode']
         startDate = event.data['startDate']
@@ -212,7 +212,7 @@ class DyStockDataDaysEngine(object):
                 return
                 
         self._eventEngine.put(DyEvent(DyEventType.finish))
-
+    #
     def _updateOneCode(self, code, data):
 
         # get max date range
@@ -228,7 +228,7 @@ class DyStockDataDaysEngine(object):
                 if operator.gt(dates[-1], endDate):
                     endDate = dates[-1]
 
-        # get from Gateway
+        # get from Gateway 相应的数据                           #下面为相应的域
         data = self._gateway.getDays(code, startDate, endDate, sorted(data), self.stockAllCodesFunds[code])
         if not data: # None(errors) or no data
             if data is None: # indicate fetching data error from engine point of view
@@ -238,10 +238,10 @@ class DyStockDataDaysEngine(object):
         # updat to DB
         if self._mongoDbEngine.updateDays(code, data):
             self._updatedCodeCount += 1 # 需要更新的股票（也就是在数据库里的数据不全），并且数据成功写入数据库
-
+    #
     def _printCount(self):
         self._info.print('由于股票停牌或者没有上市, 更新了{0}只股票(指数,基金)日线数据'.format(self._updatedCodeCount), DyLogData.ind)
-
+    #
     def _updateStockHistDays_Handler(self, event):
         # unpack
         codes = event.data
@@ -272,13 +272,13 @@ class DyStockDataDaysEngine(object):
         event.data = codes
 
         self._eventEngine.put(event)
-
+    #
     def _loadCommon(self, dates, codes):
-        if not self._commonEngine.load(dates, codes):
+        if not self._commonEngine.load(dates, codes): # 载入股票代码表以及交易日表
             return None, None
 
-        return self._commonEngine.tOldestDay(), self._commonEngine.tLatestDay()
-
+        return self._commonEngine.tOldestDay(), self._commonEngine.tLatestDay()#载入最早交易日以及最晚交易日（为T）
+    #
     def _loadAdjFactors(self, date, latestAdjFactorInDb):
         """ 载入@date的复权因子"""
         self._info.print('开始载入复权因子...')
@@ -293,9 +293,9 @@ class DyStockDataDaysEngine(object):
         # init progress
         self._progress.init(len(self._codeDaysDf), 100, 10)
 
-        # 载入复权因子, 基于载入的日线数据
+        # 载入复权因子, 基于载入的日线数据 （获得每一个股票的最新的复权因子）
         for code, _ in self._codeDaysDf.items():
-            adjFactor = self._mongoDbEngine.getAdjFactor(code, date, self.stockAllCodesFunds[code])
+            adjFactor = self._mongoDbEngine.getAdjFactor(code, date, self.stockAllCodesFunds[code])#最后一个输入的是名字
 
             if adjFactor is not None:
                 self._codeAdjFactors[code] = adjFactor
@@ -306,7 +306,7 @@ class DyStockDataDaysEngine(object):
 
         self._info.print('复权因子载入完成')
         return True
-
+    #处理前复权
     def _processAdj(self):
         """ 前复权 """
         self._info.print("开始前复权...")
@@ -328,7 +328,7 @@ class DyStockDataDaysEngine(object):
             self._progress.update()
 
         self._info.print("前复权完成")
-
+    #结合日期的左右边界
     def _unionDates(self, startDate, endDate, dates):
         for date in dates:
             if isinstance(date, str):
@@ -339,7 +339,7 @@ class DyStockDataDaysEngine(object):
                     endDate = date
 
         return startDate, endDate
-
+    #
     def _loadOneCodeDays(self, code, dates, indicators):
         """
             载入个股日线数据，个股对应的指数数据也被载入
@@ -361,7 +361,7 @@ class DyStockDataDaysEngine(object):
         endDay = df.index[-1].strftime("%Y-%m-%d")
 
         # 载入对应的指数日线数据
-        index = self.getIndex(code)
+        index = self.getIndex(code)#四大指数
         df = self._mongoDbEngine.getOneCodeDays(index, startDay, endDay, indicators, self.stockIndexes[index])
 
         #!!! 个股上市可能早于指数
@@ -401,7 +401,7 @@ class DyStockDataDaysEngine(object):
 
     def tDaysOffsetInDb(self, base, n=0):
         return self._commonEngine.tDaysOffsetInDb(base, n)
-
+    #
     def codeTDayOffset(self, code, baseDate, n=0, strict=True):
         """ 根据偏移获取个股的交易日
             @strict: 严格方式，非严格方式，则获取股票在数据库里的最大偏移
@@ -527,7 +527,7 @@ class DyStockDataDaysEngine(object):
 
     def getStockMarketDate(self, code, name=None):
         return self._mongoDbEngine.getStockMarketDate(code, name)
-
+    #
     def loadCode(self, code, dates, indicators=DyStockDataCommon.dayIndicators, latestAdjFactorInDb=True):
         """ 
             以个股（基金）在数据库里的数据加载日线数据。个股对应的指数数据默认载入
@@ -580,7 +580,7 @@ class DyStockDataDaysEngine(object):
             @codes: [code], 股票代码，指数数据默认载入。None-载入所有股票（基金）日线数据，[]-只载入指数数据。
         """
         # 载入公共数据
-        startDay, endDay = self._loadCommon(dates, codes)
+        startDay, endDay = self._loadCommon(dates, codes) 
         if startDay is None:
             self._info.print('DyStockDataEngine._loadCommon: 载入数据失败', DyLogData.error)
             return False
@@ -599,15 +599,15 @@ class DyStockDataDaysEngine(object):
         self._processAdj()
 
         return True
-
+    #根据输入的日期来获取相应的数据
     def getDataFrame(self, code, date=None, n=None):
         df = self._codeDaysDf.get(code)
         if df is None:
             return None
-
+        #没有指定日期，就全部返回
         if date is None:
             return df
-
+        #当然获取的都是交易日
         if isinstance(n, int):
             # convert to absloute dates
             endDay = self.tDaysOffset(date, 0)
@@ -618,7 +618,7 @@ class DyStockDataDaysEngine(object):
         else:
             startDay, endDay = self.tDaysOffset(date, 0), n
 
-        # !!!当只有一行数据的时候，会导致环切切不到
+        # !!!当只有一行数据的时候，会导致环切切不到，所以写一个if
         retDf = None
         if df.shape[0] == 1:
             if startDay == endDay and startDay in df.index:
@@ -628,7 +628,7 @@ class DyStockDataDaysEngine(object):
             retDf = df[startDay:endDay]
 
         return retDf
-
+    #股票代码和日期是否存在
     def isExisting(self, code, date):
         if code not in self._codeDaysDf:
             return False

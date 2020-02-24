@@ -5,7 +5,7 @@ class DyStockBackTestingEventHandType:
 
     nbr = 2
 
-
+#发送的请求数据 Data现在就是类实例
 class DyStockBackTestingStrategyReqData:
     def __init__(self, strategyCls, tDays, settings, param, codes=None, paramGroupNo=None):
         self.strategyCls = strategyCls
@@ -15,7 +15,7 @@ class DyStockBackTestingStrategyReqData:
         self.param = param # 策略参数
         self.paramGroupNo = paramGroupNo # 策略参数组合号
 
-
+#发送的确认数据 Data现在就是类实例
 class DyStockBackTestingStrategyAckData:
     def __init__(self, datetime, strategyCls, paramGroupNo, period, isClose=False):
         self.datetime = datetime
@@ -33,11 +33,11 @@ class DyStockBackTestingStrategyAckData:
 
         self.isClose = isClose # 是不是收盘后的Ack
 
-
+# 默认是 收盘价
 class DyStockBackTestingCommon:
     maViewerIndicator = 'close'
 
-
+#股票回测上下文
 class DyStockBackTestingContext:
     """
         回测时，由于策略@prepare函数会有大量重复的计算，所以需要context缓存数据，提高策略回测效率。
@@ -45,7 +45,7 @@ class DyStockBackTestingContext:
         这样策略可以根据整个回测周期，一次性准备好所有的回测数据，
         然后存到context里(由于python的动态特性，策略可以直接在context里添加成员变量)。
         策略可以利用pandas进行矢量运算，把选股结果针对整个回测周期一次性完成。
-        context将会由回测策略引擎保存，每次开盘传给策略@prepare函数。
+        context将会由 回测策略引擎 保存，每次开盘传给策略@prepare函数。
         策略可以通过hasattr(<userAddedAttr>)来判断有没有一次性准备好所有的回测数据。
 
         对实盘来讲，context是None，策略可以认为@self.startDate = self.endDate = date，

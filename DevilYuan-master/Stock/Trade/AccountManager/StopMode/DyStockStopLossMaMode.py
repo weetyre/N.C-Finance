@@ -1,12 +1,12 @@
 from .DyStockStopMode import *
 from ...DyStockTradeCommon import *
 
-
+# 止损均线策略
 class DyStockStopLossMaMode(DyStockStopMode):
     
     stopLossPnlRatio = -5
 
-    def __init__(self, accountManager, dataEngine, ma):
+    def __init__(self, accountManager, dataEngine, ma):# 几日均线
         super().__init__(accountManager)
 
         self._dataEngine = dataEngine
@@ -16,7 +16,7 @@ class DyStockStopLossMaMode(DyStockStopMode):
         self._tradeStartTime = '14:55:00'
 
         self._curInit()
-
+    # 当日初始化
     def _curInit(self):
         self._preparedData = {}
 
@@ -60,7 +60,7 @@ class DyStockStopLossMaMode(DyStockStopMode):
         self._preparedData[code] = closes
 
         return True
-
+    #
     def _stopLoss(self, code, tick):
         ma = (sum(self._preparedData[code]) + tick.price)/self._ma
 
@@ -68,7 +68,7 @@ class DyStockStopLossMaMode(DyStockStopMode):
 
         if tick.price < ma and pos.pnlRatio < self.stopLossPnlRatio:
             self._accountManager.closePos(tick.datetime, code, getattr(tick, DyStockTradeCommon.sellPrice), DyStockSellReason.stopLoss, tickOrBar=tick)
-
+    # 每一个bar or tick 都会参与计算
     def onTicks(self, ticks):
         for code, pos in self._accountManager.curPos.items():
             tick = ticks.get(code)

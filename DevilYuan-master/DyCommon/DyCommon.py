@@ -19,7 +19,7 @@ class DyLogData:
     ind2 = '通知2'
 
     def __init__(self, description, type):
-        self.time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
+        self.time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-4] # 为了实时更新
         self.type = type
         self.description = description
 
@@ -37,20 +37,20 @@ class DyInfo(object):
         event.data = DyLogData(description, type)
 
         self._eventEngine.put(event)
-
+    #单进度条
     def progressSingle(self, percent):
         if self._progressSingle != percent:
             self._progressSingle = percent
-
+            #注册一个单进度条事件
             event = DyEvent(DyEventType.progressSingle)
             event.data = percent
 
             self._eventEngine.put(event)
-
+    #总进度条
     def progressTotal(self, percent):
         if self._progressTotal != percent:
             self._progressTotal = percent
-
+            #注册一个总进度条事件
             event = DyEvent(DyEventType.progressTotal)
             event.data = percent
 
@@ -162,10 +162,10 @@ class DySubInfo:
 
     def progressSingle(self, percent):
         pass
-
+    # 对于策略引起得事件，不需要跟新个体，只需要更新总就行
     def progressTotal(self, percent):
         if not self._enabled: return
-
+        # 只要百分比一遍就告知引擎，进行更新
         if self._progressTotal != percent:
             self._progressTotal = percent
 
@@ -173,10 +173,10 @@ class DySubInfo:
             event.data = percent
 
             self._outQueue.put(event)
-
+    #初始化进度
     def initProgress(self):
         self.progressTotal(0)
-
+    #是否使用进度条
     def enable(self, enable=True):
         self._enabled = enable
 
@@ -226,7 +226,7 @@ class DyTime:
         start += timedelta(days=step)
 
         return start
-
+    #获取日期的字符串
     def getDateStr(start, step):
         if isinstance(start, str):
             start = start.split('-')
@@ -283,7 +283,7 @@ class DyTime:
 
         return True
 
-
+    #获得从当天开始到最后一天的所有具体日期的字符串
     def getDates(start, end, strFormat=False):
         if isinstance(start, str):
             start = start.split('-')
@@ -381,13 +381,13 @@ class DyTime:
 
         return wrapper
 
-
+#绘图主要组件
 class DyMatplotlib:
     """ 管理matplotlib的figure的分配 """
 
     curFigNums = []
     figNbr = 8
-
+    #绘图时会调用此函数
     def newFig():
         figs = plt.get_fignums()
 
@@ -432,10 +432,10 @@ class DyProgress(object):
 
         # init Ui progress
         percent = 100 if self._singleReqCount == 0 else 0
-        self._info.progressSingle(percent)#调用Dyinfo进度条函数
+        self._info.progressSingle(percent)# 调用Dyinfo进度条函数
 
         percent = 100 if self._totalReqCount == 0 else 0
-        self._info.progressTotal(percent)#调用Dyinfo进度条函数
+        self._info.progressTotal(percent)# 调用Dyinfo进度条函数
 
         self._singleUpdateUiStep = singleUpdateUiStep
         self._totalUpdateUiStep = totalUpdateUiStep
@@ -481,7 +481,7 @@ class DyProgress(object):
         self._updateTotal()
 
         self._updateSingle()
-
+    # 重置进度条
     def reset(self):
         self._info.progressSingle(0)
         self._info.progressTotal(0)

@@ -5,9 +5,9 @@ from PyQt5.QtWidgets import QComboBox, QCheckBox, QGridLayout, QLabel, QLineEdit
 
 from DyCommon.Ui.DyTableWidget import *
 
-
+#回测设置窗口
 class DyStockBackTestingSettingDlg(QDialog):
-
+    #默认设置
     settings = \
         {
             '止损':
@@ -147,33 +147,33 @@ class DyStockBackTestingSettingDlg(QDialog):
         self.setLayout(grid)
 
         self.resize(QApplication.desktop().size().width()//2, QApplication.desktop().size().height()//3)
-
+    # 初始化止损UI
     def _initStopLossUi(self):
         self._stopLossCls.addItems(list(self.settings['止损'].keys()))
 
         self._stopLossCls.currentIndexChanged.connect(self._stopLossClsChange)
 
         self._stopLossCls.setCurrentText('无')
-
+    # 如果更改了
     def _stopLossClsChange(self):
         text = self._stopLossCls.currentText()
         param = self.settings['止损'][text]
         
-        self._setParam(self._stopLossParam, param)
-
+        self._setParam(self._stopLossParam, param)#同时传入
+    # 初始化
     def _initStopProfitUi(self):
         self._stopProfitCls.addItems(list(self.settings['止盈'].keys()))
 
         self._stopProfitCls.currentIndexChanged.connect(self._stopProfitClsChange)
 
         self._stopProfitCls.setCurrentText('无')
-
+    # 如果更改
     def _stopProfitClsChange(self):
         text = self._stopProfitCls.currentText()
         param = self.settings['止盈'][text]
         
         self._setParam(self._stopProfitParam, param)
-
+    # 初始化， 如果更改
     def _initStopTimeUi(self):
         self._stopTimeCls.addItems(list(self.settings['止时'].keys()))
 
@@ -186,9 +186,9 @@ class DyStockBackTestingSettingDlg(QDialog):
         param = self.settings['止时'][text]
         
         self._setParam(self._stopTimeParam, param)
-
+    # 设置参数
     def _setParam(self, table, param):
-        if param is None:
+        if param is None:# 如果选择的是无
             table.setRowCount(0)
             table.setColumnCount(0)
             table.setEnabled(False)
@@ -197,8 +197,8 @@ class DyStockBackTestingSettingDlg(QDialog):
         table.setEnabled(True)
 
         table.setColNames(param[0])
-        table.appendRow(param[1], new=True)
-
+        table.appendRow(param[1], new=True)#加一行
+    #获得参数
     def _getParam(self, table):
         colNbr = table.columnCount()
         param = []
@@ -209,8 +209,8 @@ class DyStockBackTestingSettingDlg(QDialog):
 
             param.append(value)
 
-        return param
-
+        return param 
+    # 数据库缓存打开了，就可以编辑了
     def _dbCacheCheckBoxClicked(self):
         enable = self._dbCacheCheckBox.isChecked()
         self._dbCachePreLoadDaysSizeLabel.setEnabled(enable)

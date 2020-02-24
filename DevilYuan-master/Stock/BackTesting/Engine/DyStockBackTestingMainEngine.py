@@ -4,12 +4,12 @@ from EventEngine.DyEventEngine import *
 
 from .Strategy.DyStockBackTestingStrategyEngine import *
 
-
+#
 class DyStockBackTestingMainEngine(object):
     """ 股票回测主引擎 """
 
     def __init__(self):
-        self._eventEngine = DyEventEngine(DyStockBackTestingEventHandType.nbr, False)
+        self._eventEngine = DyEventEngine(DyStockBackTestingEventHandType.nbr, False) # 线程数为二，没有timer事件
         self._info = DyInfo(self._eventEngine)
 
         self._strategyEngine = DyStockBackTestingStrategyEngine(self._eventEngine, self._info)
@@ -26,9 +26,9 @@ class DyStockBackTestingMainEngine(object):
 
     def exit(self):
         pass
-
+    # 设置为线程模式
     def setThreadMode(self):
         self._strategyEngine.setThreadMode()
-
+    # 设置为进程模式
     def setProcessMode(self, mode):
         self._strategyEngine.setProcessMode(mode)

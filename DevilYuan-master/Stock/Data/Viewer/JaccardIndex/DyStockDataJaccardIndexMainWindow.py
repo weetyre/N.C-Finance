@@ -5,7 +5,7 @@ from .DyStockDataJaccardIndexCodeSetWidgets import *
 from .DyStockDataJaccardIndexWidgets import *
 from .DyStockDataJaccardIndexPlotDlg import *
 
-
+#杰卡德指数
 class DyStockDataJaccardIndexMainWindow(DyBasicMainWindow):
     name = 'DyStockDataJaccardIndexMainWindow'
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-
+#
 class DyStockCtaBarData(object):
     """ K线数据 """
 
@@ -75,7 +75,7 @@ class DyStockCtaBarData(object):
 
         raise AttributeError
 
-
+#
 class DyStockCtaTickData(object):
     """ Tick数据 """
 
@@ -87,7 +87,7 @@ class DyStockCtaTickData(object):
             self._defaultInit()
         else:
             self.convertFromSina(sinaCode, sinaTick)
-
+    #
     def _defaultInit(self):
         self.code = None
         self.name = None
@@ -114,7 +114,7 @@ class DyStockCtaTickData(object):
         
         self.askPrices = None # list
         self.askVolumes = None # list
-
+    #
     def __getattr__(self, name):
         """
             获取股票价格
@@ -152,7 +152,7 @@ class DyStockCtaTickData(object):
                 return self.askPrices[int(name[-1]) - 1]
 
         raise AttributeError
-
+    #
     def convertFromSina(self, sinaCode, sinaTick):
         self.code = sinaCode[2:] + '.' + sinaCode[:2].upper()
         self.name = sinaTick['name']

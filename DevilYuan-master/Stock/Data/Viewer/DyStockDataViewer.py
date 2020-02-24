@@ -25,8 +25,8 @@ from ..Utility.DyStockDataML import *
 
 class DyStockDataViewer(object):
     """
-        股票数据的视图展示，主要是计算股票数据生成matplotlib视图
-        若要生成跟股票代码相关的表格窗口，则需要使用DyStockDataWindow类(友元类)，这样可以防止import递归。
+        股票数据的视图展示，主要是 计算股票数据 生成matplotlib视图
+        若要生成 跟股票代码相关 的 表格窗口 ，则需要使用DyStockDataWindow类(友元类)，这样可以防止import递归。
     """
 
     def __init__(self, dataEngine, info=None):
@@ -53,7 +53,7 @@ class DyStockDataViewer(object):
 
     def setTestedStocks(self, codes):
         self._testedStocks = codes
-
+    #
     def _plotNetCapitalFlow(self, df, ax, code):
         try:
             mf = df['mf_amt'].values
@@ -80,7 +80,7 @@ class DyStockDataViewer(object):
         endDate = self._daysEngine.codeTDayOffset(code, baseDay, dates[2], strict=False)
 
         return baseDay, startDate, endDate
-
+    #绘制蜡烛图，这是个公用函数，不是私有函数
     def plotCandleStick(self, code, dates, maIndicator='close'):
         """
             @dates: [-n, baseDate, n]
@@ -110,7 +110,7 @@ class DyStockDataViewer(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #私有函数
     def _plotCandleStick(self, code, startDate=None, endDate=None, periods=None, baseDate=None, netCapitalFlow=True, left=None, right=None, top=None, bottom=None, maIndicator='close'):
         """
             股票日线K线图
@@ -344,10 +344,10 @@ class DyStockDataViewer(object):
         top = top * ((turn*100)/volumeSum)
         top = '%.2f万分之'%top
         axVolume.text(1, 1, top, color='r', transform=axVolume.transAxes)
-
+    #大函数调用同名的小函数，绘制图像使用
     def plotTimeShareChart(self, code, date, n):
 
-        date = self._daysEngine.codeTDayOffset(code, date, n)
+        date = self._daysEngine.codeTDayOffset(code, date, n)# 从这进行日期的偏移
         if date is None: return
 
         DyMatplotlib.newFig()
@@ -401,7 +401,7 @@ class DyStockDataViewer(object):
             f.show()
         except Exception as ex:
             pass
-
+    #绘制散点图
     def plotSpreadChart(self, target, code, baseDate, n):
         def _dateFormatter(x, pos):
             if not (0 <= int(x) < spreads.shape[0]):
@@ -478,7 +478,7 @@ class DyStockDataViewer(object):
             f.show()
         except Exception as ex:
             pass
-        
+    #交易日数据载入
     def plotDealsDist(self, code, baseDate, n):
         # 载入tick数据
         if not self._ticksEngine.loadCodeN(code, [baseDate, n]):
@@ -558,7 +558,7 @@ class DyStockDataViewer(object):
 
         except Exception as ex:
             pass
-
+    #绘制特征点
     def _plotRegionalLocals(self, ax, index, regionalLocals, color='k'):
         """
             在现有坐标系里绘制特征点
@@ -577,7 +577,7 @@ class DyStockDataViewer(object):
             x.append(x_)
 
         ax.plot(x, regionalLocals.values, color + 'o--')
-
+    #
     def _plotDealsHSARs(self, ax, hsars):
         """
             在现有坐标系里绘制成本HSARs
@@ -587,7 +587,7 @@ class DyStockDataViewer(object):
         hsars = hsars[::-1]
         for i, y in enumerate(hsars):
             ax.axhline(y, color='y', linestyle='--', linewidth=i+1)
-
+    #
     def _plotExtremaHSARs(self, ax, hsars):
         """
             在现有坐标系里绘制极值HSARs
@@ -596,7 +596,7 @@ class DyStockDataViewer(object):
         """
         for y, i in hsars:
             ax.axhline(y, color='y', linestyle='--', linewidth=i)
-
+    #
     def _plotTAHSARs(self, ax, code, startDay, endDay, index=False):
         """
             @index: 指数还是股票，指数没有成本压力阻力支撑
@@ -618,7 +618,7 @@ class DyStockDataViewer(object):
                 hsars = hss + hrs
 
             self._plotExtremaHSARs(ax, hsars)
-
+    #
     def _plotTrendLine(self, df, ax, xIndex):
         """
             绘制@df的趋势线
@@ -654,7 +654,7 @@ class DyStockDataViewer(object):
                 ax.plot([x[1], xExtendPoint], [y[1], yExtendPoint], '-', color='#FF6100', linewidth=1.5)
             except Exception as ex:
                 pass
-
+    #
     def _plotTrendChannel(self, df, ax, xIndex):
         """
             绘制@df的趋势通道
@@ -693,7 +693,7 @@ class DyStockDataViewer(object):
         # plot trend channel
         _plotLine(up)
         _plotLine(down)
-
+    #
     def plotHSARs(self, code, dates, maIndicator='close'):
         """
             绘制股票的水平支撑和阻力图表，含《专业投机原理》里的趋势线
@@ -759,7 +759,7 @@ class DyStockDataViewer(object):
         # layout
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #
     def plotVolatilityDist(self, code, baseDate, forwardNTDays):
         """
             波动率分布图
@@ -854,7 +854,7 @@ class DyStockDataViewer(object):
         oldDf.hist(color='r', alpha=0.5, bins=100)
         plt.gcf().suptitle('波动分布(%) - 基准日期[{0}],向前{1}个交易日'.format(newBaseDate, forwardNTDays), fontsize=20, color='b')
         plt.gcf().show()
-
+    #
     def plotAtrExtreme(self, code, dates, maIndicator='close'):
         """
             绘制股票的ATR Extreme图表
@@ -882,7 +882,7 @@ class DyStockDataViewer(object):
         # layout
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #
     def _plotAtrExtreme(self, code, timeIndex=None, left=None, right=None, top=None, bottom=None):
         """
             绘制个股的TTI ATR Exterme通道, which is based on 《Volatility-Based Technical Analysis》
@@ -1019,7 +1019,7 @@ class DyStockDataViewer(object):
         axPrice.legend(loc='upper left', frameon=False)
 
         return refIndex
-
+    #
     def plotIntraDayCandleStick(self, code, dates, bar='1min', maIndicator='close'):
         """
             日内K线图
@@ -1066,7 +1066,7 @@ class DyStockDataViewer(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-                      
+    #     
     def _plotVolatilityChart(self,
                              df,
                              startDay=None, endDay=None,
@@ -1189,7 +1189,7 @@ class DyStockDataViewer(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #
     def plotSwingChart(self, code, dates, maIndicator='close'):
         """
             绘制股票的波段图
@@ -1286,7 +1286,7 @@ class DyStockDataViewer(object):
         # layout
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #
     def plotBuySellDayCandleStick(self, code, buySellDates, withDate=True, maIndicator='close'):
         """
             绘制有买卖标记的股票日K线
@@ -1320,7 +1320,7 @@ class DyStockDataViewer(object):
                                                   withDate=withDate,
                                                   maIndicator=maIndicator)
 
-        # plot index
+        # plot index 
         indexCode = self._daysEngine.getIndex(code)
         self._plotBuySellDayCandleStick(indexCode, buySellDates,
                                         periods=periods,
@@ -1346,6 +1346,7 @@ class DyStockDataViewer(object):
             @periods: 周期索引，主要用来对齐不同子图的时间坐标
             @return: periods or None
         """
+        #时间格式转化
         def _dateFormatter(x, pos):
             if not (0 <= int(x) < df.shape[0]):
                 return None
@@ -1396,7 +1397,7 @@ class DyStockDataViewer(object):
         axPrice.xaxis.set_major_locator(FixedLocator(x[:-xspace-1: xspace] + x[-1:]))
         axPrice.xaxis.set_major_formatter(FuncFormatter(_dateFormatter))
 
-        # plot K-chart
+        # plot K-chart 调用mpl_finance 的绘图包
         lineCollection, barCollection = candlestick2_ohlc(axPrice, df['open'].values, df['high'].values, df['low'].values, df['close'].values, width=.9, colorup='r', colordown='g', alpha=1)
         barCollection.set_edgecolor('face') # 边框同色
         lineCollection.set_color(barCollection.get_facecolor())
@@ -1436,7 +1437,7 @@ class DyStockDataViewer(object):
                              color='k',
                              verticalalignment=verticalalignment,
                              horizontalalignment='center')
-                if withDate:
+                if withDate:#如果有日期的话写日期
                     axPrice.text(x, y + dateYOffset, date[2:], horizontalalignment='center')
             except:
                 pass

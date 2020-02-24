@@ -40,7 +40,7 @@ class DyStockWxScKeyConfigDlg(QDialog):
         vbox.addWidget(cancelPushButton)
  
         self.setLayout(vbox)
-
+    #
     def _read(self):
         file = DyStockConfig.getStockWxScKeyFileName()
 

@@ -24,14 +24,14 @@ class DyStockDataTicksGateway(object):
     """
         股票历史分笔数据网络接口
         分笔数据可以从新浪，腾讯，网易，通达信获取
-        每个hand一个实例，这样可以防止数据互斥
-        通达信的分笔数据没有秒只有分钟，现在的算法是分笔数据随机分布在分钟内
+        每个hand一个实例，这样可以防止数据互斥（这是重点）
+        通达信的分笔数据没有秒只有分钟，现在的算法是分笔数据随机分布在分钟内（重点）
     """
     dataSourceRules = { # startDate - date when data soure have ticks data
         '腾讯': {'startDate': None},
         '新浪': {'startDate': None},
         }
-
+    #不需要实例化，就可以调用此方法，cls是类的自身，不需要self参数 cls : 表示没用被实例化的类本身
     @classmethod
     def setDataSourceStartDate(cls, dataSoureDetectData):
         for name, date in dataSoureDetectData.items():
@@ -43,15 +43,15 @@ class DyStockDataTicksGateway(object):
             self.func = func
             self.errorCount = 0
 
-
+    #这里的hand是数字，从0开始，具体多少个实例由DyStockDataGateway决定
     def __init__(self, eventEngine, info, hand):
         self._eventEngine = eventEngine
         self._info = info
         self._hand = hand
 
-        self._tdx = DyStockDataTdx(hand, self._info, emptyTicksRetry=True)
+        self._tdx = DyStockDataTdx(hand, self._info, emptyTicksRetry=True)#实例化通达信获取数据的实例，要把信息实例传进去，因为要在信息上做手脚
 
-        self._setTicksDataSources(DyStockDataCommon.defaultHistTicksDataSource)
+        self._setTicksDataSources(DyStockDataCommon.defaultHistTicksDataSource)#智能
 
         self._registerEvent()
 
@@ -100,13 +100,13 @@ class DyStockDataTicksGateway(object):
             else:
                 return df
         raise ex
-
+    #转成腾讯接口所需要的数据格式类型
     def _codeToTencentSymbol(code):
         if code[0] in ['5', '6']:
             return 'sh' + code
 
         return 'sz' + code
-
+    #
     def _getTickDataFromTencent(code=None, date=None, retry=3, pause=0.001):
         """
             从腾讯获取分笔数据
@@ -147,7 +147,7 @@ class DyStockDataTicksGateway(object):
             else:
                 return df
         raise ex
-
+    #新浪还是调用的Tencent的接口
     def _codeToSinaSymbol(code):
         return DyStockDataTicksGateway._codeToTencentSymbol(code)
 
@@ -207,7 +207,7 @@ class DyStockDataTicksGateway(object):
                     continue
 
             # get ticks from data source
-            data = self._getTicksByFunc(dataSource.func, code, date)
+            data = self._getTicksByFunc(dataSource.func, code, date)#从这里选择数据获取函数
 
             # 如果数据源应该有数据却没有数据或者发生错误，则换个数据源获取
             if data == DyStockHistTicksAckData.noData or data is None:
@@ -226,7 +226,7 @@ class DyStockDataTicksGateway(object):
         # Too many errors happend for data source, so we think it as fatal error and then switch data source
         if switch:
             oldTicksDataSourceNames = [s.name for s in self._ticksDataSources]
-            self._ticksDataSources = self._ticksDataSources[1:] + self._ticksDataSources[0:1]
+            self._ticksDataSources = self._ticksDataSources[1:] + self._ticksDataSources[0:1]#智能的那个Datasource换了数据源换了一个位置
             newTicksDataSourceNames = [s.name for s in self._ticksDataSources]
 
             self._info.print('Hand {}: 历史分笔数据源切换{}->{}'.format(self._hand, oldTicksDataSourceNames, newTicksDataSourceNames), DyLogData.warning)
@@ -246,7 +246,7 @@ class DyStockDataTicksGateway(object):
 
             if 'change' in df:
                 del df['change']
-
+            #数据清洗过程(Nan,o,重复)
             df = df.dropna() # sometimes Sina will give wrong data that price is NaN
             df = df[df['volume'] > 0] # !!!drop 0 volume, added 2017/05/30, sometimes Sina contains tick with 0 volume.
             df = df.drop_duplicates(['time']) # drop duplicates
@@ -263,13 +263,13 @@ class DyStockDataTicksGateway(object):
                 break
 
             df.rename(columns={'time': 'datetime'}, inplace=True)
-
+            #数据做转置处理
             df = df.T
             data = [] if df.empty else list(df.to_dict().values())
 
         except Exception as ex:
             if '当天没有数据' in str(ex):
-                return DyStockHistTicksAckData.noData
+                return DyStockHistTicksAckData.noData# 返回一个nodata的字符串
             else:
                 self._info.print("Hand {}: {}获取[{}, {}]Tick数据异常: {}".format(self._hand, func.__name__, code, date, str(ex)), DyLogData.warning)
                 if 'timed out' in str(ex):
@@ -297,10 +297,10 @@ class DyStockDataTicksGateway(object):
 
     def _updateHistTicksDataSourceHandler(self, event):
         self._setTicksDataSources(event.data)
-
+    #这几个函数都是爬虫函数
     def _setTicksDataSources(self, dataSource):
         if dataSource == '新浪':
-            self._ticksDataSources = [self.DataSource('新浪', self.__class__._getTickDataFromSina)]
+            self._ticksDataSources = [self.DataSource('新浪', self.__class__._getTickDataFromSina)]#DataSource的一个实例
         elif dataSource == '腾讯':
             self._ticksDataSources = [self.DataSource('腾讯', self.__class__._getTickDataFromTencent)]
         elif dataSource == '通达信':
@@ -308,4 +308,4 @@ class DyStockDataTicksGateway(object):
         else: # '智能'
             self._ticksDataSources = [self.DataSource('腾讯', self.__class__._getTickDataFromTencent),
                                       self.DataSource('通达信', self._tdx.getTicks),
-                                      ]
+                                      ]#如果智能的话，选择的是腾讯或者是通达信

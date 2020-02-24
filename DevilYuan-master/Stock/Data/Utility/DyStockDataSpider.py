@@ -19,10 +19,10 @@ class DyStockDataSpider(object):
                   '每股现金流(元)': '每股经营现金流'
                  }
 
-    pro = None
+    pro = None #TusharePro Token
     companyInfoDf = None # DF['所属行业', '主营业务']
 
-
+    #
     def _startPro(func):
         def wrapper(cls, *args, **kwargs):
             if cls.pro is None:
@@ -31,21 +31,21 @@ class DyStockDataSpider(object):
 
             return func(cls, *args, **kwargs)
         return wrapper
-
+    #返回想要得指标中文 如：营业总收入同比增长率
     def _dy2Jqka(indicators):
         return [DyStockDataSpider.dy2JqkaMap[x] for x in indicators]
-
+    #持有股票股数的转化
     def _getShareQuantity(strQuantity):
         """
             @strQuantity: str, like '45.22万股', '1.02亿股' or '234.44'
             @return: float, 单位是万股
         """
-        quantity = DyCommon.toFloat(re.findall(r"\d*\.?\d+", strQuantity)[0])
+        quantity = DyCommon.toFloat(re.findall(r"\d*\.?\d+", strQuantity)[0])#找到数字，转化为浮点
         if '亿' in strQuantity:
             quantity *= 10000
 
         return quantity
-
+    #获得最新得财报
     def getLatestFinanceReport(code, indicators):
         """
             从财务报表获取指定指标最新值
@@ -54,11 +54,11 @@ class DyStockDataSpider(object):
         """
         indicators = DyStockDataSpider._dy2Jqka(indicators)
 
-        mainLink = 'http://basic.10jqka.com.cn/{0}/flash/main.txt'.format(code[:-3])
+        mainLink = 'http://basic.10jqka.com.cn/{0}/flash/main.txt'.format(code[:-3])#同花顺查询链接
         r = requests.get(mainLink)
-
+        #获得了财报表
         table = dict(json.loads(r.text))
-
+        #循环获得相应指标
         values = []
         for indicator in indicators:
             # get @indicator position
@@ -74,18 +74,18 @@ class DyStockDataSpider(object):
             values.append(value)
 
         return values
-
+    #
     def getLatestFundPositionsRatio(code):
         """
-            最近机构持股占比流通股比例总和
+            最近机构 持股 占比流通股比例 总和
             @return: ratio(%), fundNbr
         """
-        mainLink = 'http://basic.10jqka.com.cn/16/{0}/position.html'.format(code[:-3])
+        mainLink = 'http://basic.10jqka.com.cn/16/{0}/position.html'.format(code[:-3])#同花顺查询链接
         r = requests.get(mainLink)
         soup = BeautifulSoup(r.text, 'lxml')
 
         sumRatio = 0
-        fundNbr = 0
+        fundNbr = 0#机构数总和
 
         try:
             tag = soup.find('h2', text='机构持股明细')
@@ -142,10 +142,10 @@ class DyStockDataSpider(object):
                     # !!!持有数量格式为'450.76万股'，格式跟以前不一样
                     lockedShares += DyStockDataSpider._getShareQuantity(tags_[0].string)
 
-                    types = str(tags_[typePos].string).split(',')
+                    types = str(tags_[typePos].string).split(',')#持股类型，有可能有多个股票类型
                     for type in types:
                         if type[2:] not in lockedShareType:
-                            lockedShareType += type[2:]
+                            lockedShareType += type[2:]#从第三个字符，例如A股
 
             # 股本结构
             mainLink = 'http://basic.10jqka.com.cn/16/{0}/equity.html'.format(code[:-3])
@@ -155,7 +155,7 @@ class DyStockDataSpider(object):
             tag = soup.find('span', text='总股本')
             tag = tag.parent.parent.parent.find('span', text='流通A股')
             tag = tag.parent.parent.find('td')
-            freeShares = DyStockDataSpider._getShareQuantity(tag.string)
+            freeShares = DyStockDataSpider._getShareQuantity(tag.string)#内置处理亿得能力
 
         except Exception: # 新股可能没有十大流通股东数据
             # 股本结构
@@ -172,9 +172,9 @@ class DyStockDataSpider(object):
             lockedShareType = 'A股'
 
         # return
-        realFreeShares = (freeShares - lockedShares)/10000
+        realFreeShares = (freeShares - lockedShares)/10000#返回单位为亿
         return realFreeShares, lockedShareType
-
+    #读取企业信息
     @classmethod
     @_startPro
     def getCompanyInfo(cls, code, indicators):
@@ -207,5 +207,5 @@ class DyStockDataSpider(object):
 
             colData.append(data)
 
-        return newColNames, colData
+        return newColNames, colData#返回新的列名以及所需要得数据
         

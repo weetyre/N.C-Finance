@@ -141,7 +141,7 @@ class DyStockDataCommonEngine(object):
         if not self._codeTable.load(codes):
             return False
 
-        return self._tradeDayTable.load(dates)
+        return self._tradeDayTable.load(dates) # 然后在载入交易日表
 
     def loadCodeTable(self, codes=None):
         return self._codeTable.load(codes)

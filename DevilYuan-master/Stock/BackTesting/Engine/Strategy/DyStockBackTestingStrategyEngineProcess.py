@@ -9,7 +9,7 @@ from ....Data.Engine.DyStockDataEngine import *
 from Stock.Config.DyStockConfig import DyStockConfig
 from Stock.Data.Engine.DyStockDbCache import DyStockDbCache
 
-
+#设置数据库缓存
 def __setDbCache(reqData):
     dbCachePreLoadDaysSize = reqData.settings.get('dbCachePreLoadDaysSize')
 
@@ -24,7 +24,7 @@ def __setDbCache(reqData):
         DyStockDbCache.preLoadDaysSize = dbCachePreLoadDaysSize
 
     return useDbCache
-
+#
 def dyStockBackTestingStrategyEngineProcess(outQueue, inQueue, reqData, config=None):
     """
         股票回测处理实体。每个回测处理实体由一个参数组合和一个回测周期组成。
@@ -40,8 +40,8 @@ def dyStockBackTestingStrategyEngineProcess(outQueue, inQueue, reqData, config=N
     useDbCache = __setDbCache(reqData)
 
     # Engines
-    eventEngine = DyDummyEventEngine()
-    info = DySubInfo(paramGroupNo, period, outQueue)
+    eventEngine = DyDummyEventEngine()#Dy假的引擎，因为是子进程
+    info = DySubInfo(paramGroupNo, period, outQueue)#所有log类事件都会放到这个outqueue里面
     dataEngine = DyStockDataEngine(eventEngine, info, False, dbCache=useDbCache)
 
     # create stock back testing CTA engine
@@ -49,12 +49,12 @@ def dyStockBackTestingStrategyEngineProcess(outQueue, inQueue, reqData, config=N
     
     for tDay in reqData.tDays:
         try:
-            event = inQueue.get_nowait()
+            event = inQueue.get_nowait() # 队列为空，取值的时候不等待，但是取不到值那么直接崩溃了
         except queue.Empty:
             pass
 
         # 回测当日数据
-        if not ctaEngine.run(tDay):
+        if not ctaEngine.run(tDay):# 遍历当日
             break
 
         # 发送当日回测结果数据事件
@@ -65,6 +65,6 @@ def dyStockBackTestingStrategyEngineProcess(outQueue, inQueue, reqData, config=N
 
     # 发送'股票回测策略引擎处理结束'事件
     event = DyEvent(DyEventType.stockBackTestingStrategyEngineProcessEnd)
-    event.data[paramGroupNo] = period
-
+    event.data[paramGroupNo] = period #参数编号  周期
+    # 最终会发给外面得事件引擎
     outQueue.put(event)

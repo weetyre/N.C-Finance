@@ -21,14 +21,14 @@ class DyStockMongoDbEngine(object):
     stockDaysDb = 'stockDaysDb' # 股票日线行情数据
 
     # DB for TuShare Data Source
-    stockCommonDbTuShare = 'stockCommonDbTuShare'
-    tradeDayTableNameTuShare = "tradeDayTableTuShare"
-    codeTableNameTuShare = "codeTableTuShare"
+    stockCommonDbTuShare = 'stockCommonDbTuShare'#包含以下两个表集合，交易日，以及股票代码表（3765）
+    tradeDayTableNameTuShare = "tradeDayTableTuShare"#是否是交易日
+    codeTableNameTuShare = "codeTableTuShare"#股票代码表
 
-    stockDaysDbTuShare = 'stockDaysDbTuShare' # 股票日线行情数据
+    stockDaysDbTuShare = 'stockDaysDbTuShare' # 股票日线行情数据，里面是个股表的集合
     
 
-    # 板块股票代码表，一个日期对应一张表
+    # 板块股票代码表，一个日期对应一张表 上证50，沪深300，中证500，映射
     sectorCodeDbMap = {DyStockCommon.sz50Index: 'sz50CodeTableDb',
                        DyStockCommon.hs300Index: 'hs300CodeTableDb',
                        DyStockCommon.zz500Index: 'zz500CodeTableDb'
@@ -43,8 +43,8 @@ class DyStockMongoDbEngine(object):
         # DB cache
         self._dbCache = None
         if cache:
-            self._dbCache = DyGetStockDbCache(self._info, self)
-
+            self._dbCache = DyGetStockDbCache(self._info, self)#传入DBengine实例，因为要补充缓存中不存在的东西 然后支持cache功能
+    #获取交易日表
     def _getTradeDayTableCollection(self):
         if 'Wind' in DyStockCommon.defaultHistDaysDataSource:
             collection = self._client[self.stockCommonDb][self.tradeDayTableName]
@@ -52,7 +52,7 @@ class DyStockMongoDbEngine(object):
             collection = self._client[self.stockCommonDbTuShare][self.tradeDayTableNameTuShare]
 
         return collection
-
+    #获取股票代码表
     def _getCodeTableCollection(self):
         if 'Wind' in DyStockCommon.defaultHistDaysDataSource:
             collection = self._client[self.stockCommonDb][self.codeTableName]
@@ -60,15 +60,15 @@ class DyStockMongoDbEngine(object):
             collection = self._client[self.stockCommonDbTuShare][self.codeTableNameTuShare]
 
         return collection
-
+    #获取日数据库，根据不同的数据源进行获取
     def _getStockDaysDb(self):
         if 'Wind' in DyStockCommon.defaultHistDaysDataSource:
             db = self._client[self.stockDaysDb]
         else:
-            db = self._client[self.stockDaysDbTuShare]
+            db = self._client[self.stockDaysDbTuShare]#输入数据库名字就行
 
         return db
-
+    #
     def _deleteTicks(self, code, date):
         collection = self._client[self.stockTicksDb][code]
 
@@ -86,7 +86,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #
     def _findTicks(self, code, startDate, endDate):
         collection = self._client[self.stockTicksDb][code]
 
@@ -104,7 +104,7 @@ class DyStockMongoDbEngine(object):
             return None
 
         return cursor
-
+    #找交易日
     def _findTradeDays(self, startDate=None, endDate=None):
         collection = self._getTradeDayTableCollection()
 
@@ -125,11 +125,11 @@ class DyStockMongoDbEngine(object):
             return None
 
         return cursor
-        
+    #获取基准日期前几日得数据
     def _getTradeDaysByRelativeNegative(self, baseDate, n):
         
         baseDateSave = baseDate
-        nSave = n
+        nSave = n# n是负数
 
         # always get 0 offset trade day
         baseDate = self._getTradeDaysByRelativeZero(baseDate)
@@ -159,7 +159,7 @@ class DyStockMongoDbEngine(object):
         self._info.print("数据库里没有{0}向前{1}个交易日的日期数据".format(baseDateSave, abs(nSave)),
                              DyLogData.error)
         return None
-
+    #
     def _getTradeDaysByRelativeZero(self, baseDate):
         """ 基准日期向前找到第一个交易日 """
 
@@ -182,7 +182,7 @@ class DyStockMongoDbEngine(object):
                 return [d]
 
         return None
-
+    #基于基准日期得后面得数据
     def _getTradeDaysByRelativePositive(self, baseDate, n):
 
         baseDateSave = baseDate
@@ -223,13 +223,13 @@ class DyStockMongoDbEngine(object):
                 return None
 
         return dates
-
+    #查找一只股票的交易日数据
     def _findOneCodeDays(self, code, startDate, endDate, name=None):
-        collection = self._getStockDaysDb()[code]
+        collection = self._getStockDaysDb()[code]#获得那个股票代码的集合表
 
         dateStart = datetime.strptime(startDate, '%Y-%m-%d')
         dateEnd = datetime.strptime(endDate + ' 23:00:00', '%Y-%m-%d %H:%M:%S')
-
+        #过滤器
         flt = {'datetime':{'$gte':dateStart,
                            '$lt':dateEnd}}
 
@@ -243,7 +243,7 @@ class DyStockMongoDbEngine(object):
             return None
 
         return cursor
-
+    #
     def _getCodeDay(self, code, baseDate, name=None):
         """ 得到个股的当日交易日, 向前贪婪 """
         collection = self._getStockDaysDb()[code]
@@ -266,7 +266,7 @@ class DyStockMongoDbEngine(object):
             return d['datetime'].strftime('%Y-%m-%d')
         
         return None 
-
+    #
     def _findOneCodeDaysByRelative(self, code, baseDate, n=0, name=None):
         """
             包含当日，也就是说offset 0总是被包含的
@@ -304,7 +304,7 @@ class DyStockMongoDbEngine(object):
         # The reason is that we don't know future, as well as 何时股票上市
         
         return cursor 
-
+    #通过cursor的方式找到数据
     def _getOneCodeDaysByCursor(self, cursor, indicators):
         try:
             columns = indicators + ['datetime']
@@ -319,7 +319,7 @@ class DyStockMongoDbEngine(object):
             return None
 
         return None if df.empty else df
-
+    #两个日期获取个股日线数据（是否有n偏移来执行不同得函数）
     def _getOneCodeDaysUnified2(self, code, startDate, endDate, indicators, name=None):
         if isinstance(endDate, int):
             df = self._getOneCodeDaysByRelative(code, indicators, startDate, endDate, name)
@@ -327,7 +327,7 @@ class DyStockMongoDbEngine(object):
             df = self.getOneCodeDays(code, startDate, endDate, indicators, name)
 
         return df
-
+    #有三个日期（或者里面含有一个整数），获取对应得交易日日期
     def _getOneCodeDaysUnified3(self, code, startDate, endDate, n, indicators, name=None):
         # 分部分载入
         # front part
@@ -349,7 +349,7 @@ class DyStockMongoDbEngine(object):
         df = df[~df.index.duplicated()]
 
         return df
-
+    #
     def _getOneCodeDaysByRelative(self, code, indicators, baseDate, n=0, name=None):
 
         cursor = self._findOneCodeDaysByRelative(code, baseDate, n, name)
@@ -385,7 +385,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #date (datetime 和 tradeDay)
     def updateTradeDays(self, dates):
         collection = self._getTradeDayTableCollection()
 
@@ -405,7 +405,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #更新股票代码表
     def updateStockCodes(self, codes):
         collection = self._getCodeTableCollection()
 
@@ -423,19 +423,19 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #
     def getOneCodeDaysWrapper(func):
         """
             @getOneCodeDays的装饰器
         """
-        def wrapper(self, *args, **kwargs):
-            if self._dbCache is None or kwargs.get('raw'):
+        def wrapper(self, *args, **kwargs):#**kwargs他的意思就是后面的参数，是可以通过get方法获取的
+            if self._dbCache is None or kwargs.get('raw'):#不通过cache获得
                 return func(self, *args, **kwargs)
-
+            #通过cache获得
             return self._dbCache.getOneCodeDays(*args, **kwargs)
 
         return wrapper
-
+    #
     @getOneCodeDaysWrapper
     def getOneCodeDays(self, code, startDate, endDate, indicators, name=None, raw=False):
         """
@@ -446,7 +446,7 @@ class DyStockMongoDbEngine(object):
         if cursor is None: return None
 
         return self._getOneCodeDaysByCursor(cursor, indicators)
-
+    #输入一系列股票获取相应得数据
     def getDays(self, codes, startDate, endDate, indicators):
         """ @codes: [code] or {code:name}
             @return: {code:DF}
@@ -463,7 +463,7 @@ class DyStockMongoDbEngine(object):
                 codesDf[code] = df
 
         return codesDf if codesDf else None
-
+    #
     def getAdjFactorWrapper(func):
         """
             @getAdjFactor的装饰器
@@ -475,7 +475,7 @@ class DyStockMongoDbEngine(object):
             return self._dbCache.getAdjFactor(*args, **kwargs)
 
         return wrapper
-
+    #获得复权因子
     @getAdjFactorWrapper
     def getAdjFactor(self, code, date, name=None):
         collection = self._getStockDaysDb()[code]
@@ -498,10 +498,10 @@ class DyStockMongoDbEngine(object):
             return d['adjfactor']
 
         return None
-
+    #获取最新的交易日期，不是交易日
     def getDaysLatestDate(self):
         """ 获取数据库里交易日数据的最新日期，不是交易日 """
-
+        #为了发生错误，通过重试来尝试
         while True:
             try:
                 cursor = self._findTradeDays()
@@ -517,7 +517,7 @@ class DyStockMongoDbEngine(object):
             except Exception as ex:
                 self._info.print("MongoDB 异常({0}): 获取最新日期".format(str(ex) + ', ' + str(ex.details)),
                                  DyLogData.error)
-
+                #重试的话就是继续循环
                 if '无法连接' in str(ex):
                     self._info.print('MongoDB正在启动, 等待60s后重试...')
                                 
@@ -525,7 +525,7 @@ class DyStockMongoDbEngine(object):
                     continue
 
                 return None
-
+    #所有的最新就是最晚的交易日
     def getDaysLatestTradeDay(self):
         """ 获取数据库里交易日数据的最新交易日 """
         cursor = self._findTradeDays()
@@ -538,7 +538,7 @@ class DyStockMongoDbEngine(object):
                 return d
 
         return None
-
+    #个股日线数据得判断（如果缓存打开，就通过缓存机制获取数据）
     def getOneCodeDaysUnifiedWrapper(func):
         """
             @getOneCodeDaysUnified的装饰器
@@ -550,7 +550,7 @@ class DyStockMongoDbEngine(object):
             return self._dbCache.getOneCodeDaysUnified(*args, **kwargs)
 
         return wrapper
-
+    #
     @getOneCodeDaysUnifiedWrapper
     def getOneCodeDaysUnified(self, code, dates, indicators, name=None):
         """
@@ -565,7 +565,7 @@ class DyStockMongoDbEngine(object):
             df = df.sort_index()
 
         return df
-
+    #
     def codeTDayOffsetWrapper(func):
         """
             @codeTDayOffset的装饰器
@@ -577,13 +577,13 @@ class DyStockMongoDbEngine(object):
             return self._dbCache.codeTDayOffset(*args, **kwargs)
 
         return wrapper
-
+    #
     @codeTDayOffsetWrapper
     def codeTDayOffset(self, code, baseDate, n=0, strict=True):
         """
-            获取基于个股偏移的交易日
+            获取基于个股偏移的交易日（最后或者最前的那一天）
         """
-        cursor = self._findOneCodeDaysByRelative(code, baseDate, n)
+        cursor = self._findOneCodeDaysByRelative(code, baseDate, n)#包括那一天，然后加n
         if cursor is None: return None
 
         df = self._getOneCodeDaysByCursor(cursor, [])
@@ -592,11 +592,11 @@ class DyStockMongoDbEngine(object):
         # 保留查找的次序，也就是说n<=0是降序，反之是升序
 
         if strict:
-            if df.shape[0] != abs(n) + 1:
+            if df.shape[0] != abs(n) + 1:#如果相等，就证明查找正确，如果不等，证明查找过程由于数据库数据完整性的原因造成问题
                 return None
 
         return None if df.empty else df.index[-1].strftime("%Y-%m-%d")
-
+    #
     def getTicks(self, code, startDate, endDate):
         cursor = self._findTicks(code, startDate, endDate)
         if cursor is None: return None
@@ -610,7 +610,7 @@ class DyStockMongoDbEngine(object):
             return None
 
         return None if df.empty else df
-
+    #
     def insertTicks(self, code, date, data):
 
         collection = self._client[self.stockTicksDb][code]
@@ -634,7 +634,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #是否存在分笔数据
     def isTicksExisting(self, code, date):
         cursor = self._findTicks(code, date, date)
         if cursor is None: return False
@@ -643,7 +643,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #输入列名，以及日期，获得列名不存在得日期
     def getNotExistingDates(self, code, dates, indicators):
         """ @dates: sorted [date]
             @indicators: [indicator]
@@ -675,16 +675,16 @@ class DyStockMongoDbEngine(object):
             date = datetime.strftime(d['datetime'], '%Y-%m-%d')
 
             for indicator in d:
-                if indicator in data:
+                if indicator in data:#indicator不在既定得indicator内肯定不用处理
                     if date in data[indicator]:
                         # remove existing date
-                        data[indicator].remove(date)
+                        data[indicator].remove(date)#因为要的是不存在得日期，所以把数据库中存在的那个删了
 
                         if not data[indicator]:
                             del data[indicator]
         
         return data if data else None
-
+    #
     def isTradeDaysExisting(self, startDate, endDate):
         cursor = self._findTradeDays(startDate, endDate)
         if cursor is None: return False
@@ -694,7 +694,7 @@ class DyStockMongoDbEngine(object):
             return True
 
         return False
-
+    #返回参数为T的交易日（这个表是common 里面 的 tradeday表格）
     def getTradeDaysByRelative(self, baseDate, n):
         """ 从数据库获取相对日期的交易日数据
             @n: 向前或者向后多少个交易日
@@ -710,7 +710,7 @@ class DyStockMongoDbEngine(object):
         if tradeDays is None: return None
 
         return tradeDays
-
+    #
     def getTradeDaysByAbsolute(self, startDate=None, endDate=None):
         """ 从数据库获取指定日期区间的交易日数据 """
         cursor = self._findTradeDays(startDate, endDate)
@@ -729,7 +729,7 @@ class DyStockMongoDbEngine(object):
                 tradeDays.append(d)
 
         return tradeDays
-
+    #输入股票code，返回code+名
     def getStockCodes(self, codes=None):
         # 不载入任何股票
         if codes == []:
@@ -754,7 +754,7 @@ class DyStockMongoDbEngine(object):
             data.append(d)
 
         return data if data else None
-
+    #
     def getStockMarketDate(self, code, name=None):
         """
             获取个股上市日期
@@ -776,7 +776,7 @@ class DyStockMongoDbEngine(object):
             return d['datetime'].strftime('%Y-%m-%d')
         
         return None
-
+    #获得板块股票代码
     def getSectorStockCodes(self, date, sectorCode, codes=None):
         # 不载入任何股票
         if codes == []:
@@ -789,12 +789,12 @@ class DyStockMongoDbEngine(object):
 
         collectionNames = sorted(collectionNames)
         for i, date_ in enumerate(collectionNames):
-            if date_ > date:
+            if date_ > date:#找到最接近得日期
                 break
         else:
             i += 1
 
-        collection = collectionNames = self._client[self.sectorCodeDbMap[sectorCode]][collectionNames[i-1]]
+        collection = collectionNames = self._client[self.sectorCodeDbMap[sectorCode]][collectionNames[i-1]]#获取集合
 
         # get code table
         if codes is None:
@@ -814,7 +814,7 @@ class DyStockMongoDbEngine(object):
             data.append(d)
 
         return data if data else None
-
+    #跟新板块股票代码
     def updateSectorStockCodes(self, sectorCode, date, codes):
         collection = self._client[self.sectorCodeDbMap[sectorCode]][date]
 
@@ -832,7 +832,7 @@ class DyStockMongoDbEngine(object):
             return False
 
         return True
-
+    #
     def codeAllTradeDays(self, code, name=None):
         """
             get all trade days for stock code
@@ -848,4 +848,4 @@ class DyStockMongoDbEngine(object):
             self._info.print("MongoDB Exception({}): @codeAllTradeDays, {}".format(exStr, codeInfo), DyLogData.error)
             return None
 
-        return sorted([x.strftime('%Y-%m-%d') for x in datetimeList])
+        return sorted([x.strftime('%Y-%m-%d') for x in datetimeList])#递增的顺序返回的列表

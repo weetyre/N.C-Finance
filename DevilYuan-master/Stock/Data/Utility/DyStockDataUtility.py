@@ -9,7 +9,7 @@ import numpy as np
 from DyCommon.DyCommon import *
 from ...Common.DyStockCommon import *
 
-
+#
 class DyStockDataUtility(object):
     """ 股票数据工具箱，主要用来计算技术指标和统计相关的数据 """
 
@@ -24,7 +24,7 @@ class DyStockDataUtility(object):
         df.dropna(inplace=True) # drop缺失的Bars
 
         return df
-
+    #
     def getMas(df, mas, dropna=True, indicator='close'):
         """
             获取周期内的指标均值
@@ -266,6 +266,7 @@ class DyStockDataUtility(object):
 
         return angle
 
+    #获取杰卡德指数
     def getJaccardIndex(index, startDate, endDate, param, daysEngine, info, codes=None, load=True):
         """
             @param: {N Days: increase percent in N Days}
@@ -476,7 +477,7 @@ class DyStockDataUtility(object):
             indexPIPs = indexPIPs[1:-1]
 
         return series[indexPIPs]
-
+    #
     def rwExtremas(df, w=4, peakIndicator='high', bottomIndicator='low'):
         """
             获取滑动窗口的极值
@@ -588,7 +589,7 @@ class DyStockDataUtility(object):
         extremaList = sorted(peaks + bottoms)
 
         return extremas[extremaList], extremas[peaks], extremas[bottoms]
-
+    #DyStockDataViewer调用
     def dealsHSARs(df, volatility=2, hsarsVolatility=5):
         """
             根据分笔成交计算支撑和阻力价格，支撑和阻力价格取最大成交量区间的均值
@@ -676,7 +677,7 @@ class DyStockDataUtility(object):
         prices = prices.reindex(columns=['price', 'count'])
 
         return prices.values.tolist()
-
+    #
     def rwExtremaHSARs(df, w=4, volatility=5):
         """
             根据滑动窗口极值计算支撑和阻力价格，支撑和阻力价格取区间极值的均值
@@ -730,7 +731,7 @@ class DyStockDataUtility(object):
         prices = prices.reindex(columns=['price', 'count'])
 
         return prices.values.tolist()
-
+    #
     def rwPeakBottomHSARs(df, w=4, volatility=5, mean=True):
         """
             根据滑动窗口最小极值和最大极值计算支撑和阻力价格

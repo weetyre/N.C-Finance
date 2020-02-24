@@ -73,15 +73,15 @@ class DyStockCtaTemplate(object):
     #--------------------- 私有类变量 ---------------------
     __stockSelectEngine = None # 选股引擎，为了对接选股后的实盘
 
-
+    #
     def __init__(self, ctaEngine, info, state, strategyParam=None):
         """
             @state: 策略状态
             @strategyParam: 策略参数。 实盘时是None；回测时，会从策略窗口生成策略参数
         """
-        self._ctaEngine = ctaEngine
+        self._ctaEngine = ctaEngine # 如果是回测那就是回测引擎
         self._info = info
-        self._state = state
+        self._state = state # 如果是回测引擎那就是回测状态
         self._strategyParam = strategyParam
 
         self._newPrepareInterface = None # 策略是否使用了新的@prepare接口
@@ -89,7 +89,7 @@ class DyStockCtaTemplate(object):
 
         # 初始化当日相关数据
         self.__curInit()
-
+    #
     def __curInit(self, date=None):
         """
             初始化当日相关数据，被子类继承
@@ -142,7 +142,7 @@ class DyStockCtaTemplate(object):
             @return: [code] or None
         """
         return None
-
+    #
     def onOpenWrapper(func):
         """
             子类@onOpen的装饰器
@@ -152,11 +152,11 @@ class DyStockCtaTemplate(object):
             # 调用父类的@onOpen
             if not super(self.__class__, self).onOpen(*args, **kwargs):
                 return False
-
+            # 然后再调用子类的
             return func(self, *args, **kwargs)
 
         return wrapper
-
+    #
     def onOpen(self, date, codes=None):
         """
             初始化策略每天开盘前的数据，这些数据都与当日有关（必须由用户继承实现）
@@ -187,7 +187,7 @@ class DyStockCtaTemplate(object):
         self._monitoredStocks.extend(list(self._curPos))
 
         return True
-
+    #
     def onMonitor(self):
         """
             引擎获取策略开盘前要监控的股票（必须由用户赋值@self._monitoredStocks）
@@ -195,7 +195,7 @@ class DyStockCtaTemplate(object):
             这样子类的@onMonitor实现其实都是一样的，都是返回监控股票列表。
             返回值：股票列表
         """
-        return self._monitoredStocks
+        return self._monitoredStocks# 这是由策略自己赋值
 
     def onTicksWrapper(func):
         """
@@ -286,14 +286,14 @@ class DyStockCtaTemplate(object):
         self._curSavedData['pos'] = positions
 
         self._ctaEngine.saveOnClose(self._curTDay, self.__class__, self._curSavedData)
-
+    #
     @classmethod
     def prepare(cls, date, dataEngine, info, codes=None, errorDataEngine=None, backTestingContext=None):
         """
             类方法，策略开盘前的准备数据（由用户选择继承实现）
             @date: 前一交易日。由当日交易调用，@date为当日的前一交易日。
             @backTestingContext: 回测时有效
-            @return: None-prepare错误, {}-策略没有准备数据
+            @return: None- prepare错误, {}-策略没有准备数据
         """
         return {}
 
@@ -349,7 +349,7 @@ class DyStockCtaTemplate(object):
                 signalInfo += '{0}:{1}'.format(name, value)
 
         return signalInfo
-
+    #
     def __checkBuy(self, tick):
         """
             买入前的检查
@@ -456,7 +456,7 @@ class DyStockCtaTemplate(object):
             self._add2CurNotDoneEntrusts(entrust)
 
         return entrust
-
+    #
     def buyByRatio(self, tick, ratio, ratioMode, signalDetails=None):
         """
             按照比例买入股票：
@@ -531,9 +531,9 @@ class DyStockCtaTemplate(object):
         """
         if self._newPrepareInterface is None:
             try:
-                data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
+                data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting) # 如果策略没有事先，就用自带得，返回是 {} 空， 出现tpye错误也会在最后一个参数出现
                 
-                self._newPrepareInterface = False
+                self._newPrepareInterface = False 
 
                 warningStr = "DevilYuan-Warning: 策略[{}]请使用@prepare新接口: def prepare(cls, date, dataEngine, info, codes=None, errorDataEngine=None, backTestingContext=None)".format(self.chName)
                 print(warningStr)
@@ -578,7 +578,7 @@ class DyStockCtaTemplate(object):
             data = self.preparePos(date, self._ctaEngine.dataEngine, self._info, posCodes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
 
         return data
-
+    #
     def loadPreparedData(self, date, codes=None):
         """
             策略开盘前载入所需的准备数据和策略实例属性。在策略的@onOpen实现里被调用。
@@ -586,19 +586,19 @@ class DyStockCtaTemplate(object):
             @date: 当日
         """
         isBackTesting = self._state.isState(DyStockStrategyState.backTesting)
-
+        # 如果时回测，不用
         if not isBackTesting:
             self._info.print('载入策略的准备数据...')
 
         # load from JSON file
-        data = self._ctaEngine.loadPreparedData(date, self.__class__)
+        data = self._ctaEngine.loadPreparedData(date, self.__class__) # 回测引擎返回none
         if data is None:
             if not isBackTesting:
                 self._info.print('策略的准备数据载入失败', DyLogData.warning)
                 self._info.print('开始实时准备策略开盘前数据...')
 
             # 前一日
-            date = self._ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1))
+            date = self._ctaEngine.tDaysOffsetInDb(DyTime.getDateStr(date, -1)) # 回测引擎返回前一天
             if date is None: # if no enough data, we'll report an error. 2018.06.11
                 self._info.print('没有足够的历史数据，策略的准备数据载入失败', DyLogData.error)
                 return None
@@ -795,7 +795,7 @@ class DyStockCtaTemplate(object):
         """
         # 不根据策略的self._posSync is True直接返回，而是根据持仓的同步标识
         # 回测时，由于数据问题可能会有某个持仓数据的暂时性缺失
-        self._posSync = True
+        self._posSync = True 
 
         for code, pos in self._curPos.items():
             if pos.sync:

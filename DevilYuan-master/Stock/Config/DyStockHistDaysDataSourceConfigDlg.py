@@ -60,7 +60,7 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
         cancelPushButton.clicked.connect(self._cancel)
         okPushButton.clicked.connect(self._ok)
 
-        self._tradeDaysComboBox = QComboBox()
+        self._tradeDaysComboBox = QComboBox()#下拉菜单
         descriptionTradeDays = "Wind有时交易日数据可能出错，所以选Wind时，总是跟TuShare做验证，由用户选择该如何做。"
         tradeDaysTextEdit = QTextEdit()
         tradeDaysTextEdit.setPlainText(descriptionTradeDays)
@@ -143,9 +143,9 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
         self._tuShareProDaysIntervalLineEdit.setText(str(self._tuShareProDaysIntervalData['interval']))
 
         self.resize(QApplication.desktop().size().width()//2, QApplication.desktop().size().height()//4*3)
-        
+    #本地有配置，从配置文件获取，否则是默认数据
     def _read(self):
-        # data source
+        # data source wind or Tushare
         file = DyStockConfig.getStockHistDaysDataSourceFileName()
 
         try:
@@ -216,7 +216,7 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
         data['ShowToken'] = True if self._tuShareProTokenPushButton.text() == 'TuSharePro token' else False
 
         DyStockConfig.configStockHistDaysTuSharePro(data)
-
+        # save
         file = DyStockConfig.getStockHistDaysTuShareProFileName()
         with open(file, 'w') as f:
             f.write(json.dumps(data, indent=4))
@@ -269,17 +269,17 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
 
     def _cancel(self):
         self.reject()
-
+    #
     def _enableTradeDaysComboBox(self):
         if self._windCheckBox.isChecked():
-            self._tradeDaysComboBox.setEnabled(True)
+            self._tradeDaysComboBox.setEnabled(True) #Wind有时交易日数据可能出错，所以选Wind时，总是跟TuShare做验证，由用户选择该如何做。
         else:
-            self._tradeDaysComboBox.setEnabled(False)
+            self._tradeDaysComboBox.setEnabled(False)#如果没有选择wind，那么那个验证下拉菜单无效，Tushare不会出错
 
     def _checkBoxClicked(self):
-        if not self._windCheckBox.isChecked() and not self._tuShareCheckBox.isChecked():
+        if not self._windCheckBox.isChecked() and not self._tuShareCheckBox.isChecked():#如果这两个都没有选
             if sys.platform == 'win32':
-                self._windCheckBox.setChecked(True)
+                self._windCheckBox.setChecked(True)#会给我默认选择wind
             else:
                 self._tuShareCheckBox.setChecked(True)
 
@@ -287,13 +287,13 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
 
     def _windCheckBoxClicked(self):
         self._checkBoxClicked()
-
+    #首先看两个是否都没有选择，如果选择一个，则不会变更既有选项，同样跟新那个下拉菜单得状态
     def _tuShareCheckBoxClicked(self):
         self._checkBoxClicked()
-
+        #如果选则了Tushare,TusharePro才处于可选择得状态，否则不是
         enable = self._tuShareCheckBox.isChecked()
         self._tuShareProCheckBox.setEnabled(enable)
-
+    #显示Token以及不显示Token
     def _showTuShareProToken(self):
         text = self._tuShareProTokenPushButton.text()
         if text == 'TuSharePro token':

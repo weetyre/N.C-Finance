@@ -5,7 +5,7 @@ from EventEngine.DyEvent import *
 from DyCommon.DyCommon import *
 from Stock.Common.DyStockCommon import *
 
-
+#主要控制按钮的状态，防止互斥操作
 class DyBasicMainWindow(QMainWindow):
 
     name = 'DyBasicMainWindow'
@@ -29,17 +29,17 @@ class DyBasicMainWindow(QMainWindow):
             self.__registerEvent(eventEngine)
 
         self.__initStatusBar()
-
+    #初始化状态栏
     def __initStatusBar(self):
         if self.__type == 'stock':
             text = '股票历史日线数据源:{}'.format(','.join(DyStockCommon.defaultHistDaysDataSource))
             label = QLabel(text)
             self.statusBar().addPermanentWidget(label)
-
+    #添加互斥操作
     def _addMutexAction(self, action):
         if action not in self._mutexActions:
             self._mutexActions.append(action)
-
+    #开始运行互斥操作
     def _startRunningMutexAction(self, action, count=1):
         """
             @count: 并行运行操作的个数。也就是说当所有的操作都结束时，才能使能Action。
@@ -50,15 +50,15 @@ class DyBasicMainWindow(QMainWindow):
                     例子：
                         一键更新股票数据，包含2个独立并行操作，日线数据和历史分笔。
         """
-        self._runningAction = action
-        self._runningActionText = action.text()
-        self._runningActionCount = count
-
-        action.setText('停止')
+        self._runningAction = action # 例如 ：一键更新股票数据
+        self._runningActionText = action.text() # 一键更新股票数据
+        self._runningActionCount = count # 2
+        # 开始运行操作后，立马变为停止
+        action.setText('停止')# 这是界面的那个停止按钮，action 是那一个按钮
 
         for action in self._mutexActions:
             if action != self._runningAction:
-                action.setDisabled(True)
+                action.setDisabled(True)# 其他按钮先不能点击，先确保这个action 运行完毕
 
     def _endRunningMutexAction(self):
         """ called once finish, fail or stopAck event received """
@@ -68,19 +68,19 @@ class DyBasicMainWindow(QMainWindow):
 
         # all ended
         if self._runningActionCount == 0:
-            self._runningAction.setText(self._runningActionText)
+            self._runningAction.setText(self._runningActionText)# 恢复原来按钮的文字
 
             self._runningAction = None
             self._runningActionText = None
             self._runningActionCount = 0
 
             for action in self._mutexActions:
-                action.setEnabled(True)
+                action.setEnabled(True)# 其他互斥操作已经可以点击
 
             return True
 
         return False
-
+    #停止正在运行的互斥操作，让那个停止按钮无法点击
     def _stopRunningMutexAction(self):
         self._runningAction.setDisabled(True)
 
@@ -116,7 +116,7 @@ class DyBasicMainWindow(QMainWindow):
         settings = QtCore.QSettings('DevilYuan', 'DevilYuanQuant')
         settings.setValue(self.name + 'State', self.saveState())
         settings.setValue(self.name + 'Geometry', self.saveGeometry())
-
+    #先载入后保存
     def _loadWindowSettings(self):
         """载入窗口设置"""
         settings = QtCore.QSettings('DevilYuan', 'DevilYuanQuant')
@@ -125,16 +125,16 @@ class DyBasicMainWindow(QMainWindow):
             ret = self.restoreGeometry(settings.value(self.name + 'Geometry'))    
         except Exception as ex:
             pass
-
+    #关闭事件，保存窗口设置再关闭
     def closeEvent(self, event):
         self._saveWindowSettings()
 
         return super().closeEvent(event)
-
+    #
     def _createDock(self, widgetClass, widgetName, widgetArea, *param):
         """创建停靠组件"""
 
-        widget = widgetClass(*param)
+        widget = widgetClass(*param)#根据自己写的特定类自定义组件
 
         dock = QDockWidget(widgetName, self)
         dock.setWidget(widget)

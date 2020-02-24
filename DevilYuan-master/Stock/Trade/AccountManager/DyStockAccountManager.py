@@ -429,18 +429,18 @@ class DyStockAccountManager:
             获取当前股票持仓成本
         """
         return self._curPos[code].cost if code in self._curPos else None
-
+    #
     def _putStockMarketMonitorEvent(self):
         """
-            向股票市场发送监控持仓的股票
-            Note: !!!实盘跟回测有不同之处，实盘没有实现@onMonitor接口。回测时，@onMonitor是由CTA Engine调用。实盘则根据券商的持仓信息来监控持仓股票实时信息。
+            向股票市场发送 监控持仓 的股票
+            Note: !!!实盘跟回测有不同之处，实盘没有实现@onMonitor接口。回测时，@onMonitor是由CTA Engine调用。实盘 则根据 券商的持仓信息 来 监控 持仓股票实时信息。
         """
         if self._curPos:
             event = DyEvent(DyEventType.stockMarketMonitor)
             event.data = list(self._curPos)
 
             self._eventEngine.put(event)
-
+        # 既然发送监控持仓的股票，自然要有新得过滤器
         # 新的持仓Filter
         self._filter = DyStockMarketFilter(list(self._curPos))
 
@@ -539,7 +539,7 @@ class DyStockAccountManager:
         balance = rows[0]
 
         self._curCash = float(balance[header.index(self.headerNameMap['capital']['availCash'])])
-
+    #获得当前持仓
     def _stockPositionUpdateHandler(self, event):
         """
             收到来自券商接口的账户持仓更新事件

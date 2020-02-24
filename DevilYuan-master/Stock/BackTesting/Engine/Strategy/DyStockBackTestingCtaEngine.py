@@ -44,8 +44,8 @@ class DyStockBackTestingCtaEngine(object):
         # 初始化账户和策略实例
         self._accountManager = DyStockBackTestingAccountManager(self._eventEngine, self._info, self._dataEngine, settings)
         self._accountManager.setParamGroupNoAndPeriod(self._strategyParamGroupNo, self._strategyPeriod)
-
-        self._strategy = strategyCls(self, self._info, DyStockStrategyState(DyStockStrategyState.backTesting), self._strategyParam)
+        # 在这里调用策略
+        self._strategy = strategyCls(self, self._info, DyStockStrategyState(DyStockStrategyState.backTesting), self._strategyParam)# 回测模式只有回测状态
         self._strategySavedData = None # 策略收盘后保存的数据
         self._strategyMarketFilter = DyStockMarketFilter()
 
@@ -69,7 +69,7 @@ class DyStockBackTestingCtaEngine(object):
         self._context = DyStockBackTestingContext(self._strategyPeriod, self._strategyParam)
 
         self._curInit()
-
+    #打印策略参数
     def _printStrategyClsParams(self, strategyCls):
         """
             print策略参数（类参数），不是用户通过界面配置的参数。界面配置的参数，通过界面显示。
@@ -87,7 +87,7 @@ class DyStockBackTestingCtaEngine(object):
                 continue
 
             self._info.print('{}: {}'.format(k, v), DyLogData.ind1)
-
+    # 当日初始化
     def _curInit(self, tDay=None):
         """ 当日初始化 """
 
@@ -101,13 +101,13 @@ class DyStockBackTestingCtaEngine(object):
 
         self.__etf300Tick = None
         self.__etf500Tick = None
-
+    # 获取前日收盘和今日开盘
     def _loadPreCloseOpen(self, code):
         self._info.enable(False)
 
-        # 为了获取前日收盘价，向前一日获取股票日线数据，前复权方式基于当日
+        # 为了获取前日收盘价，向前一日获取股票日线数据，“ 前复权方式基于当日 ”
         # !!!回测不考虑股票上市日起
-        if not self._daysEngine.loadCode(code, [self._curTDay, -1], latestAdjFactorInDb=False):
+        if not self._daysEngine.loadCode(code, [self._curTDay, -1], latestAdjFactorInDb=False): # 经过前复权的股票
             self._info.enable(True)
             return None, None
 
@@ -130,15 +130,15 @@ class DyStockBackTestingCtaEngine(object):
 
         self._info.enable(True)
         return preClose, open
-
+    #
     def _loadTicks(self, codes):
         self._info.print('开始载入{0}只监控股票Ticks数据[{1}]...'.format(len(codes), self._curTDay))
-        self._progress.init(len(codes), 100)
+        self._progress.init(len(codes), 100)# single 步进为100
 
         count = 0
         for code in codes:
             # 获取昨日收盘和当日开盘
-            preClose, open = self._loadPreCloseOpen(code)
+            preClose, open = self._loadPreCloseOpen(code) # 基于获取日线数据得方式获得
             if open is None:
                 self._progress.update()
                 continue
@@ -151,7 +151,7 @@ class DyStockBackTestingCtaEngine(object):
                 continue
 
             # to dict for fast access
-            df = self._ticksEngine.getDataFrame(code)
+            df = self._ticksEngine.getDataFrame(code) 
 
             # 累积值，因为从新浪抓取的实时数据是累积值
             df['volume'] = df['volume'].cumsum()*100
@@ -199,20 +199,20 @@ class DyStockBackTestingCtaEngine(object):
         self._info.print('{0}只监控股票Ticks数据[{1}]载入完成'.format(count, self._curTDay))
 
         return True
-
+    # 获得时间
     def _getTime(self, seconds):
         h = seconds // 3600
         m = (seconds % 3600 ) // 60
         s = (seconds % 3600 ) % 60
 
         return h, m, s
-
+    #
     def _getCtaTicks(self, h, m, s):
         """
             获取推送到策略的Ticks
         """
         time = '{0}:{1}:{2}'.format(h if h > 9 else ('0' + str(h)), m if m > 9 else ('0' + str(m)), s if s > 9 else ('0' + str(s)))
-
+        # 先确保有数据
         if not self._curTicksBitmap.get(time):
             return {}
 
@@ -235,7 +235,7 @@ class DyStockBackTestingCtaEngine(object):
                     ticks[code] = tick
 
         return ticks
-
+    #
     def _getCtamBars(self, h, m):
         """
             获取推送到策略的分钟Bars
@@ -249,9 +249,9 @@ class DyStockBackTestingCtaEngine(object):
                 bar = self._curBars[code][time]
 
                 bars[code] = bar
-
+        # 分钟bar的所有code
         return bars
-
+    #
     def _onPushAccount(self):
         """
             向策略推送账户相关的数据
@@ -269,7 +269,7 @@ class DyStockBackTestingCtaEngine(object):
         # 持仓回报，每次都推送，这个跟实盘引擎有区别。实盘引擎只在持仓变化时推送。
         if self._accountManager.curPos:
             self._strategy.onPos(self._accountManager.curPos)
-
+    #
     def _setTicks(self, ticks):
         """
             设置ETF300和ETF500 Tick，也适用于bars
@@ -281,7 +281,7 @@ class DyStockBackTestingCtaEngine(object):
         etf500Tick = ticks.get(DyStockCommon.etf500)
         if etf500Tick:
             self.__etf500Tick = etf500Tick
-
+    #
     def _runTicks(self):
         self._info.print('开始回测Ticks数据[{0}]...'.format(self._curTDay))
         self._progress.init(4*60*60, 100, 20)
@@ -302,7 +302,7 @@ class DyStockBackTestingCtaEngine(object):
                 if ticks:
                     self._accountManager.onTicks(ticks) # update current positions firstly
 
-                    self._accountManager.syncStrategyPos(self._strategy) # 同步策略持仓
+                    self._accountManager.syncStrategyPos(self._strategy) # 同步策略持仓，在账户的onticks or onbars 完成后调用
 
                     self._setTicks(ticks)
 
@@ -315,7 +315,7 @@ class DyStockBackTestingCtaEngine(object):
                 self._progress.update()
 
         self._info.print('Ticks数据[{0}]回测完成'.format(self._curTDay))
-
+    #
     def _load1dBars(self, codes):
         """ 载入日线数据 """
         self._info.print('开始载入{0}只监控股票日线数据[{1}]...'.format(len(codes), self._curTDay))
@@ -334,7 +334,7 @@ class DyStockBackTestingCtaEngine(object):
             if df.shape[0] < 2:
                 # 当日停牌
                 if self._curTDay != df.index[0].strftime("%Y-%m-%d"):
-                    continue
+                    continue # 在这代表当日停牌
 
                 # 载入当日和昨日数据
                 if not self._errorDaysEngine.loadCode(code, [self._curTDay, -1], latestAdjFactorInDb=False):
@@ -367,7 +367,7 @@ class DyStockBackTestingCtaEngine(object):
             barData.date = self._curTDay
             barData.time = '15:00:00'
             barData.datetime = datetime.strptime(self._curTDay + ' 15:00:00', '%Y-%m-%d %H:%M:%S')
-
+            # 日线
             self._curBars[code] = barData
 
             count += 1
@@ -375,20 +375,20 @@ class DyStockBackTestingCtaEngine(object):
         self._info.print('{0}只监控股票日线数据[{1}]载入完成'.format(count, self._curTDay))
 
         return True
-
+    #
     def _loadmBars(self, codes, m):
         """ 载入分钟Bar数据
             @m: 分钟
         """
         self._info.print('开始载入{0}只监控股票{1}分钟K线数据[{2}]...'.format(len(codes), m, self._curTDay))
-        self._progress.init(len(codes), 100)
+        self._progress.init(len(codes), 100)# 初始化进度条
 
         count = 0
         for code in codes:
             # 获取昨日收盘和当日开盘
             preClose, curOpen = self._loadPreCloseOpen(code)
             if curOpen is None: # 停牌或者未上市
-                self._progress.update()
+                self._progress.update() # 更新进度条
                 continue
 
             # load ticks
@@ -439,7 +439,7 @@ class DyStockBackTestingCtaEngine(object):
                 barData.curLow = curLow
             
                 # datetime
-                barData.date = self._curTDay
+                barData.date = self._curTDay # bar结束的时间，日期
                 barData.time = datetime.strftime('%H:%M:%S')
                 barData.datetime = datetime
 
@@ -453,7 +453,7 @@ class DyStockBackTestingCtaEngine(object):
         self._info.print('{0}只监控股票{1}分钟K线数据[{2}]载入完成'.format(count, m, self._curTDay))
 
         return True
-
+    #
     def _loadBars(self, barMode, codes):
         if barMode == 'bar1d':
             ret = self._load1dBars(codes)
@@ -465,7 +465,7 @@ class DyStockBackTestingCtaEngine(object):
             self._info.print('策略载入[{0}]数据[{1}]失败'.format(barMode, self._curTDay), DyLogData.error)
 
         return ret
-
+    # 根据监控得股票
     def _loadData(self, codes):
         if 'bar' in self._strategy.backTestingMode:
             if not self._loadBars(self._strategy.backTestingMode, codes):
@@ -477,26 +477,26 @@ class DyStockBackTestingCtaEngine(object):
                 return False
 
         return True
-
+    #
     def _run1dBars(self):
         self._info.print('开始回测日线数据[{0}]...'.format(self._curTDay))
 
         # onBars, 引擎不统一catch策略中的任何异常，策略必须处理异常
-        if self._curBars:
+        if self._curBars:# 刚才已经加载好的数据
             self._accountManager.onBars(self._curBars) # update current positions firstly
 
             self._accountManager.syncStrategyPos(self._strategy) # 同步策略持仓
-
+            # 设置ETF300和ETF500 Tick，也适用于bars
             self._setTicks(self._curBars)
 
-            filteredBars = self._strategyMarketFilter.filter(self._curBars)
+            filteredBars = self._strategyMarketFilter.filter(self._curBars) # return: {code:DyStockCtaTickData} or {code:DyStockCtaBarData}
             if filteredBars:
-                self._strategy.onBars(filteredBars)
-
+                self._strategy.onBars(filteredBars) # 放入策略开始回测
+            # 向策略推送账户相关的数据
             self._onPushAccount()
 
         self._info.print('日线数据[{0}]回测完成'.format(self._curTDay))
-
+    #
     def _runmBars(self, barM):
         self._info.print('开始回测{0}分钟K线数据[{1}]...'.format(barM, self._curTDay))
         self._progress.init(int(4*60/barM), 100, 20)
@@ -507,10 +507,10 @@ class DyStockBackTestingCtaEngine(object):
         startTime = [(9, 30), (13, 0)]
 
         for startTimeH, startTimeM in startTime:
-            for i in range(0, 60*60*2 + 1, barM*60):
+            for i in range(0, 60*60*2 + 1, barM*60):# 换算成秒数，步进barm分钟
                 h, m, s = self._getTime(startTimeM*60 + i) # plus minute offset for calculation
                 h += startTimeH
-
+                #获得分钟bar
                 bars = self._getCtamBars(h, m)
 
                 # onBars, 引擎不统一catch策略中的任何异常，策略必须处理异常
@@ -530,30 +530,30 @@ class DyStockBackTestingCtaEngine(object):
                 self._progress.update()
 
         self._info.print('{0}分钟K线数据[{1}]回测完成'.format(barM, self._curTDay))
-
+    #
     def _runBars(self, barMode):
         if barMode == 'bar1d':
             self._run1dBars()
 
         else:
             self._runmBars(int(barMode[3:-1]))
-
+    # 然后是运行数据
     def _runData(self):
         if 'bar' in self._strategy.backTestingMode:
             self._runBars(self._strategy.backTestingMode)
 
         else: # default is Tick Mode
             self._runTicks()
-
+    # 检查参数合法性
     def _verifyParams(self, tDay):
         if 'bar' in self._strategy.backTestingMode:
             if self._strategy.backTestingMode != 'bar1d':
                 m = int(self._strategy.backTestingMode[3:-1])
-                if math.ceil(4*60/m) != int(4*60/m):
+                if math.ceil(4*60/m) != int(4*60/m):# 一天股市只开放4个小时 所以 4*60 ，分种先必须除尽
                     return False
 
         return True
-
+    # 这是主要开始得函数
     def run(self, tDay):
         """
             运行指定交易日回测
@@ -569,7 +569,7 @@ class DyStockBackTestingCtaEngine(object):
         self._curInit(tDay)
 
         # 策略开盘前准备
-        onOpenCodes = self._strategy.onOpenCodes()
+        onOpenCodes = self._strategy.onOpenCodes() # 银行日内返回空
         if onOpenCodes is None: # 策略指定的开盘股票代码优先于测试股票代码
             onOpenCodes = self._testCodes
 
@@ -580,17 +580,17 @@ class DyStockBackTestingCtaEngine(object):
         # 账户管理开盘前准备
         self._info.enable(False)
         ret = self._accountManager.onOpen(tDay)
-        self._info.enable(True)
+        self._info.enable(True) #开始启用
         if not ret:
             self._info.print('账户管理[{0}]开盘前准备失败'.format(tDay), DyLogData.error)
             return False
 
-        if self._strategy.onMonitor() or self._accountManager.onMonitor():
+        if self._strategy.onMonitor() or self._accountManager.onMonitor():# 前面返回得是策略自定得监控股票，后面当前持仓
             # 设置策略行情过滤器
             self._strategyMarketFilter.addFilter(self._strategy.onMonitor())
 
             # 得到策略要监控的股票池
-            monitoredCodes = self._strategy.onMonitor() + self._accountManager.onMonitor() + [DyStockCommon.etf300, DyStockCommon.etf500]
+            monitoredCodes = self._strategy.onMonitor() + self._accountManager.onMonitor() + [DyStockCommon.etf300, DyStockCommon.etf500] # 后面是两个基金 回测和实盘引擎，默认会监听ETF300和ETF500。
             monitoredCodes = set(monitoredCodes) # 去除重复的股票
             monitoredCodes -= set(DyStockCommon.indexes.keys()) # 新浪没有指数的Tick数据
             monitoredCodes = list(monitoredCodes)
@@ -608,8 +608,8 @@ class DyStockBackTestingCtaEngine(object):
         self._strategy.onClose()
         self._accountManager.onClose()
 
-        return True
-
+        return True # 回测成功
+    #
     def setSlippage(self, slippage):
         """ 设置滑点（成交价的千分之） """
         DyStockCtaTickData.slippage = slippage
@@ -688,13 +688,13 @@ class DyStockBackTestingCtaEngine(object):
 
     def getCurPosMarketValue(self, strategyCls):
         return self._accountManager.getCurPosMarketValue()
-
+    #
     def getCurAckData(self):
         return self._accountManager.getCurAckData(self._strategy.__class__)
-
+    #
     def getBuyVol(self, cash, code, price):
         return DyStockTradeCommon.getBuyVol(cash, code, price)
-
+    #
     def buy(self, strategyCls, tick, volume, signalInfo=None):
         datetime = tick.datetime
         code = tick.code
@@ -702,7 +702,7 @@ class DyStockBackTestingCtaEngine(object):
         price = getattr(tick, strategyCls.buyPrice)
 
         return self._accountManager.buy(datetime, strategyCls, code, name, price, volume, signalInfo, tick)
-    
+    #
     def sell(self, strategyCls, tick, volume, sellReason=None, signalInfo=None):
         datetime = tick.datetime
         code = tick.code
@@ -715,7 +715,7 @@ class DyStockBackTestingCtaEngine(object):
 
     def sellByRatio(self, strategy, tick, ratio, ratioMode, sellReason=None, signalInfo=None):
         return DyStockCtaEngineExtra.sellByRatio(self, self._accountManager, strategy, tick, ratio, ratioMode, sellReason, signalInfo)
-
+    #
     def closePos(self, strategyCls, tick, volume, sellReason, signalInfo=None):
         """
             注释参照DyStockCtaEngine
@@ -725,7 +725,7 @@ class DyStockBackTestingCtaEngine(object):
         price = getattr(tick, strategyCls.sellPrice)
 
         return self._accountManager.sell(datetime, strategyCls, code, price, volume, sellReason, signalInfo, tick)
-
+    #
     def cancel(self, strategyCls, cancelEntrust):
         """
             策略撤销委托

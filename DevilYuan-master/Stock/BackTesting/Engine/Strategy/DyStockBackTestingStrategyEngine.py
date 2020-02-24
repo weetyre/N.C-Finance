@@ -11,7 +11,7 @@ from ....Common.DyStockCommon import *
 
 
 class DyStockBackTestingStrategyEngine(object):
-    """接收用户发起的策略回测请求，然后根据时间周期拆分到具体的回测引擎来并行回测"""
+    """接收用户发起的策略回测请求，然后根据 时间周期 拆分到具体的 回测引擎 来并行回测"""
 
     # 二者互斥
     paramGroupNbr = 6 # 并行回测多少个参数组合，只对进程模式有效
@@ -36,8 +36,8 @@ class DyStockBackTestingStrategyEngine(object):
 
         # For生成代码组合
         errorInfo = DyErrorInfo(eventEngine)
-        errorDataEngine = DyStockDataEngine(eventEngine, errorInfo, registerEvent=False)
-        self._errorDaysEngine = errorDataEngine.daysEngine
+        errorDataEngine = DyStockDataEngine(eventEngine, errorInfo, registerEvent=False)#不使用相关功能，所以不注册
+        self._errorDaysEngine = errorDataEngine.daysEngine #股票日数据引擎
 
     def _init(self):
         self._strategyCls = None
@@ -51,7 +51,7 @@ class DyStockBackTestingStrategyEngine(object):
 
         # reset progress
         self._progress.reset()
-
+    #
     def setThreadMode(self):
         """
             设置回测线程模式
@@ -59,7 +59,7 @@ class DyStockBackTestingStrategyEngine(object):
         self._proxy = self._proxyThread
         self._periodNbr = 1
         self._paramGroupNbr = 1
-
+    #
     def setProcessMode(self, mode='参数组合'):
         """"
             设置回测进程模式
@@ -291,11 +291,11 @@ class DyStockBackTestingStrategyEngine(object):
 
                 # 向前推进回测参数组合
                 self._backTestingParamGroups()
-
+    #
     def _registerEvent(self):
-        self._eventEngine.register(DyEventType.stockStrategyBackTestingReq, self._stockStrategyBackTestingReqHandler, DyStockBackTestingEventHandType.engine)
-        self._eventEngine.register(DyEventType.stockStrategyBackTestingAck, self._stockStrategyBackTestingAckHandler, DyStockBackTestingEventHandType.engine)
-        self._eventEngine.register(DyEventType.stockBackTestingStrategyEngineProcessEnd, self._stockBackTestingStrategyEngineProcessEndHandler, DyStockBackTestingEventHandType.engine)
+        self._eventEngine.register(DyEventType.stockStrategyBackTestingReq, self._stockStrategyBackTestingReqHandler, DyStockBackTestingEventHandType.engine)# 0 号hand
+        self._eventEngine.register(DyEventType.stockStrategyBackTestingAck, self._stockStrategyBackTestingAckHandler, DyStockBackTestingEventHandType.engine)# 0 号hand
+        self._eventEngine.register(DyEventType.stockBackTestingStrategyEngineProcessEnd, self._stockBackTestingStrategyEngineProcessEndHandler, DyStockBackTestingEventHandType.engine)# 0 号hand
         self._eventEngine.register(DyEventType.stockSelectTestedCodes, self._stockSelectTestedCodesHandler)
         #self._eventEngine.register(DyEventType.stopStockStrategyBackTestingReq, self._stopReqHandler, DyStockBackTestingEventHandType.engine)
 

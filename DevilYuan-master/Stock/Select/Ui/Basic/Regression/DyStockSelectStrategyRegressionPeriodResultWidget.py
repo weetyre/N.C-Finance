@@ -37,7 +37,7 @@ class DyStockSelectStrategyRegressionPeriodResultWidget(DyStockTableWidget):
 
     def getAutoColName(self):
         return DyStockSelectStrategyTemplate.getAutoColName()
-
+    #设置列名
     def setColNames(self, names):
         super().setColNames(['*', '基准日期'] + names)
 

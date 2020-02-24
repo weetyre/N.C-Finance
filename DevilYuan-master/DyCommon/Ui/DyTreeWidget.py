@@ -115,13 +115,13 @@ class DyTreeWidget(QTreeWidget):
                 self._leafIdMap[leafId] = parent
 
     def __UpdateChild(self, parent):
-        for i in range(parent.childCount()):
+        for i in range(parent.childCount()):# 这个树枝下面还有没有树叶
             child = parent.child(i)
-            child.setCheckState(0, parent.checkState(0))
+            child.setCheckState(0, parent.checkState(0))# 更具父的状态来更新子的状态
 
-            self.__UpdateChild(child)
+            self.__UpdateChild(child)# 递归
 
-
+    #
     def __UpdateParent(self, child):
         parent = child.parent()
         if parent is None or parent is self: return
@@ -148,7 +148,12 @@ class DyTreeWidget(QTreeWidget):
                 parent.setCheckState(0, Qt.Checked)
 
         self.__UpdateParent(parent)
-
+        '''
+        复选框一共有三种状态：全选中、半选中和无选中。
+        若一个父选项的子选项全部为选中状态，则该父选项为全选中；
+        若子选项全部为无选中状态，则该父选项为无选中状态；
+        若子选项既有全选中和无选中状态，则该父选项为半选中状态
+        '''
 
     def __GetFieldsFromTreeWidget(self):
         fields = self.__GetFields(self.treeWidgetFields.invisibleRootItem())
@@ -162,16 +167,16 @@ class DyTreeWidget(QTreeWidget):
     
     def on_itemClicked(self, item, column):
         pass
-
+    # 子类继承实现
     def on_currentItemChanged(self, current, previous):
         pass
-
+    #
     def on_itemChanged(self, item, column):
         self.blockSignals(True)
-
+        # 先阻断信号，更新子目录，然后更新父目录, 更新按钮状态的
         self.__UpdateChild(item)
         self.__UpdateParent(item)
-
+        # 之后不阻断状态
         self.blockSignals(False)
 
     def getCheckedTexts(self):

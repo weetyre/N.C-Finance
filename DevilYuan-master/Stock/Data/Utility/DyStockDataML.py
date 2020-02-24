@@ -7,7 +7,7 @@ from .DyStockDataUtility import *
 
 class DyStockDataML(object):
     """ 股票数据的机器学习类 """
-    
+    #预测反弹交易
     def predictReboundVol(df, w=4):
         """
             amount = rebound increase pct + previous decrease pct
@@ -50,7 +50,7 @@ class DyStockDataML(object):
         predictOutcome = regr.predict([[-7, 3]])
 
         return predictOutcome
-
+    #稳定性检验
     def adfTest(s):
         """
             ADF Test
@@ -60,7 +60,7 @@ class DyStockDataML(object):
         result = stattools.adfuller(s, 1)
 
         return result[1]
-
+    #
     def trendChannel(df, w=4):
         """
             生成趋势通道

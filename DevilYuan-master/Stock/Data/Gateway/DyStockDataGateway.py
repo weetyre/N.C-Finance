@@ -21,7 +21,7 @@ from ...Common.DyStockCommon import *
 from .DyStockDataTicksGateway import DyStockDataTicksGateway
 from .DyStockDataTdx import DyStockDataTdx
 
-
+#股票数据网络接口
 class DyStockDataGateway(object):
     """
         股票数据网络接口
@@ -48,7 +48,7 @@ class DyStockDataGateway(object):
         self._tuSharePro = None
 
         if registerEvent:
-            self._registerEvent()
+            self._registerEvent()#注册的是是否获得Tick数据，默认5个hand，也就对应5个tickgateway实例，避免互斥
 
     def _registerEvent(self):
         """
@@ -56,7 +56,7 @@ class DyStockDataGateway(object):
         """
         # new DyStockDataTicksGateway instance for each ticks hand to avoid mutex
         self._ticksGateways = [DyStockDataTicksGateway(self._eventEngine, self._info, i) for i in range(DyStockDataEventHandType.stockHistTicksHandNbr)]
-
+    #识别是否安装了Wind，没有安装的话抛出错误
     def _windCheckWrapper(func):
         def wrapper(self, *args, **kwargs):
             if 'Wind' in DyStockCommon.defaultHistDaysDataSource:
@@ -67,7 +67,7 @@ class DyStockDataGateway(object):
             return func(self, *args, **kwargs)
 
         return wrapper
-
+    #从Tushare获取交易日数据(输入开始日期以及截止日期)
     def _getTradeDaysFromTuShare(self, startDate, endDate):
         try:
             df = ts.trade_cal()
@@ -77,10 +77,10 @@ class DyStockDataGateway(object):
             dfDict = df.to_dict()
 
             # get trade days
-            dates = DyTime.getDates(startDate, endDate, strFormat=True)
+            dates = DyTime.getDates(startDate, endDate, strFormat=True)#根据开始日和结束日获取具体的日期
             tDays = []
             for date in dates:
-                if dfDict['isOpen'][date] == 1:
+                if dfDict['isOpen'][date] == 1:#如果那天是否开盘来获取开盘数据
                     tDays.append(date)
 
             return tDays
@@ -89,7 +89,7 @@ class DyStockDataGateway(object):
             self._info.print("从TuShare获取[{}, {}]交易日数据异常: {}".format(startDate, endDate, str(ex)), DyLogData.error)
             
         return None
-
+    #从TusharePro获取交易日数据(输入开始日期以及截止日期)
     def _getTradeDaysFromTuSharePro(self, startDate, endDate):
         self._startTuSharePro()
 
@@ -120,10 +120,10 @@ class DyStockDataGateway(object):
                 lastEx = ex
                 print("TuSharePro: 获取交易日数据[{} ~ {}]异常: {}, retrying...".format(startDate, endDate, ex))
                 sleep(1)
-
+        #尝试3次已经失败
         self._info.print("TuSharePro: 获取交易日数据[{} ~ {}]异常: {}, retried {} times".format(startDate, endDate, lastEx, retry), DyLogData.error)
         return None
-
+    #这是一个根据是否存在Token来决定是否pro
     def _getTradeDaysFromTuShareOrPro(self, startDate, endDate):
         tDays = None
         if DyStockCommon.tuShareProToken: # prefer TuSharePro firstly
@@ -155,7 +155,7 @@ class DyStockDataGateway(object):
                 return _errorResult()
 
         return windTradeDays # same
-
+    #在执行前确保安装WindPy,这是此修饰器的作用
     @_windCheckWrapper
     def getTradeDays(self, startDate, endDate):
         """
@@ -175,7 +175,7 @@ class DyStockDataGateway(object):
             tradeDays = self._determineTradeDays(windTradeDays, tuShareTradeDays)
 
         return tradeDays
-
+    #
     @_windCheckWrapper
     def getStockCodes(self):
         """
@@ -207,11 +207,11 @@ class DyStockDataGateway(object):
                     return None
 
         return codes
-
+    #
     @_windCheckWrapper
     def getSectorStockCodes(self, sectorCode, startDate, endDate):
         return self._wind.getSectorStockCodes(sectorCode, startDate, endDate)
-
+    #
     @_windCheckWrapper
     def getDays(self, code, startDate, endDate, fields, name=None):
         """
@@ -248,7 +248,7 @@ class DyStockDataGateway(object):
 
         # BSON
         return None if df is None else list(df.T.to_dict().values())
-
+    # 判断现在时间是否在交易日时间之后
     def isNowAfterTradingTime(self):
         today = datetime.now().strftime("%Y-%m-%d")
 
@@ -261,16 +261,16 @@ class DyStockDataGateway(object):
         else:
             self._info.print("@DyStockDataGateway.isNowAfterTradingTime: 获取交易日数据[{}, {}]失败3次".format(today, today), DyLogData.error)
             return None # error
-
+        #今天是否是交易日
         if today in days:
             year, month, day = today.split('-')
             afterTradeTime = datetime(int(year), int(month), int(day), 18, 0, 0)
-
+            #如果是交易日，然后在判断时间是否是正常区间
             if datetime.now() < afterTradeTime:
                 return False
 
         return True
-
+    #给TushareOld版本
     def _getDaysFromTuShareOld(self, code, startDate, endDate, fields, name=None, verify=False):
         """
             从tushare获取股票日线数据。
@@ -338,7 +338,7 @@ class DyStockDataGateway(object):
         df = df[['datetime'] + fields]
 
         return df
-
+    #
     def _getStockCodesFromTuShare(self):
         self._info.print("开始从TuShare获取股票代码表...")
 
@@ -362,9 +362,9 @@ class DyStockDataGateway(object):
 
         self._info.print("从TuShare获取股票代码表成功")
         return codes
-
+    #
     def _getStockCodesFromTuSharePro(self):
-        self._info.print("从TuSharePro获取股票代码表...")
+        self._info.print("从TuSharePro获取股票代码表...")#默认是info
 
         self._startTuSharePro()
 
@@ -388,7 +388,7 @@ class DyStockDataGateway(object):
 
         self._info.print("从TuSharePro获取股票代码表成功")
         return codes
-
+    #
     def _getStockCodesFromTdx(self):
         self._info.print("开始从TDX获取股票代码表...")
 
@@ -409,7 +409,7 @@ class DyStockDataGateway(object):
 
         self._info.print("从TDX获取股票代码表成功")
         return codes
-
+    #
     def _getDaysFrom163(self, code, startDate, endDate, retry_count=3, pause=0.001):
         """
             从网易获取个股日线数据，指数和基金（ETF）除外
@@ -439,7 +439,7 @@ class DyStockDataGateway(object):
                 df = df.sort_index(ascending=False)
                 return df
         raise ex
-
+    #
     def _getCodeDaysFromTuShare(self, code, startDate, endDate, fields, name=None):
         """
             从TuShare获取个股日线数据
@@ -504,7 +504,7 @@ class DyStockDataGateway(object):
         df = df[['datetime'] + fields]
 
         return df
-
+    #板块数据获取
     def _getIndexDaysFromTuShare(self, code, startDate, endDate, fields, name=None):
         """
             从TuShare获取指数日线数据
@@ -539,7 +539,7 @@ class DyStockDataGateway(object):
         df = df[['datetime'] + fields]
 
         return df
-
+    #ETF基金获取
     def _getFundDaysFromTuShare(self, code, startDate, endDate, fields, name=None):
         """
             从tushare获取基金（ETF）日线数据。
@@ -574,7 +574,7 @@ class DyStockDataGateway(object):
             # change to Wind's indicators
             df.rename(columns={'date': 'datetime', 'amount': 'amt', 'turnover': 'turn', 'factor': 'adjfactor'}, inplace=True)
 
-            # 把日期的HH:MM:SS转成 00:00:00
+            # 把日期的HH:MM:SS转成 00-00-00
             df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d')
 
             # select according @fields
@@ -584,7 +584,7 @@ class DyStockDataGateway(object):
             return None
 
         return df
-
+    #Tushare一般版本数据获取
     def _getDaysFromTuShare(self, code, startDate, endDate, fields, name=None):
         """
             从tushare获取股票日线数据（含指数和基金（ETF））。
@@ -604,7 +604,7 @@ class DyStockDataGateway(object):
             return self._getFundDaysFromTuShare(code, startDate, endDate, fields, name)
 
         return self._getCodeDaysFromTuShare(code, startDate, endDate, fields, name)
-
+    #pro版本日线数据获取
     def _getDaysFromTuSharePro(self, code, startDate, endDate, fields, name=None):
         """
             从tusharepro获取股票日线数据（含指数和基金（ETF））。
@@ -624,12 +624,12 @@ class DyStockDataGateway(object):
             return self._getFundDaysFromTuSharePro(code, startDate, endDate, fields, name)
 
         return self._getCodeDaysFromTuSharePro(code, startDate, endDate, fields, name)
-
+    #
     def _startTuSharePro(self):
         if self._tuSharePro is None:
             ts.set_token(DyStockCommon.tuShareProToken)
             self._tuSharePro = ts.pro_api()
-
+    #
     def _getCodeDaysFromTuSharePro(self, code, startDate, endDate, fields, name=None):
         """
             从TuSharePro获取个股日线数据
@@ -678,7 +678,7 @@ class DyStockDataGateway(object):
         else:
             self._info.print("{}({})TuSharePro异常[{}, {}]: {}, retried {} times".format(code, name, startDate, endDate, lastEx, retry), DyLogData.error)
             return None
-
+        # 日线数据先和DF连接起来
         # 清洗数据
         df = pd.concat([dailyDf, dailyBasicDf], axis=1)
         df = df[df['vol'] > 0] # 剔除停牌
@@ -699,7 +699,7 @@ class DyStockDataGateway(object):
         # select according @fields
         df = df[['datetime'] + fields]
         return df
-
+    #
     def _getIndexDaysFromTuSharePro(self, code, startDate, endDate, fields, name=None):
         """
             从TuSharePro获取指数日线数据
@@ -747,7 +747,7 @@ class DyStockDataGateway(object):
         # select according @fields
         df = df[['datetime'] + fields]
         return df
-
+    #
     def _getFundDaysFromTuSharePro(self, code, startDate, endDate, fields, name=None):
         self._startTuSharePro()
 

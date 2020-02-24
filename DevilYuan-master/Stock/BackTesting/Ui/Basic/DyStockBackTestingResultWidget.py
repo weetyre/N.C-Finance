@@ -8,9 +8,9 @@ from DyCommon.DyCommon import *
 from ....Data.Engine.DyStockDataEngine import *
 from ....Data.Viewer.DyStockDataViewer import *
 
-
+#显示回测结果的Dock（核心类，涉及引擎的启动）
 class DyStockBackTestingResultWidget(QTabWidget):
-
+    #这是重点，signal 激活函数
     reqSignal = QtCore.pyqtSignal(type(DyEvent()))
     ackSignal = QtCore.pyqtSignal(type(DyEvent()))
     newParamSignal = QtCore.pyqtSignal(type(DyEvent()))
@@ -23,13 +23,13 @@ class DyStockBackTestingResultWidget(QTabWidget):
 
         self._strategyWidgets = {}
         self._windows = []
-        
+        #可以关闭TAB
         self.setTabsClosable(True)
         self.tabCloseRequested.connect(self._closeTab)
 
-        self._initTabBarMenu()
+        self._initTabBarMenu() # 初始化表头右键菜单
 
-        self._initDataViewer()
+        self._initDataViewer()# 
 
         self._registerEvent()
 
@@ -57,11 +57,12 @@ class DyStockBackTestingResultWidget(QTabWidget):
         action.triggered.connect(self._paramGroupStatsOverviewAct)
         self._tabBarMenu.addAction(action)
 
+    #涉及右键弹出的位置
     def _showTabContextMenu(self, position):
         self._rightClickedTabIndex = self.tabBar().tabAt(position)
 
         self._tabBarMenu.popup(QCursor.pos())
-
+    #回测后的数据更新
     def _stockStrategyBackTestingAckHandler(self, event):
         # unpack
         ackData = event.data
@@ -69,7 +70,7 @@ class DyStockBackTestingResultWidget(QTabWidget):
 
         tabName = strategyCls.chName
         self._strategyWidgets[tabName].update(ackData)
-
+    #注册事件
     def _registerEvent(self):
         self.ackSignal.connect(self._stockStrategyBackTestingAckHandler)
         self._eventEngine.register(DyEventType.stockStrategyBackTestingAck, self.ackSignal.emit)
@@ -82,14 +83,14 @@ class DyStockBackTestingResultWidget(QTabWidget):
 
         self.newPeriodSignal.connect(self._newPeriodHandler)
         self._eventEngine.register(DyEventType.newStockStrategyBackTestingPeriod, self.newPeriodSignal.emit)
-
+    #关闭了这个TAB后需要处理的
     def _closeTab(self, index):
         tabName = self.tabText(index)
 
         del self._strategyWidgets[tabName]
 
         self.removeTab(index)
-
+    #
     def _stockStrategyBackTestingReqHandler(self, event):
         """ 开始一个策略的回测 """
         strategyCls = event.data.strategyCls
@@ -98,42 +99,43 @@ class DyStockBackTestingResultWidget(QTabWidget):
 
         # 是不是重新开始一个策略的回测
         if tabName in self._strategyWidgets:
-            self._strategyWidgets[tabName].removeAll()
+            self._strategyWidgets[tabName].removeAll()# 移除所有参数
         else:
             widget = DyStockBackTestingStrategyResultWidget(strategyCls, self._eventEngine, self._dataEngine, self._dataViewer)
             self.addTab(widget, tabName)
 
             # save
             self._strategyWidgets[tabName] = widget
-
+        #
         self.parentWidget().raise_()
-
+    #初始化相应的引擎
     def _initDataViewer(self):
         errorInfo = DyErrorInfo(self._eventEngine)
         self._dataEngine = DyStockDataEngine(self._eventEngine, errorInfo, False)
         self._dataViewer = DyStockDataViewer(self._dataEngine, errorInfo)
 
+    #新的参数
     def _newParamHandler(self, event):
         strategyCls = event.data['class']
         tabName = strategyCls.chName
 
         self._strategyWidgets[tabName].newParam(event)
-
+    #新的周期
     def _newPeriodHandler(self, event):
         strategyCls = event.data['class']
         tabName = strategyCls.chName
 
         self._strategyWidgets[tabName].newPeriod(event)
-
+    #
     def _pnlRatioAscendingSortAct(self):
         self.widget(self._rightClickedTabIndex).sort(True)
-
+    #
     def _pnlRatioDescendingSortAct(self):
         self.widget(self._rightClickedTabIndex).sort(False)
-
+    #
     def _paramGroupStatsOverviewAct(self):
         self.widget(self._rightClickedTabIndex).paramGroupStatsOverview()
-
+    #载入结果数据
     def loadDeals(self, data, strategyCls):
         """
             载入回测成交数据
@@ -146,6 +148,7 @@ class DyStockBackTestingResultWidget(QTabWidget):
         if className != 'DyStockBackTestingStrategyResultDealsWidget':
             return False
 
+        #显示结果
         window = DyStockBackTestingStrategyResultDealsWidget(self._eventEngine, data['name'], strategyCls)
         window.setColNames(data['data']['colNames'])
         window.fastAppendRows(data['data']['rows'], data['autoForegroundColName'])

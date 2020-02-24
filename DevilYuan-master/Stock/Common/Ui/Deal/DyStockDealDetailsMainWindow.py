@@ -6,7 +6,7 @@ from ....Data.Engine.DyStockDataEngine import *
 from ...DyStockCommon import *
 from DyCommon.Ui.DyBasicMainWindow import *
 
-
+#股票成交明细主窗口
 class DyStockDealDetailsMainWindow(DyBasicMainWindow):
     name = 'DyStockDealDetailsMainWindow'
 
@@ -24,7 +24,7 @@ class DyStockDealDetailsMainWindow(DyBasicMainWindow):
 
         self._initCentral()
         self._initToolBar()
-
+        #载入界面设置
         self._loadWindowSettings()
 
     def _initCentral(self):
@@ -34,7 +34,7 @@ class DyStockDealDetailsMainWindow(DyBasicMainWindow):
 
         # for turn
         self._widgetDealDetails.setInfoWidget(self._widgetInfo)
-
+    #
     def _initToolBar(self):
         """ 初始化工具栏 """
         # 创建操作

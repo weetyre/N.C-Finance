@@ -1,6 +1,6 @@
 from PyQt5.Qt import QAction
 
-
+#
 class DyStockMaViewerIndicatorMenu(object):
     """ 设置股票视图显示均线采用的指标 """
 
@@ -10,7 +10,7 @@ class DyStockMaViewerIndicatorMenu(object):
         self._init()
 
     def _init(self):
-        menu = self._interface.getMaViewerIndicatorParentMenu()
+        menu = self._interface.getMaViewerIndicatorParentMenu() # 得到父菜单
 
         maIndicatorMenu = menu.addMenu('均线视图指标')
 
@@ -36,11 +36,11 @@ class DyStockMaViewerIndicatorMenu(object):
         maIndicatorMenu.addAction(closeAction)
 
         self._actions = [(openAction, 'open'), (highAction, 'high'), (lowAction, 'low'), (closeAction, 'close')]
-
+        #默认收盘价
         closeAction.setChecked(True)
         self._checkedAction = closeAction
         self._checkedIndicator = 'close'
-
+    #action 的动作
     def _act(self):
         for action, indicator in self._actions:
             # new indicator
@@ -50,10 +50,11 @@ class DyStockMaViewerIndicatorMenu(object):
                 break
 
         self._checkedAction.setChecked(True)
-
+        
+        #只能选择一个状态
         for action, indicator in self._actions:
             if self._checkedAction != action:
                 action.setChecked(False)
-
+        #设置指标
         self._interface.setMaViewerIndicator(self._checkedIndicator)
 

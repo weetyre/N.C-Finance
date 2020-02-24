@@ -12,17 +12,17 @@ class DyStockMongoDbConfigDlg(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self._read()
+        self._read()#先读取数据库配置文件
         self._initUi()
-
+    #通用和日线数据设置
     def _createCommonDaysTab(self, tabWidget):
         widget = QTabWidget()
-
+        #然后创建两个子Tab，那这个widget就是父亲
         self._createWindTab(widget)
         self._createTuShareTab(widget)
 
         tabWidget.addTab(widget, "通用和日线数据")
-
+    #
     def _createWindTab(self, tabWidget):
         widget = QWidget()
 
@@ -57,7 +57,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         widget.setLayout(vbox)
 
         tabWidget.addTab(widget, "Wind")
-
+    #
     def _createTuShareTab(self, tabWidget):
         widget = QWidget()
 
@@ -92,7 +92,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         widget.setLayout(vbox)
 
         tabWidget.addTab(widget, "TuShare")
-
+    #链接Tab
     def _createConnectionTab(self, tabWidget):
         widget = QWidget()
 
@@ -115,7 +115,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         widget.setLayout(grid)
 
         tabWidget.addTab(widget, "连接")
-
+    #分笔数据Tab
     def _createTicksTab(self, tabWidget):
         widget = QWidget()
 
@@ -136,7 +136,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         self.setWindowTitle('配置-MongoDB')
 
         tabWidget = QTabWidget()
-        self._createConnectionTab(tabWidget)
+        self._createConnectionTab(tabWidget)#链接标签
         self._createCommonDaysTab(tabWidget)
         self._createTicksTab(tabWidget)
         
@@ -156,7 +156,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         grid.addWidget(cancelPushButton, 1, 1)
  
         self.setLayout(grid)
-
+    #读取数据库配置json文件
     def _read(self):
         file = DyStockConfig.getStockMongoDbFileName()
 
@@ -166,7 +166,7 @@ class DyStockMongoDbConfigDlg(QDialog):
                 self._data = json.load(f)
         except:
             self._data = DyStockConfig.defaultMongoDb
-
+    #确认保存，写入data
     def _ok(self):
         # get data from UI
         data = {"Connection": {}, "CommonDays": {"Wind": {}, "TuShare": {}}, "Ticks": {}}
@@ -190,7 +190,7 @@ class DyStockMongoDbConfigDlg(QDialog):
         # ticks
         data["Ticks"]['db'] = self._lineEditStockTicksDb.text()
 
-        # config to variables
+        # config to variables 设置engine类属性
         DyStockConfig.configStockMongoDb(data)
 
         # save config
@@ -199,6 +199,6 @@ class DyStockMongoDbConfigDlg(QDialog):
             f.write(json.dumps(data, indent=4))
 
         self.accept()
-
+    #取消
     def _cancel(self):
         self.reject()

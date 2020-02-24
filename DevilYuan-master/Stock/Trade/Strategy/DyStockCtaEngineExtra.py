@@ -7,7 +7,7 @@ class DyStockCtaEngineExtra(object):
         辅助类，跟CTA Engine class之间是dependancy关系
     """
 
-
+    #
     def _getCashByRatio(accountManager, strategyCls, ratio, ratioMode):
         """
             根据模式，获取总现金

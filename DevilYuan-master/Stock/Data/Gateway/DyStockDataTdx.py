@@ -84,7 +84,7 @@ class DyStockDataTdx:
 
         self._apis = None
         self._tickErrorLog = {} # {code: {date: [log]}}
-
+    #获取市场码
     def _getMarketCode(self, code):
         """
             1- sh
@@ -157,7 +157,7 @@ class DyStockDataTdx:
         self._apis = []
         for i, ipDict in enumerate(self.ipList):
             ip, port = ipDict['ip'], ipDict['port']
-            tdxApi, latency = self._ping(ip, port, first=i==0)
+            tdxApi, latency = self._ping(ip, port, first=i==0)#默认false版本正常
             if tdxApi is None:
                 continue
             
@@ -191,7 +191,7 @@ class DyStockDataTdx:
         newTick['time'] = '{}:{}'.format(chunkTime, curSec if curSec >= 10 else ('0' + str(curSec)))
         newTick['price'] = tick['price']
         newTick['volume'] = tick['vol']
-        newTick['amount'] = tick['vol']*100*tick['price']
+        newTick['amount'] = tick['vol']*100*tick['price']#一笔100股
             
         # 1--sell 0--buy 2--盘前
         if tick['buyorsell'] == 0:
@@ -202,13 +202,13 @@ class DyStockDataTdx:
             newTick['type'] = '中性盘'
 
         return newTick
-
+    #22笔分笔的集合竞价
     def _newAdditionalTicks_22(self, chunk, api, code, date):
         newChunk = None
         headTicks = None
         tailTicks = None
-        chunkTime = chunk[0]['time']
-
+        chunkTime = chunk[0]['time']#可以理解为集合竞价的时间
+        #开盘前集合竞价
         if chunkTime == '09:30':
             headTicks = [self._newTick(chunk[0], 3, chunkTime='09:25')]
             tailTicks = [self._newTick(chunk[-1], 59)]
@@ -227,7 +227,7 @@ class DyStockDataTdx:
             self._tickErrorLog.setdefault(code, {}).setdefault(date, []).append(log)
 
         return newChunk, headTicks, tailTicks
-
+    #21笔集合竞价
     def _newAdditionalTicks_21(self, chunk, api, code, date):
         newChunk = None
         headTicks = None
@@ -279,7 +279,7 @@ class DyStockDataTdx:
             error correction for chunk according to chunk time
             @return: new chunk like [orignal tick]
         """
-        chunkTime = chunk[0]['time']
+        chunkTime = chunk[0]['time']#chunk里面有很多newTick字典
 
         if chunkTime < '09:25':
             log = 'TDX{}: [{}, {}] minute ticks[{}] from {}:{}: length {} > 0'.format(self._tdxNo, code, date, chunkTime, api.ip, api.port, len(chunk))
@@ -305,7 +305,7 @@ class DyStockDataTdx:
             chunk = []
 
         return chunk
-
+    #这些的函数调用以上的_newadditional的函数
     def _newAdditionalTicks(self, chunk, api, code, date):
         """
             check chunk correct or not, as well as new a chunk with additional ticks
@@ -369,7 +369,7 @@ class DyStockDataTdx:
         newChunk = headTicks + newChunk + tailTicks
 
         return newChunk
-
+    #这个调用上面那个函数，随机散列tick，模拟真实股市。还有就是转化成DF
     def _transform(self, chunks, api, code, date):
         time = None
         chunk = None
@@ -397,7 +397,7 @@ class DyStockDataTdx:
         newChunks += newChunk
 
         return newChunks
-
+    #通过API获得chunk集合（含tick）
     def _getTicksOneChunkByApi(self, api, code, date, offset, retry=3):
         for _ in range(3): # We support 3 loop retries
             for _ in range(retry):
@@ -423,24 +423,24 @@ class DyStockDataTdx:
                 print(log)
                 self._tickErrorLog.setdefault(code, {}).setdefault(date, []).append(log)
 
-                if not self._adjustApis(api):
+                if not self._adjustApis(api):#重试API链接
                     return None
 
         return None
-
+    #关闭通达信API
     def _closeTdxApi(self, tdxApi):
         try:
             tdxApi.disconnect()
         except:
             pass
-
+    #这个是正式的关闭函数，调用上面的
     def close(self):
         if not self._apis:
             return
 
         for api in self._apis:
             self._closeTdxApi(api.tdxApi)
-
+    #调用上面的chunkByAPI根据代码表获取chunktick集合数据
     def _getTicksByApi(self, api, code, date, retry=3):
         print('TDX{}: Get ticks[{}, {}] from {}:{}'.format(self._tdxNo, code, date, api.ip, api.port))
 
@@ -481,7 +481,7 @@ class DyStockDataTdx:
         if df is None or df.empty:
             logs = self._tickErrorLog.get(code, {}).get(date, [])
             for log in logs:
-                self._info.print(log, DyLogData.warning)
+                self._info.print(log, DyLogData.warning)#错误通过引擎系统打印出来
 
         # remove corressponding buffered logs
         try:
@@ -490,9 +490,9 @@ class DyStockDataTdx:
                 del self._tickErrorLog[code]
         except:
             pass
-    
+    #调用_getTicksByApi，返回DF数据（这是首要函数）
     def getTicks(self, code, date, retry=3, pause=0):
-        apis = self._getApis()
+        apis = self._getApis()#获取多个api类实例，里面的属性值带有TDX的api
         if apis is None:
             return None
 
@@ -507,14 +507,14 @@ class DyStockDataTdx:
                 continue
 
             break
-
+        #打印处理结果
         self._processGetTicksResult(code, date, df)
 
         return df
-
+    #这个是获取股票代码表
     def _getStockCodesByApi(self, api):
         """
-            0 - 深圳， 1 - 上海
+            0 - 深圳， 1 - 上海 market
         """
         def sz(code):
             if code[:2] in ['00', '30', '02']:
@@ -549,8 +549,8 @@ class DyStockDataTdx:
                 self._info.print('TDX{}: Get stock code table failed from {}:{}'.format(self._tdxNo, api.ip, api.port), DyLogData.error)
                 return None
 
-        return pd.concat(dfs)
-
+        return pd.concat(dfs)#df拼接
+    #获取股票代码表
     def getStockCodes(self):
         """
             get stock code table

@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QTabWidget
 from ....Common.DyStockCommon import *
 from .DyStockDataIndexConsecutiveDayLineStatsWidget import *
 
-
+#指数连续日阴阳线统计
 class DyStockDataIndexConsecutiveDayLineStatsTabWidget(QTabWidget):
 
     def __init__(self, dataWindow, startDate, endDate, indexCountedDfs, greenLine=True):

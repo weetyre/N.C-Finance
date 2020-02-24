@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QTextEdit, QPushButton
 
 from DyCommon.DyCommon import *
 
-
+#调试股票输入的窗口
 class DyStockSelectTestedStocksDlg(QDialog):
 
     def __init__(self, data, parent=None):
@@ -40,7 +40,7 @@ class DyStockSelectTestedStocksDlg(QDialog):
         # 控件
         descriptionLabel = QLabel('要调试的股票代码')
         self._codesTextEdit = QTextEdit()
-        self._codesTextEdit.setPlainText(self._read())
+        self._codesTextEdit.setPlainText(self._read())# 去从文件里面读取
 
         cancelPushButton = QPushButton('Cancel')
         okPushButton = QPushButton('OK')
@@ -61,7 +61,7 @@ class DyStockSelectTestedStocksDlg(QDialog):
  
         self.setLayout(grid)
         self.resize(QApplication.desktop().size().width()//3, QApplication.desktop().size().height()//2)
-
+    # 接受的话保存到本地文件
     def _ok(self):
         # save
         self._save()
@@ -73,10 +73,10 @@ class DyStockSelectTestedStocksDlg(QDialog):
             if x and x not in temp: temp.append(x)
 
         codes = [x + '.SH' if x[0] in ['6', '5'] else x + '.SZ' for x in temp]
-
+        #在这里传入数据
         self._data['codes'] = codes
-
+        #接受
         self.accept()
-
+    # 取消就是拒绝
     def _cancel(self):
         self.reject()

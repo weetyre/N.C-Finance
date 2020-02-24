@@ -4,7 +4,7 @@ import pandas as pd
 
 from .DyStockDataUtility import *
 
-
+#主要算涨幅之类的
 class DyStockDataAssembler(object):
     """
         股票数据组装，主要是从数据引擎里读出数据，做简单的运算。比如，涨幅之类的等等。

@@ -12,7 +12,7 @@ from ...Trade.AccountManager.StopMode.DyStockStopLossStepMode import *
 from ...Trade.AccountManager.StopMode.DyStockStopProfitPnlRatioMode import *
 from ...Trade.AccountManager.StopMode.DyStockStopTimeMode import *
 
-
+#
 class DyStockBackTestingAccountManager:
     """
         回测账户管理
@@ -83,12 +83,12 @@ class DyStockBackTestingAccountManager:
 
     @property
     def curPos(self):
-        return self._curPos
+        return self._curPos# 当前持仓
 
     @property
     def curCash(self):
-        return self._curCash
-
+        return self._curCash# 当前资金
+    #
     def getCurPosMarketValue(self):
         """
             get market value of all positions
@@ -98,7 +98,7 @@ class DyStockBackTestingAccountManager:
             value += pos.totalVolume * pos.price
 
         return value
-
+    #
     def getCurCodePosMarketValue(self, code):
         """
             get market value of position of sepcified code
@@ -109,7 +109,7 @@ class DyStockBackTestingAccountManager:
             value = pos.totalVolume * pos.price
 
         return value
-
+    # 获得总资产
     def getCurCapital(self):
         """
             获取当前账户总资产
@@ -126,27 +126,27 @@ class DyStockBackTestingAccountManager:
                 tradeCost = DyStockTradeCommon.getTradeCost(code, type, price, volume)
                 entrustCash += price*volume + tradeCost
 
-        return self._curCash + self.getCurPosMarketValue() + entrustCash
-
+        return self._curCash + self.getCurPosMarketValue() + entrustCash # 后面是锁掉得资金 
+    #
     def getCurCodePosAvail(self, code):
         """
             获取当前股票持仓可用数量
         """
         return self._curPos[code].availVolume if code in self._curPos else 0
-
+    #
     def getCurCodePosCost(self, code):
         """
             获取当前股票持仓成本
         """
         return self._curPos[code].cost if code in self._curPos else None
-
+    #
     def _processDealedEntrusts(self, dealedEntrusts, ticks):
         """
             处理成交的委托
         """
         for entrust in dealedEntrusts:
             # update
-            entrust.status = DyStockEntrust.Status.allDealed
+            entrust.status = DyStockEntrust.Status.allDealed# 已成
             entrust.dealedVolume = entrust.totalVolume
             self.matchedDealedVolume = entrust.totalVolume
 
@@ -160,7 +160,7 @@ class DyStockBackTestingAccountManager:
             entrustDatetime = entrust.entrustDatetime
 
             datetime = ticks.get(code).datetime
-            tradeCost = DyStockTradeCommon.getTradeCost(code, type, price, volume)
+            tradeCost = DyStockTradeCommon.getTradeCost(code, type, price, volume)# 交易成本
 
             # remove from not done entrusts list
             self._curNotDoneEntrusts.remove(entrust)
@@ -169,26 +169,26 @@ class DyStockBackTestingAccountManager:
             self._curWaitingPushEntrusts.append(entrust)
 
             # new deal
-            self._curDealCount += 1
+            self._curDealCount += 1 # 新增一个成交
             deal = DyStockDeal(datetime, type, code, name, price, volume, tradeCost, signalInfo=signalInfo, entrustDatetime=entrustDatetime)
             deal.dyDealId = '{}.{}_{}'.format(self.broker, self._curTDay, self._curDealCount)
 
-            self._curDeals.append(deal)
-            self._deals.append(deal)
-            self._curWaitingPushDeals.append(deal)
+            self._curDeals.append(deal) # 当日成交
+            self._deals.append(deal)# 历史成交
+            self._curWaitingPushDeals.append(deal) # 等待推送得成交
 
             # update positions
             if type == DyStockOpType.buy: # 买入
                 if code in self._curPos:
                     pos = self._curPos[code]
-                    pos.addPos(datetime, strategyCls, price, volume, tradeCost)
+                    pos.addPos(datetime, strategyCls, price, volume, tradeCost)# 增加持仓
                 else:
                     self._curPos[code] = DyStockPos(datetime, strategyCls, code, name, price, volume, tradeCost)
 
             else: # 卖出
                 pos = self._curPos[code]
 
-                pnl, pnlRatio = pos.removePos(price, volume, tradeCost, removeAvailVolume=False)
+                pnl, pnlRatio = pos.removePos(price, volume, tradeCost, removeAvailVolume=False)# 因为前面已经减了，在这里只需要减了total
                 assert pnl is not None
 
                 deal.pnl = pnl
@@ -198,8 +198,8 @@ class DyStockBackTestingAccountManager:
                 deal.minPnlRatio = pos.minPnlRatio
 
                 cash = price*volume - tradeCost
-                self._curCash += cash
-
+                self._curCash += cash # 现在现金流
+    #
     def _CrossCurNotDoneEntrustsByTicks(self, ticks):
         """
             每tick撮合当日未成交的委托
@@ -223,13 +223,13 @@ class DyStockBackTestingAccountManager:
 
         # 处理成交的委托
         self._processDealedEntrusts(dealedEntrusts, ticks)
-
+    #
     def _isBarLimitDown(self, bar):
         return bar.low == bar.high and (bar.low - bar.preClose)/bar.preClose*100 <= DyStockCommon.limitDownPct
-
+    #
     def _isBarLimitUp(self, bar):
         return bar.low == bar.high and (bar.high - bar.preClose)/bar.preClose*100 >= DyStockCommon.limitUpPct
-
+    #
     def _CrossCurNotDoneEntrustsByBars(self, bars):
         """
             每Bar撮合当日未成交的委托
@@ -260,7 +260,7 @@ class DyStockBackTestingAccountManager:
 
         # 处理成交的委托
         self._processDealedEntrusts(dealedEntrusts, bars)
-
+    #
     def _newEntrust(self, type, datetime, strategyCls, code, name, price, volume, signalInfo=None, tickOrBar=None):
         """
             生成新的委托
@@ -282,13 +282,13 @@ class DyStockBackTestingAccountManager:
             self._CrossCurNotDoneEntrustsByBars({tickOrBar.code: tickOrBar})
 
         return entrust
-
+    #
     def buy(self, datetime, strategyCls, code, name, price, volume, signalInfo=None, tickOrBar=None):
         """
             @tickOrBar: 主要为了日内回测
         """
         if volume < 100:
-            return None # 至少买一手
+            return None # 至少买一手，一手的股票数量为100股
 
         if self._riskGuardCount > 0:
             return None # 风控中
@@ -303,7 +303,7 @@ class DyStockBackTestingAccountManager:
 
         # 生成新的委托
         return self._newEntrust(DyStockOpType.buy, datetime, strategyCls, code, name, price, volume, signalInfo=signalInfo, tickOrBar=tickOrBar)
-    
+    #
     def sell(self, datetime, strategyCls, code, price, volume, sellReason=None, signalInfo=None, tickOrBar=None):
         """
             @tickOrBar: 主要为了日内回测
@@ -313,7 +313,7 @@ class DyStockBackTestingAccountManager:
             return None
 
         name = pos.name
-
+        # 确保卖出得量是在许可范围内的
         if not pos.availVolume >= volume > 0:
             return None
 
@@ -321,11 +321,11 @@ class DyStockBackTestingAccountManager:
 
         # 生成新的委托
         return self._newEntrust(DyStockOpType.sell, datetime, strategyCls, code, name, price, volume, signalInfo=signalInfo, tickOrBar=tickOrBar)
-
+    #
     def setParamGroupNoAndPeriod(self, paramGroupNo, period):
         self._paramGroupNo = paramGroupNo
         self._period = period
-
+    #
     def _curInit(self, tDay=None):
         """ 当日初始化 """
 
@@ -333,22 +333,22 @@ class DyStockBackTestingAccountManager:
 
         self._curDeals = [] # 当日成交
 
-        self._curEntrustCount = 0
-        self._curDealCount = 0
+        self._curEntrustCount = 0 #当前委托数量
+        self._curDealCount = 0# 当前成交数量
 
         # 需要推送给策略的委托和成交回报
-        self._curWaitingPushDeals = []
-        self._curWaitingPushEntrusts = []
+        self._curWaitingPushDeals = [] # 成交
+        self._curWaitingPushEntrusts = []# 委托
 
         self._curNotDoneEntrusts = [] # 当日未成交委托
 
         # 风控
         if self._riskGuardCount > 0:
             self._riskGuardCount -= 1
-
+    #监控
     def onMonitor(self):
         return list(self._curPos)
-
+    #
     def onTicks(self, ticks):
         # 撮合委托
         self._CrossCurNotDoneEntrustsByTicks(ticks)
@@ -367,12 +367,12 @@ class DyStockBackTestingAccountManager:
 
         # 止时
         self._stopTimeMode.onTicks(ticks)
-
+    #
     def onBars(self, bars):
         # 撮合委托
         self._CrossCurNotDoneEntrustsByBars(bars)
 
-        # 先更新持仓
+        # 先更新持仓，更新对应code的持仓
         for code, pos in self._curPos.items():
             bar = bars.get(code)
             if bar is not None:
@@ -386,7 +386,7 @@ class DyStockBackTestingAccountManager:
 
         # 止时
         self._stopTimeMode.onBars(bars)
-
+    #
     def _onCloseCurNotDoneEntrusts(self):
         """
             处理收盘后的未成交委托
@@ -407,21 +407,21 @@ class DyStockBackTestingAccountManager:
             if type == DyStockOpType.buy:
                 tradeCost = DyStockTradeCommon.getTradeCost(code, type, price, volume)
 
-                self._curCash += price*volume + tradeCost
-
+                self._curCash += price*volume + tradeCost #恢复资金
+    # 关闭
     def onClose(self):
         # remove pos
         for code in list(self._curPos):
-            if self._curPos[code].totalVolume == 0:
+            if self._curPos[code].totalVolume == 0: # 都为零了，肯定不持仓了
                 del self._curPos[code]
 
         # update positions
         for _, pos in self._curPos.items():
-            pos.onClose()
+            pos.onClose() # 更改持有量，更改收盘最高价格
 
         # 处理收盘后的未成交委托
         self._onCloseCurNotDoneEntrusts()
-
+    # 获取回测结果
     def getCurAckData(self, strategyCls):
         """ 获取当日策略回测结果数据 """
 
@@ -431,10 +431,10 @@ class DyStockBackTestingAccountManager:
         ackData.curCash = self._curCash
         ackData.curPos = copy.deepcopy(self._curPos)
         ackData.day = self._curTDay
-        ackData.deals = self._curDeals
+        ackData.deals = self._curDeals # deal 类实例
 
         return ackData
-
+    # 开盘前准备
     def onOpen(self, date):
         
         # 当日初始化
@@ -454,7 +454,7 @@ class DyStockBackTestingAccountManager:
                 return False
 
         return True
-
+    # 关闭持仓，也就是生成一个卖的委托
     def closePos(self, datetime, code, price, sellReason, signalInfo=None, tickOrBar=None):
         entrust = None
         if code in self._curPos:
@@ -468,21 +468,21 @@ class DyStockBackTestingAccountManager:
                 self._riskGuardCount = self._riskGuardNbr + 1
 
         return entrust
-
+    # 弹出等待推送
     def popCurWaitingPushDeals(self):
         deals = self._curWaitingPushDeals
 
         self._curWaitingPushDeals = []
 
         return deals
-
+    # 弹出等待委托
     def popCurWaitingPushEntrusts(self):
         entrusts = self._curWaitingPushEntrusts
 
         self._curWaitingPushEntrusts = []
 
         return entrusts
-
+    # 
     def syncStrategyPos(self, strategy):
         """
             由于除复权的问题，同步策略的持仓。
@@ -491,7 +491,7 @@ class DyStockBackTestingAccountManager:
         # 构造持仓同步数据
         syncData = {}
         for code, pos in self._curPos.items():
-            if pos.sync: # 只跟策略同步同步过的持仓。若持仓当日停牌或者前面tick数据缺失，则持仓不会被同步。所以也不能假设停牌，而把复权因子设为1。
+            if pos.sync: # 只跟策略同步 同步过的持仓。若持仓当日停牌或 者前面tick数据缺失，则持仓不会被同步。所以也不能假设停牌，而把复权因子设为1。
                 syncData[code] = {'priceAdjFactor': pos.priceAdjFactor,
                                   'volumeAdjFactor': pos.volumeAdjFactor,
                                   'cost': pos.cost

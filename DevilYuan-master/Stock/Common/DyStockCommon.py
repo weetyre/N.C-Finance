@@ -1,20 +1,21 @@
 from datetime import datetime
 from collections import OrderedDict
 
-
+#股票代码的映射
 class DyStockCommon(object):
+    # 大盘指数
     indexes = OrderedDict([
                         ('000001.SH', '上证指数'),
                         ('399001.SZ', '深证成指'),
                         ('399006.SZ', '创业板指'),
                         ('399005.SZ', '中小板指'),
                         ])
-
+    #基金
     funds = {'510050.SH': '50ETF',
              '510300.SH': '300ETF',
              '510500.SH': '500ETF'
              }
-
+    #板块指数的映射
     sectors = {'000016.SH': '上证50',
                '399300.SZ': '沪深300',
                '399905.SZ': '中证500'
@@ -35,7 +36,7 @@ class DyStockCommon(object):
     # 创小板，同花顺做了调整，统一是用的所对应板的全市场的股票成交额。
     cybzIndex = '399102.SZ' # 创业板综
     zxbzIndex = '399101.SZ' # 中小板综
-
+    #基金
     etf50 = '510050.SH' # 50ETF是2005.02.23上市的
     etf300 = '510300.SH' # 300ETF是2012.05.28上市的
     etf500 = '510500.SH' # 500ETF是2013.03.15上市的
@@ -54,7 +55,7 @@ class DyStockCommon(object):
     defaultHistDaysDataSource = ['Wind'] # Wind and TuShare，如果数据源是两个或者以上，则数据相互做验证。单个则不做验证。这里包括验证交易日数据，股票代码表和日线数据。
     WindPyInstalled = True
     useTuSharePro = False
-    tuShareProToken = None 
+    tuShareProToken = None #这里输入TusharePro的Token
 
     # 同花顺个股资料（F10）link
     jqkaStockF10Link = 'http://basic.10jqka.com.cn/{}/'
@@ -111,7 +112,7 @@ class DyStockCommon(object):
 
         assert(0)
         return None
-
+    #股票代码是否有效
     def isValidDyStockCode(code):
         """
             @code: DY stock code
@@ -127,15 +128,15 @@ class DyStockCommon(object):
                 return True
 
         return False
-
+    #输入代码获得整个股票的完整代码
     def getDyStockCode(code):
         return (code[:6] + '.SH') if code[0] in ['6', '5'] else (code[:6] + '.SZ')
-
+    #输入一批获取一批股票的完整代码
     def getDyStockCodes(codes):
         if not isinstance(codes, list): return None
 
         return [DyStockCommon.getDyStockCode(code) for code in codes]
-
+    #获得相对于股票交易开场时间（早上的相对时间）
     def getRelativeTime(stockTime):
         morningStart = datetime(stockTime.year, stockTime.month, stockTime.day, 9, 30, 0)
         afternoonStart = datetime(stockTime.year, stockTime.month, stockTime.day, 13, 0, 0)
@@ -145,12 +146,12 @@ class DyStockCommon(object):
         if stockTime < morningStart:
             relativeSeconds = 0
         elif morningStart <= stockTime < afternoonStart:
-            relativeSeconds = min((stockTime - morningStart).total_seconds(), 2*60*60)
+            relativeSeconds = min((stockTime - morningStart).total_seconds(), 2*60*60)#股票早上11.30停，所以和2给小时比较
         else:
-            relativeSeconds = min((stockTime - afternoonStart).total_seconds(), 2*60*60) + 2*60*60
+            relativeSeconds = min((stockTime - afternoonStart).total_seconds(), 2*60*60) + 2*60*60#加上早上的两个时间
 
         return int(relativeSeconds)
-
+    #获取相对于早上或者下午开盘时间的相对时间
     def getRelativeTimeByTime(time):
         h, m, s = time.split(':')
         h, m, s = int(h), int(m), int(s)
@@ -159,7 +160,7 @@ class DyStockCommon(object):
             return (h - 9)*60*60 + m*60 + s - 30*60
 
         return (h - 13)*60*60 + m*60 + s
-
+    #获取两个时间差，time1比time2早，在数值上的表现就是time1的数值小
     def getTimeInterval(time1, time2):
         """
             获取时间差，单位是秒
@@ -173,6 +174,6 @@ class DyStockCommon(object):
             deltaMorning = 11*3600 + 30*60 - time1S
             deltaAfternoon = time2S - 13*3600
 
-            return max(deltaMorning, 0) + max(deltaAfternoon, 0)
+            return max(deltaMorning, 0) + max(deltaAfternoon, 0)#以上午的时间差+下午的时间差的总和
 
-        return time2S - time1S
+        return time2S - time1S#如果不跨越，单上午或者单个下午

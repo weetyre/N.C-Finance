@@ -83,8 +83,8 @@ class DyStockAccountConfigDlg(QDialog):
         self.setWindowTitle('配置-账号（实盘交易）')
 
         self._tabWidget = QTabWidget()
-        self._createYhTab()
-        self._createThsTab()
+        self._createYhTab()#银河tAb
+        self._createThsTab()#同花顺tAb
         
         cancelPushButton = QPushButton('Cancel')
         okPushButton = QPushButton('OK')
@@ -101,7 +101,7 @@ class DyStockAccountConfigDlg(QDialog):
         grid.addWidget(cancelPushButton, 1, 1)
  
         self.setLayout(grid)
-
+    #先读取本地得，否则配置成默认的
     def _read(self):
         file = DyStockConfig.getStockAccountFileName()
 

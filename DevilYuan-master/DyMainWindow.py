@@ -95,7 +95,7 @@ class DyMainWindow(QMainWindow, Ui_MainWindow):
         @type QWidget
         """
         super(DyMainWindow, self).__init__(parent)
-        self.setupUi(self)
+        self.setupUi(self)#调用父类的界面初始化函数
 
         self.setWindowFlags(Qt.WindowMinimizeButtonHint|Qt.WindowCloseButtonHint)
         self.setFixedSize(self.width(), self.height())
@@ -173,9 +173,9 @@ class DyMainWindow(QMainWindow, Ui_MainWindow):
 
     def _configAccount(self):
         DyStockAccountConfigDlg().exec_()
-
+    #链接各种配置函数
     def _config(self):
-        DyCommon.exePath = os.path.dirname(os.path.abspath(__file__))
+        DyCommon.exePath = os.path.dirname(os.path.abspath(__file__))# @DyMainWindow.py的所在目录
         DyStockConfig.config()
 
 

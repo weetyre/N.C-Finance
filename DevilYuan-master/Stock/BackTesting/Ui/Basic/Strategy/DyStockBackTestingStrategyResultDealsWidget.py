@@ -4,7 +4,7 @@ from .....Trade.DyStockTradeCommon import *
 from .....Common.Ui.Basic.DyStockTableWidget import *
 
 
-class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
+class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):# 继承以至于提供右键菜单的功能
 
     sellReasonFGMap = {DyStockSellReason.stopLoss: Qt.darkGreen,
                        DyStockSellReason.stopLossStep: Qt.darkGreen,
@@ -38,7 +38,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
 
         # 定制的表头右键Actions，防止重复创建
         self.__customHeaderContextMenuActions = set()
-
+    #
     def _initItemMenu(self):
         """
             子类改写
@@ -47,18 +47,18 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         super()._initItemMenu()
 
         self._itemMenu.addSeparator()
-
+        #添加一个右键菜单
         action = QAction('交易信号K线图: 无日期', self)
         action.triggered.connect(self._showBuySellKLineWithoutDate)
         self._itemMenu.addAction(action)
-
+    #
     def customizeHeaderContextMenu(self, headerItem):
         """
             子类改写
             这样子类可以定制Header的右键菜单
         """
         super().customizeHeaderContextMenu(headerItem)
-
+        #删除自定义上下文的menu
         for action in self.__customHeaderContextMenuActions:
             self._headerMenu.removeAction(action)
             del action
@@ -147,7 +147,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
             colData.append(rowData)
 
         self.fastAppendColumns(self._strategyCls.signalDetailsHeader, colData)
-
+    #每次添加后自动更新header 以及对应前景色
     def append(self, deals):
         """
             添加一个交易日结束后的成交
@@ -179,14 +179,14 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
 
             self.setItemForeground(rowCol, self._typeCol, color)
 
-            # 设置'盈亏'前景色
+            # 设置'盈亏'前景色（量）
             if deal.pnl is not None and deal.pnl != 0:
                 color = Qt.red if deal.pnl > 0 else Qt.darkGreen
                 self.setItemForeground(rowCol, self._pnlCol, color)
 
-                pnl += deal.pnl
+                pnl += deal.pnl# 需要算总数
 
-            # 设置'盈亏'前景色
+            # 设置'盈亏'前景色（百分比）
             if deal.pnlRatio is not None and deal.pnlRatio != 0:
                 color = Qt.red if deal.pnlRatio > 0 else Qt.darkGreen
                 self.setItemForeground(rowCol, self._pnlRatioCol, color)
@@ -224,7 +224,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         tradeCost += float(colName[5:-1])
 
         self.setColName(self._tradeCostCol, '交易成本(%.2f)'%tradeCost)
-
+    #获取代码以及成交时间
     def _getItemCodeDate(self, item):
         # get code
         row = self.row(item)
@@ -236,7 +236,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         date = time[:len('2000-00-00')]
 
         return code, date
-
+    #获取代码名和代码
     def _getItemCodeName(self, item):
         # get code
         row = self.row(item)
@@ -245,13 +245,13 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         if code is None: return None, None
 
         return code, name
-
+    #
     def getRightClickCodeDate(self):
         item = self.itemAt(self._rightClickPoint)
         if item is None: return None, None
 
         return self._getItemCodeDate(item)
-
+    #获得代码日期以及代码
     def getCodeDate(self, item):
         return self._getItemCodeDate(item)
 
@@ -284,7 +284,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         dateCodeList = [[row[0][:len('yyyy-mm-dd')], row[1]] for row in rows]
 
         return dateCodeList
-
+    #
     def getCodePriceList(self):
         return self.getColumnsData(['代码', '成交价格'])
 
@@ -293,7 +293,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         if item is None: return None, None
 
         return self._getItemCodeName(item)
-
+    #设置所有项目的前景色
     def setAllItemsForeground(self):
         # set all items foreground
         for col, colName in enumerate(self.getColNames(), 1):
@@ -323,12 +323,12 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
                             item.setForeground(Qt.darkGreen)
                     except Exception:
                         pass
-
+                #根据相应原因设置颜色
                 elif '卖出原因' in colName:
                     color = self.sellReasonFGMap.get(itemData)
                     if color is not None:
                         item.setForeground(color)
-
+    #获得自定义类名
     def getCustomSaveData(self):
         """
             子类改写
@@ -338,7 +338,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
                       }
 
         return customData
-
+    #新窗口
     def _newWindow(self, rows=None):
         """
             子类改写
@@ -357,13 +357,13 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         window.showMaximized()
 
         self._windows.append(window)
-
+    #获得名字
     def getUniqueName(self):
         """
             子类改写
         """
         return '{0}_{1}'.format(self._strategyCls.chName, self._name)
-
+    #显示买卖K线，有标记
     def _showBuySellKLine(self, item, withDate=True):
         # get code
         code, baseDate = self.getCodeDate(item)
@@ -383,17 +383,17 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
             if code == code_:
                 date_ = time_[:len('2000-00-00')]
                 buySellDates[date_] = type_
-
+        #绘制
         self._dataViewer.plotBuySellDayCandleStick(code, buySellDates, withDate)
-
+    #没有日期的买卖K线
     def _showBuySellKLineWithoutDate(self):
         item = self.itemAt(self._rightClickPoint)
 
         self._showBuySellKLine(item, withDate=False)
-
+    #双击一个项目
     def _itemDoubleClicked(self, item):
         self._showBuySellKLine(item)
-
+    #合并初始列名，且重新设置
     def __combineInitColNames(self, colNamesList):
         """
             @colNamesList: [colNames]
@@ -414,7 +414,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
             colName = colNames[self._typeCol]
             buyCountStart = colName.find('买入')
             sellCountStart = colName.find('卖出')
-
+            #进行具体的统计
             buyCount += int(colName[buyCountStart + 3 : sellCountStart - 1])
             sellCount += int(colName[sellCountStart + 3 : -1])
 
@@ -429,7 +429,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):
         self.setColName(self._typeCol, '交易类型(买入:{},卖出:{})'.format(buyCount, sellCount))
         self.setColName(self._pnlCol, '盈亏(%.2f)'%pnl)
         self.setColName(self._tradeCostCol, '交易成本(%.2f)'%tradeCost)
-
+    #初始化
     def combineInit(self, selves):
         """
             use self widgets to initialize itself

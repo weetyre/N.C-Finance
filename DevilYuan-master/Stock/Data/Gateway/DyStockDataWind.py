@@ -24,7 +24,7 @@ class DyStockDataWind(object):
         self._info = info
 
         self._gateway = w
-
+    #获取日线数据
     def getDays(self, code, startDate, endDate, fields, name=None):
         """
             @return: df['datetime', indicators]
@@ -47,7 +47,7 @@ class DyStockDataWind(object):
                 if 'Timeout' in errorStr and i < tries:
                     print(errorStr)
                     sleep(i)
-                    continue
+                    continue    #重试
             break
 
         if windData.ErrorCode != 0:
@@ -56,14 +56,14 @@ class DyStockDataWind(object):
 
         try:
             df = pd.DataFrame(windData.Data,
-                              index=[x.lower() for x in windData.Fields],
-                              columns=windData.Times)
+                              index=[x.lower() for x in windData.Fields],#行名
+                              columns=windData.Times)#列名
 
-            df = df.T
+            df = df.T #然后转置
 
             df = df.dropna(axis=1, how='all') # 去除全为NaN的列，比如指数数据，没有'mf_vol'
             df = df.ix[df['volume'] > 0, :] # 去除停牌的数据
-
+            #如果原来不在，那就把添加的删了
             if 'volume' not in fields:
                 del df['volume']
 
@@ -80,7 +80,7 @@ class DyStockDataWind(object):
             df = pd.DataFrame(columns=['datetime'] + fields)
 
         return df
-
+    #登陆
     def _login(self):
         if not self._gateway.isconnected():
             self._info.print("登录Wind...")
@@ -93,7 +93,7 @@ class DyStockDataWind(object):
             self._info.print("登录Wind成功")
 
         return True
-
+    #获取交易日
     def getTradeDays(self, startDate, endDate):
         if not self._login():
             return None
@@ -111,9 +111,9 @@ class DyStockDataWind(object):
 
         self._info.print("从Wind获取交易日数据失败[{0}, {1}]: {2}".format(startDate, endDate, data.Data[0][0]), DyLogData.error)
         return None
-
+    #获取代码表
     def getStockCodes(self):
-        if not self._login():
+        if not self._login():#首先验证登陆是否成功
             return None
 
         self._info.print("开始从Wind获取股票代码表...")
@@ -133,7 +133,7 @@ class DyStockDataWind(object):
 
         self._info.print("从Wind获取股票代码表成功")
         return codes
-
+    #获取ETF代码表
     def getSectorStockCodes(self, sectorCode, startDate, endDate):
         if not self._login():
             return None
@@ -141,9 +141,9 @@ class DyStockDataWind(object):
         self._info.print("开始从Wind获取[{0}]股票代码表[{1}, {2}]...".format(DyStockCommon.sectors[sectorCode], startDate, endDate))
 
         dates = DyTime.getDates(startDate, endDate)
-
+        #注册一个进度条事件
         progress = DyProgress(self._info)
-        progress.init(len(dates))
+        progress.init(len(dates))#总请求数是日期的天数
 
         codesDict = OrderedDict() # {date: {code: name}}
         for date_ in dates:

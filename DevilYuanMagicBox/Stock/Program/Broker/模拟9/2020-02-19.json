@@ -8,6 +8,5 @@
     "curDealNo": 0,
     "curEntrustNo": 0,
     "curDeals": [],
-    "curEntrusts": [],
-    "posClose": {}
+    "curEntrusts": []
 }

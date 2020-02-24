@@ -39,7 +39,8 @@ class DyStockDataWindow(object):
 
     def setTestedStocks(self, codes):
         self._testedStocks = codes
-
+    
+        #收盘价均线离差比
     def plotReqMaStats(self, startDate, endDate, index, mas, vmas):
         # close
         stats = DyStockDataUtility.getIndexMaStats(startDate, endDate, self._daysEngine, self._info, index, self._testedStocks, floatMarketValue=False)
@@ -66,7 +67,7 @@ class DyStockDataWindow(object):
         event.data['vmas'] = vmas
 
         self._eventEngine.put(event)
-
+    #被调函数
     def plotAckMaStats(self, event):
         # unpack
         stats = event.data['stats']
@@ -150,7 +151,7 @@ class DyStockDataWindow(object):
         window = DyStockDataIndexMaStatsMainWindow(self, index, DyStockCommon.getIndexesSectors()[index], df)
         window.show()
         self._windows.append(window)
-
+    # 画指数均线统计K线图 
     def plotIndexMaKChartStats(self, index, df, indicators):
         """
             画指数均线统计K线图
@@ -210,7 +211,7 @@ class DyStockDataWindow(object):
         event.data['codeTable'] = codeTable
 
         self._eventEngine.put(event)
-
+    #被调函数
     def plotAckJaccardIndex(self, event):
         """
         统计指数板块的杰卡德指数的Ack, 主要是UI操作
@@ -230,7 +231,7 @@ class DyStockDataWindow(object):
         window = DyStockDataJaccardIndexMainWindow(orgDfs, jaccardDfs, codeSetDfs, codeIncreaseDfDicts, codeTable, dataViewer)
         window.show()
         self._windows.append(window)
-
+    #
     def _plotJaccardIndex(self, df, columns, left=None, right=None, top=None, bottom=None):
         """
             生成杰卡德指数曲线图
@@ -289,7 +290,7 @@ class DyStockDataWindow(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    #======标准差均值比
     def plotReqIndexConsecutiveDayLineStats(self, startDate, endDate, greenLine=True):
         # load
         if not self._daysEngine.load([startDate, endDate], codes=[]):
@@ -311,7 +312,7 @@ class DyStockDataWindow(object):
         event.data['greenLine'] = greenLine
 
         self._eventEngine.put(event)
-
+    #被调用函数
     def plotAckIndexConsecutiveDayLineStats(self, event):
         # unpack
         startDate = event.data['startDate']
@@ -323,7 +324,7 @@ class DyStockDataWindow(object):
         window.showMaximized()
 
         self._windows.append(window)
-
+    #
     def _plotBBandsStats(self, code, periods=None, bBandPeriods=[10, 20], left=None, right=None, top=None, bottom=None):
         def _dateFormatter(x, pos):
             if not (0 <= int(x) < df.shape[0]):
@@ -370,7 +371,7 @@ class DyStockDataWindow(object):
         ax.legend(loc='upper left', frameon=False)
 
         return periods
-
+    #事件被调用函数
     def plotAckBBandsStats(self, event):
         # unpack
         code = event.data['code']
@@ -378,7 +379,7 @@ class DyStockDataWindow(object):
         endDate = event.data['endDate']
         bBand1Period = event.data['bBand1Period']
         bBand2Period = event.data['bBand2Period']
-
+        #准备画图
         DyMatplotlib.newFig()
 
         # net capital flow if stock
@@ -414,6 +415,7 @@ class DyStockDataWindow(object):
 
         self._eventEngine.put(event)
 
+    #============封板率统计图
     def plotReqLimitUpStats(self, startDate, endDate):
         # load
         if not self._daysEngine.load([startDate, endDate]):
@@ -438,6 +440,7 @@ class DyStockDataWindow(object):
 
         self._eventEngine.put(event)
 
+    #事件调用函数
     def plotAckLimitUpStats(self, event):
         # unpack
         startDate = event.data['startDate']
@@ -521,7 +524,9 @@ class DyStockDataWindow(object):
         ax.axhline(0.5, color='y', linewidth=.2)
 
         ax.legend(loc='upper left', frameon=False)
-
+    
+        
+    #热点分析====
     def plotReqFocusAnalysis(self, startDate, endDate):
         # load
         #if not self._daysEngine.load([startDate, endDate], codes=['601668.SH']):
@@ -551,7 +556,7 @@ class DyStockDataWindow(object):
         event.data['focusInfoPoolDict'] = focusInfoPoolDict
 
         self._eventEngine.put(event)
-
+    #事件调用函数
     def plotAckFocusAnalysis(self, event):
         # unpack
         startDate = event.data['startDate']
@@ -622,6 +627,7 @@ class DyStockDataWindow(object):
         
         ax.legend(loc='lower left', frameon=False)
 
+    #
     def plotReqHighLowDist(self, startDate, endDate, size=1):
         """
             请求绘制全市场股票的日内最高和最低价的时间分布
@@ -656,7 +662,7 @@ class DyStockDataWindow(object):
 
         # put event to UI
         event = DyEvent(DyEventType.plotAck)
-        event.data['plot'] = self.plotAckHighLowDist
+        event.data['plot'] = self.plotAckHighLowDist # 推送函数指针
         event.data['startDate'] = startDate
         event.data['endDate'] = endDate
         event.data['size'] = size
@@ -664,7 +670,7 @@ class DyStockDataWindow(object):
         event.data['lows'] = lows
 
         self._eventEngine.put(event)
-
+    #绘制日内最高价，日内最低价图，柱状图
     def plotAckHighLowDist(self, event):
         # unpack
         startDate = event.data['startDate']
@@ -687,7 +693,7 @@ class DyStockDataWindow(object):
                 time = '{0}:{1}:{2}'.format(h if h > 9 else ('0' + str(h)), m if m > 9 else ('0' + str(m)), s if s > 9 else ('0' + str(s)))
 
                 return time
-
+            #分一个图
             DyMatplotlib.newFig()
 
             plt.hist(data, bins=6*60//size)

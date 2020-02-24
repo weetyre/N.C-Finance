@@ -1,7 +1,7 @@
 from .DyStockStopMode import *
 from ...DyStockTradeCommon import *
 
-
+#止盈
 class DyStockStopProfitPnlRatioMode(DyStockStopMode):
     
     def __init__(self, accountManager, pnlRatio):
@@ -15,7 +15,7 @@ class DyStockStopProfitPnlRatioMode(DyStockStopMode):
             if tick is None:
                 continue
 
-            if pos.pnlRatio >= self._pnlRatio:
+            if pos.pnlRatio >= self._pnlRatio:# 如果超出，就卖
                 self._accountManager.closePos(tick.datetime, code, getattr(tick, DyStockTradeCommon.sellPrice), DyStockSellReason.stopProfit, tickOrBar=tick)
 
     def onBars(self, bars):

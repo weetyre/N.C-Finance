@@ -4,7 +4,7 @@ from ....Trade.Strategy.Cta.DyST_TraceFocus import *
 from ....Trade.Strategy.DyStockCtaBase import *
 from ....Trade.DyStockStrategyBase import *
 
-
+#主要处理热点分析
 class DyStockDataFocusAnalysisUtility(object):
     """
         热点分析工具类

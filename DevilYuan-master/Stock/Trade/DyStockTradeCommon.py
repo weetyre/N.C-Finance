@@ -53,7 +53,7 @@ class DyStockTradeCommon:
                   'simu8': '模拟8',
                   'simu9': '模拟9',
                   }
-
+    # 获取每笔交易得成本
     def getTradeCost(code, type, price, volume):
         """
             获取每笔交易的交易成本
@@ -75,16 +75,16 @@ class DyStockTradeCommon:
         brokerageCommission = max(5, price*volume*DyStockTradeCommon.brokerageCommissionRatio)
 
         return stampTax + transferFee + brokerageCommission
-
+    #
     def getBuyVol(cash, code, price):
         volume = ((cash/price)//100)*100
 
         while volume > 0:
             tradeCost = DyStockTradeCommon.getTradeCost(code, DyStockOpType.buy, price, volume)
-            if tradeCost + price*volume <= cash:
+            if tradeCost + price*volume <= cash:# 在可买范围内
                 break
 
-            volume -= 100
+            volume -= 100 # 买都是 100手 买一次
 
         return volume
 
@@ -104,12 +104,12 @@ class DyStockTradeCommon:
 
         return volume
 
-
+#
 class DyStockOpType:
     buy = '买入'
     sell = '卖出'
 
-
+#
 class DyStockSellReason:
     stopLoss = '止损'
     stopLossStep = '阶梯止损'
@@ -119,7 +119,7 @@ class DyStockSellReason:
     strategy = '策略' # 策略主动卖出
     manualSell = '手工卖出'
 
-
+#
 class DyStockDeal:
     """
         股票成交单
@@ -181,7 +181,7 @@ class DyStockEntrust:
         9    废单
         A    待确认
     """
-
+    # 简化状态
     class Status:
         """
             简化和归类委托状态
@@ -217,7 +217,7 @@ class DyStockEntrust:
         self.cancelDatetime = None # 撤销委托时间
 
         self.signalInfo = None # 策略委托的信号信息，回测时有效
-
+    #处于已成，已撤，废单
     def isDone(self):
         if self.status in [DyStockEntrust.Status.allDealed, DyStockEntrust.Status.cancelled, DyStockEntrust.Status.discarded]:
             return True

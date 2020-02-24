@@ -34,10 +34,10 @@ class DyStockTableWidget(DyStatsTableWidget):
         决定股票表的两个因子：name和baseDate
     """
     # header signal
-    stockTableAddColumnsActAckSignal = QtCore.pyqtSignal(type(DyEvent()))
+    stockTableAddColumnsActAckSignal = QtCore.pyqtSignal(type(DyEvent()))#表头增加一列
 
     # item signal
-    stockTableIndustryCompareActAckSignal = QtCore.pyqtSignal(type(DyEvent()))
+    stockTableIndustryCompareActAckSignal = QtCore.pyqtSignal(type(DyEvent()))#项目
 
     def __init__(self,
                  eventEngine,
@@ -60,7 +60,7 @@ class DyStockTableWidget(DyStatsTableWidget):
         self._baseDate = baseDate
         self._eventEngine = eventEngine
 
-        self._windows = []
+        self._windows = []# 所有即将显示窗口的集合
         self._curActionOngoing = False
 
         self._initDataViewer()
@@ -68,7 +68,7 @@ class DyStockTableWidget(DyStatsTableWidget):
         self._registerEevent()
 
         self.itemDoubleClicked.connect(self._itemDoubleClicked)
-
+    #注册
     def _registerEevent(self):
         # header
         self.stockTableAddColumnsActAckSignal.connect(self._stockTableAddColumnsActAckHandler)
@@ -77,7 +77,7 @@ class DyStockTableWidget(DyStatsTableWidget):
         # item
         self.stockTableIndustryCompareActAckSignal.connect(self._stockTableIndustryCompareActAckHandler)
         self._eventEngine.register(DyEventType.stockTableIndustryCompareActAck, self._stockTableIndustryCompareActAckSignalEmitWrapper)
-
+    #解注册
     def _unregisterEevent(self):
         # header
         self.stockTableAddColumnsActAckSignal.disconnect(self._stockTableAddColumnsActAckHandler)
@@ -86,30 +86,30 @@ class DyStockTableWidget(DyStatsTableWidget):
         # item
         self.stockTableIndustryCompareActAckSignal.disconnect(self._stockTableIndustryCompareActAckHandler)
         self._eventEngine.unregister(DyEventType.stockTableIndustryCompareActAck, self._stockTableIndustryCompareActAckSignalEmitWrapper)
-
+    #关闭事件
     def closeEvent(self, event):
         self._unregisterEevent()
 
         return super().closeEvent(event)
-
+    #
     def _initDataViewer(self):
         # 省去非错误log的输出
-        errorInfo = DyErrorInfo(self._eventEngine)
+        errorInfo = DyErrorInfo(self._eventEngine) # 此类只打印错误或者警告的消息
         self._dataEngine = DyStockDataEngine(self._eventEngine, errorInfo, registerEvent=False)
         self._dataViewer = DyStockDataViewer(self._dataEngine, errorInfo)
         self._daysEngine = self._dataEngine.daysEngine
         self._ticksEngine = self._dataEngine.ticksEngine
 
-        self._errorProgressInfo = DyErrorProgressInfo(self._eventEngine)
+        self._errorProgressInfo = DyErrorProgressInfo(self._eventEngine)#错误警告的进度条
 
     def _initHeaderMenu(self):
         """
             初始化表头右键菜单
             子类可以改写添加定制菜单
         """
-        super()._initHeaderMenu()
+        super()._initHeaderMenu()# 初始化最原始的右键菜单
 
-        self._headerMenu.addSeparator()
+        self._headerMenu.addSeparator()# 添加分隔符
 
         action = QAction('新窗口', self)
         action.triggered.connect(self._newWindowAct)
@@ -194,7 +194,7 @@ class DyStockTableWidget(DyStatsTableWidget):
         action = QAction('保存...', self)
         action.triggered.connect(self._saveAsAct)
         self._headerMenu.addAction(action)
-
+    #以下是点击Item创建的菜单
     def _initItemMenu(self):
         """
             初始化Item右键菜单
@@ -315,7 +315,7 @@ class DyStockTableWidget(DyStatsTableWidget):
                 break
 
         self._dataViewer.plotDealsDist(code, date, n)
-
+    #分时图，绘制具体的天
     def _timeShareChartAct(self):
         code, date = self.getRightClickCodeDate()
         if code is None: return
@@ -332,18 +332,18 @@ class DyStockTableWidget(DyStatsTableWidget):
                     n = 0
 
                 break
-
+        #绘制分时图
         self._dataViewer.plotTimeShareChart(code, date, n)
-
+    #
     def _dealDetailsAct(self):
         code, date = self.getRightClickCodeDate()
         if code is None: return
 
         window = DyStockDealDetailsMainWindow(self._dataViewer, self)
-        window.set(code, date)
+        window.set(code, date)# 设置两个插件的值
 
         window.show()
-
+    #股票信息
     def _stockInfoAct(self):
         code, name = self.getRightClickCodeName()
         if code is None:
@@ -351,7 +351,7 @@ class DyStockTableWidget(DyStatsTableWidget):
 
         url = 'http://basic.10jqka.com.cn/32/{0}/'.format(code[:-3])
         webbrowser.open_new_tab(url)
-
+    #新行业对比窗口
     def _newIndustryCompareWindow(self, code, name, baseDate, dfs):
         window = DyStockIndustryCompareWindow(self._eventEngine, DyStockTableWidget, code, name, baseDate)
 
@@ -361,10 +361,10 @@ class DyStockTableWidget(DyStatsTableWidget):
         window.showMaximized()
 
         self._windows.append(window)
-
+    #对应wrapper
     def _stockTableIndustryCompareActAckSignalEmitWrapper(self, event):
         self.stockTableIndustryCompareActAckSignal.emit(event)
-
+    #添加item 行业比较
     def _stockTableIndustryCompareActAckHandler(self, event):
         if self is not event.data['self']:
             return
@@ -545,7 +545,7 @@ class DyStockTableWidget(DyStatsTableWidget):
         event.data['args'] = args
 
         self._eventEngine.put(event)
-
+    #对应wrapper
     def _stockTableAddColumnsActAckSignalEmitWrapper(self, event):
         self.stockTableAddColumnsActAckSignal.emit(event)
 
@@ -643,9 +643,9 @@ class DyStockTableWidget(DyStatsTableWidget):
         self._curActionOngoing = True
         t = threading.Thread(target=_func, args=(self, dateCodeList, data))
         t.start()
-
+    #给这个表格添加列以及信息
     def _stockTableAddColumnsActAckHandler(self, event):
-        if self is not event.data['self']:
+        if self is not event.data['self']:#确认上下文一致
             return
 
         colNames, colData = event.data['args']
@@ -1241,7 +1241,7 @@ class DyStockTableWidget(DyStatsTableWidget):
 
     def setBaseDate(self, baseDate):
         self._baseDate = baseDate
-
+    # 添加股票
     def appendStocks(self, rows, header=None, autoForegroundColName=None, new=False):
         if header is not None:
             self.setColNames(header)

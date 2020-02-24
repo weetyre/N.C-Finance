@@ -1,7 +1,7 @@
 from .DyStockStopMode import *
 from ...DyStockTradeCommon import *
 
-
+#止盈均线
 class DyStockStopProfitMaMode(DyStockStopMode):
     
     profitRunningPnlRatio = 10
@@ -19,7 +19,7 @@ class DyStockStopProfitMaMode(DyStockStopMode):
 
     def _curInit(self):
         self._preparedData = {}
-
+    # 当日初始化
     def onOpen(self, date):
 
         self._curInit()
@@ -46,7 +46,7 @@ class DyStockStopProfitMaMode(DyStockStopMode):
         if code not in self._accountManager.curPos: return False
 
         closes = self._preparedData[code]
-
+        # 证明已经前复权
         if tick.preClose == closes[-1]:
             return True
 
@@ -56,11 +56,11 @@ class DyStockStopProfitMaMode(DyStockStopMode):
         # 价格
         closes = list(map(lambda x,y:x*y, closes, [adjFactor]*len(closes)))
         closes[-1] = tick.preClose # 浮点数的精度问题
-
+        # 复权完成
         self._preparedData[code] = closes
 
         return True
-
+    # 只盈
     def _stopProfit(self, code, tick):
         ma = (sum(self._preparedData[code]) + tick.price)/self._ma
 
@@ -68,13 +68,13 @@ class DyStockStopProfitMaMode(DyStockStopMode):
 
         if pos.maxPnlRatio > self.profitRunningPnlRatio and tick.price < ma:
             self._accountManager.closePos(tick.datetime, code, getattr(tick, DyStockTradeCommon.sellPrice), DyStockSellReason.stopProfit, tickOrBar=tick)
-
+    
     def onTicks(self, ticks):
         for code, pos in self._accountManager.curPos.items():
             tick = ticks.get(code)
             if tick is None:
                 continue
-
+            # 在 '14:55:00' 后
             if tick.time < self._tradeStartTime:
                 return
 

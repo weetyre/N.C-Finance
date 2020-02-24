@@ -8,7 +8,7 @@ from ..Gateway.DyStockDataGateway import *
 from .Common.DyStockDataCommonEngine import *
 from DyCommon.DyCommon import *
 
-
+# 这个类得作用就是把请求事件放入引擎
 class DyStockDataTicksEngine(object):
     """
         从新浪获取股票（基金）的分笔数据
@@ -16,7 +16,7 @@ class DyStockDataTicksEngine(object):
         !!!由于新浪会有无效历史分笔数据，所以分笔数据的更新依赖日线数据更新。也就是说要先更新日线数据，然后再更新分笔数据。
     """
 
-    batchSize = DyStockDataEventHandType.stockHistTicksHandNbr
+    batchSize = DyStockDataEventHandType.stockHistTicksHandNbr # 5
     shiftWindowSize = 1
 
     def __init__(self, eventEngine, daysEngine, mongoDbEngine, gateway, info, registerEvent=True):
@@ -35,8 +35,8 @@ class DyStockDataTicksEngine(object):
         self._codeDaysDf = {} # 股票的分笔对应的日线数据, {code: day DF}
 
         # counts for Ui show
-        self._inserted2DbCount = 0 # increased count
-        self._noDataCount = 0 # increased count
+        self._inserted2DbCount = 0 # increased count 插入到数据库计数
+        self._noDataCount = 0 # increased count 没有数据计数
 
         # sending window related, which is used for controlling sending ticks' request to Gateway
         self._windowSize = 0
@@ -45,26 +45,27 @@ class DyStockDataTicksEngine(object):
 
         if registerEvent:
             self._registerEvent()
-
+    #初始化窗口大小
     def _initWindow(self, codes):
         self._windowSize = 0
         self._windowCursor = 0
 
         # init
-        self._totalWindowData = codes
+        self._totalWindowData = codes # 为要获取数据的对数 [(code, date)]
 
         self._increaseWindowSize(self.batchSize)
-
+    #增加窗口大小，默认大小为1
     def _increaseWindowSize(self, size=1):
         windowData = self._totalWindowData[self._windowCursor : self._windowCursor + size]
 
-        self._windowSize += len(windowData)
-        self._windowCursor += len(windowData)
+        self._windowSize += len(windowData) # 更新窗口大小，刚才减了1
+        self._windowCursor += len(windowData)# 更新当前的指针位置，窗口的最后一个数据之后的位置
         
-        # send to Gateway by round robin
+        # send to Gateway by round robin 
+        # 轮询调度算法的原理是每一次把来自用户的请求轮流分配给内部中的服务器，从1开始，直到N(内部服务器个数)，然后重新开始循环。
         for i, (code, date) in enumerate(windowData, 1):
-            self._sendTicksReq(code, date, self._windowCursor - i)
-
+            self._sendTicksReq(code, date, self._windowCursor - i) # 继续从5开始更新
+    #更新窗口，具体操作为，
     def _updateWindow(self):
         assert(self._windowSize > 0)
 
@@ -82,11 +83,11 @@ class DyStockDataTicksEngine(object):
 
         # Note: To get good Gateway throughput, size can be more than 1. factor * @stockHistTicksHandNbr is a good choice.
         # Note: Don't forget intial number of requests already sent to Gateway.
-        self._increaseWindowSize(self.shiftWindowSize)
-
+        self._increaseWindowSize(self.shiftWindowSize) # 1 
+    #留下待开发
     def autoUpdateTickData(self):
         pass
-
+    #初始化进度条，请求数量(code, date)的对数，一对就是一笔数据
     def _initProgress(self, totalReqNbr):
         self._info.print('总共{0}笔Ticks数据需要更新...'.format(totalReqNbr))
 
@@ -98,22 +99,22 @@ class DyStockDataTicksEngine(object):
             
             # put finish event
             self._eventEngine.put(DyEvent(DyEventType.finish))
-
+    #打印最后的结果
     def _printCounts(self):
         self._info.print('{0}笔Ticks插入到数据库'.format(self._inserted2DbCount))
         self._info.print('由于股票停牌或者没有上市, {0}笔Ticks没有数据'.format(self._noDataCount))
-
+    #
     def _updateProgress(self):
         
         self._progress.update()
-
+        #只要进入这个结构，就意味着完成了
         if self._progress.totalReqCount == 0: # if 0, always set 100% without considering total request nbr
             if not self._isStopped: # Note: if stopped, finish event no need to be sent.
                 self._printCounts()
 
                 # put finish event
                 self._eventEngine.put(DyEvent(DyEventType.finish))
-
+    #
     def _insert2Db(self, code, date, data):
         if self._mongoDbEngine.insertTicks(code, date, data): # insert into DB successfully
             # count firstly
@@ -132,7 +133,7 @@ class DyStockDataTicksEngine(object):
             event.data = DyStockHistTicksAckData(code, date, data)
 
             self._eventEngine.put(event)
-
+    #过期函数不再使用
     def _getTicksNotInDb(self, startDate, endDate, codes):
         """
             过期函数，被@_getTicksByDays替换。
@@ -160,7 +161,7 @@ class DyStockDataTicksEngine(object):
             self._progress.update()
 
         return codes
-
+    #
     def _loadCommon(self, startDate, endDate, codes=None):
         commonEngine = DyStockDataCommonEngine(self._mongoDbEngine, self._gateway, self._info)
         if not commonEngine.load([startDate, endDate], codes=codes):
@@ -170,7 +171,7 @@ class DyStockDataTicksEngine(object):
         tdays = commonEngine.getTradeDays(startDate, endDate)
 
         return stockCodes, tdays
-
+    #
     def _getTicksByDays(self, startDate, endDate, codes=None):
         """ 根据日线数据获取数据库里不存在的分笔数据 """
 
@@ -198,7 +199,7 @@ class DyStockDataTicksEngine(object):
             self._progress.update()
 
         return codes
-
+    #
     def _deleteInvalidTicksByDays(self, startDate, endDate):
         """ 根据日线数据删除数据库里不应该存在的分笔数据
             新浪有时会含有不存在的分笔数据
@@ -232,7 +233,7 @@ class DyStockDataTicksEngine(object):
         self._info.print('总共删除{0}个无效Ticks数据'.format(deleteCount), DyLogData.ind)
 
         return True
-
+    #
     def _getTicks(self, codes):
         """ request Gateway to get ticks
             @codes: [(code, date)]
@@ -244,7 +245,7 @@ class DyStockDataTicksEngine(object):
         self._inserted2DbCount = 0
         self._noDataCount = 0
 
-        # detect data sources 2018.7.21
+        # detect data sources 
         self._detectDataSources(codes)
 
         # init progress
@@ -252,13 +253,13 @@ class DyStockDataTicksEngine(object):
 
         # init sending window
         self._initWindow(codes)
-
+    #
     def _updateTicks(self, startDate, endDate, codes):
         """ only update ticks in days database but not in DB.
             That means you should update days data firslty, and then update ticks data.
             Otherwise, nothing will be updated for ticks data.
         """
-        # 2016.10.30, replace @_getTicksNotInDb
+        # replace @_getTicksNotInDb
         codes = self._getTicksByDays(startDate, endDate, codes)
         if codes is None:
             self._eventEngine.put(DyEvent(DyEventType.fail))
@@ -266,7 +267,7 @@ class DyStockDataTicksEngine(object):
 
         # start getting ticks from Gateway
         self._getTicks(codes)
-
+    #校验历史分笔数据
     def _verifyTicks(self, startDate, endDate, verifyMissing=True, verifyInvalid=True):
         """ verify ticks according to Days data """
         # 先校验无效历史分笔数据
@@ -292,15 +293,15 @@ class DyStockDataTicksEngine(object):
             self._getTicks(codes)
         else:
             self._eventEngine.put(DyEvent(DyEventType.finish))
-
-    def _sendTicksReq(self, code, date, reqCount):
-        reqHand = reqCount % DyStockDataEventHandType.stockHistTicksHandNbr
+    #每一个线程处理一个股票的请求（采用窗口滑动的方法）
+    def _sendTicksReq(self, code, date, reqCount):#代码 日期 第几个请求（如果线程最大为5，那最大请求编号应该为4）
+        reqHand = reqCount % DyStockDataEventHandType.stockHistTicksHandNbr #求算法余数（0-4）
 
         event = DyEvent(DyEventType.stockHistTicksReq + str(reqHand))
-        event.data = DyStockHistTicksReqData(code, date)
+        event.data = DyStockHistTicksReqData(code, date) # 生成一个数据请求类
 
         self._eventEngine.put(event)
-
+    #股票历史数据确认句柄
     def _stockHistTicksAckHandler(self, event):
         """ handle ticks received from Gateway
             2 cases successful:
@@ -331,25 +332,25 @@ class DyStockDataTicksEngine(object):
 
         else: # get ticks successfully, and then insert into DB
             self._insert2Db(code, date, data)
-
+    #
     def _updateStockHistTicksHandler(self, event):
         codes = event.data['codes'] if 'codes' in event.data else None
 
         self._updateTicks(event.data['startDate'], event.data['endDate'], codes)
-
+    #
     def _verifyStockHistTicksHandler(self, event):
         self._verifyTicks(event.data['startDate'], event.data['endDate'], event.data['verifyMissing'], event.data['verifyInvalid'])
-
+    #停止请求
     def _stopReqHandler(self, event):
         self._isStopped = True
-
+    #
     def _registerEvent(self):
-        self._eventEngine.register(DyEventType.updateStockHistTicks, self._updateStockHistTicksHandler, DyStockDataEventHandType.ticksEngine)
+        self._eventEngine.register(DyEventType.updateStockHistTicks, self._updateStockHistTicksHandler, DyStockDataEventHandType.ticksEngine) #更新股票历史分笔数据
         self._eventEngine.register(DyEventType.stockHistTicksAck, self._stockHistTicksAckHandler, DyStockDataEventHandType.ticksEngine)
         self._eventEngine.register(DyEventType.stopUpdateStockHistTicksReq, self._stopReqHandler, DyStockDataEventHandType.ticksEngine)
         self._eventEngine.register(DyEventType.verifyStockHistTicks, self._verifyStockHistTicksHandler, DyStockDataEventHandType.ticksEngine)
-        self._eventEngine.register(DyEventType.stopVerifyStockHistTicksReq, self._stopReqHandler, DyStockDataEventHandType.ticksEngine)
-
+        self._eventEngine.register(DyEventType.stopVerifyStockHistTicksReq, self._stopReqHandler, DyStockDataEventHandType.ticksEngine) #停止请求
+    #通过二分法，快速查找有数据的第一天（相对于日线数据给予的交易日数据）
     def _detectDataSource(self, tdays, func, pause):
         """
             binary algorithm
@@ -361,7 +362,7 @@ class DyStockDataTicksEngine(object):
         self._progress.init(math.ceil(math.log2(len(tdays))) + 1) # roughly
 
         startDate = ''
-        start, end = 0, len(tdays) - 1
+        start, end = 0, len(tdays) - 1 # 开始和结束
         while start <= end:
             mid = (start + end)//2
             try:
@@ -377,11 +378,11 @@ class DyStockDataTicksEngine(object):
                 start = mid + 1
             else:
                 end = mid - 1
-                startDate = tdays[mid]
+                startDate = tdays[mid] # end 越来越小，mid就会越来越前，最终探索出最开始得一天的数据
         
         self._progress.init(0) # done
         return startDate
-
+    #探测交易天数
     def _detectTdays(self, codes):
         # get tdays
         tdays = set()
@@ -389,7 +390,7 @@ class DyStockDataTicksEngine(object):
             tdays.add(date)
 
         return sorted(tdays)
-        
+    #
     def _detectDataSources(self, codes):
         """
             探测腾讯，新浪什么时候提供开始提供分笔数据
@@ -409,7 +410,7 @@ class DyStockDataTicksEngine(object):
 
         # detect
         dataSources = ( # (func, pause)
-            ('腾讯', DyStockDataTicksGateway._getTickDataFromTencent, 0),
+            ('腾讯', DyStockDataTicksGateway._getTickDataFromTencent, 0),# 从腾讯接口获取的数据
         )
 
         dataSoureDetectData = {}
@@ -426,7 +427,7 @@ class DyStockDataTicksEngine(object):
                 self._info.print('{}从{}开始提供个股(基金)历史分笔数据'.format(source, startDate))
         
         # set
-        DyStockDataTicksGateway.setDataSourceStartDate(dataSoureDetectData)
+        DyStockDataTicksGateway.setDataSourceStartDate(dataSoureDetectData) # 设置数据源的名字以及开始日期
 
     # -------------------- 公共接口 --------------------
     def loadCode(self, code, date):
@@ -455,22 +456,22 @@ class DyStockDataTicksEngine(object):
         df = self._codeTicksDf[code]
 
         if adj and not self._codeTicksAdj.get(code, False): # 前复权 and 还没有前复权过
-
+            #设置已经前复权过
             self._codeTicksAdj[code] = True
 
             # get latest adjFactor
             latestAdjFactor = self._mongoDbEngine.getAdjFactor(code, datetime.now().strftime("%Y-%m-%d"))
 
             if code in self._codeDaysDf: # 历史复权因子已经载入, 也就是通过@loadCodeN载入Tick数据
-                adjFactor = self._codeDaysDf[code]['adjfactor']
-
+                adjFactor = self._codeDaysDf[code]['adjfactor'] # 一列不同得复权因子
+                #获取对应日期开始进行前复权
                 adjFactorIndex = [date.strftime("%Y-%m-%d") for date in adjFactor.index]
                 adjFactors = adjFactor.values.tolist()
                 
                 # 复权因子扩散到对应的每个Tick
                 adjFactor = []
                 for date, factor in zip(adjFactorIndex, adjFactors):
-                    size = df[date:date].shape[0]
+                    size = df[date:date].shape[0]#size 不止一个
                     adjFactor.extend(size * [factor])
 
                     if size == 0:
@@ -481,7 +482,7 @@ class DyStockDataTicksEngine(object):
 
             else: # get this day adjFactor
                 adjFactor = self._mongoDbEngine.getAdjFactor(code, df.index[0].strftime("%Y-%m-%d"))
-
+            #进行前复权算法
             df[['price']] = df[['price']]*(adjFactor / latestAdjFactor)
             df[['volume']] = df[['volume']]*(latestAdjFactor / adjFactor)
 
@@ -499,7 +500,7 @@ class DyStockDataTicksEngine(object):
             df = dfDict
 
         return df
-
+    #
     def loadCodeN(self, code, dates):
         """
             载入指定股票的一段连续日期的Ticks
@@ -536,7 +537,7 @@ class DyStockDataTicksEngine(object):
         self._codeDaysDf[code] = daysDf
 
         return True
-
+    #
     def getDays(self, code):
         """
             得到股票载入ticks数据对应的交易日
@@ -545,14 +546,14 @@ class DyStockDataTicksEngine(object):
         if code not in self._codeDaysDf: return None
 
         return [date.strftime("%Y-%m-%d") for date in self._codeDaysDf[code].index]
-
+    #
     def getDaysDataFrame(self, code):
         """
             得到股票载入ticks数据对应的日线数据
             只在调用@loadCodeN后有效
         """
         return self._codeDaysDf[code] if code in self._codeDaysDf else None
-
+    #
     def getCodeName(self, code):
         """
             得到股票名称

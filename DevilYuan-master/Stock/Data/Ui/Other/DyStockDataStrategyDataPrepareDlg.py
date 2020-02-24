@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 from DyCommon.Ui.DyTreeWidget import *
 from ....Trade.Ui.Basic.DyStockTradeStrategyWidget import * 
 
-
+#
 class DyStockDataStrategyDataPrepareDlg(QDialog):
     """ 为交易策略提供准备数据, 所以策略配置也是从交易策略窗口读取
     """
@@ -16,40 +16,40 @@ class DyStockDataStrategyDataPrepareDlg(QDialog):
         self._data = data
 
         self._initUi()
-
-    def _parseFields(self, fields):
+    #
+    def _parseFields(self, fields):#[[strategyCls],[.]..]
         if isinstance(fields, list):
             newFields = []
 
             for field in fields:
                 ret = self._parseFields(field)
 
-                if not ((not ret) or ret == '运行' or ret == '监控'): # filter
+                if not ((not ret) or ret == '运行' or ret == '监控'): # filter, 有值，且不是运行或者是监控
                     newFields.append(ret)
 
             return newFields
         else:
-            return fields
-
-    def _transform(self, fields):
+            return fields# 这是为了递归使用
+    #
+    def _transform(self, fields):#[strategyCls]
         newFields = []
         for field in fields:
             if isinstance(field, list):
                 newFields.append(self._transform(field))
             else:
-                if hasattr(field,  'chName'):
+                if hasattr(field,  'chName'):# 获得中文名
                     newFields.append(field.chName)
-                    self._strategies[field.chName] = field
+                    self._strategies[field.chName] = field # 中文名和类映射
                 else:
                     newFields.append(field)
 
-        return newFields
-
+        return newFields# [策略中文名]
+    #
     def _getFields(self):
         fields = self._parseFields(DyStockTradeStrategyWidget.strategyFields)
 
-        return self._transform(fields)
-
+        return self._transform(fields) # [策略中文名]
+    #
     def _initUi(self):
         self.setWindowTitle('生成策略准备数据')
  
@@ -88,7 +88,7 @@ class DyStockDataStrategyDataPrepareDlg(QDialog):
            QMessageBox.warning(self, '错误', '没有选择策略!')
            return
 
-        self._data['classes'] = [self._strategies[cls] for cls in clsNames]
+        self._data['classes'] = [self._strategies[cls] for cls in clsNames] # 中文名和类的映射
         self._data['date'] = self._dateLineEdit.text()
 
         self.accept()

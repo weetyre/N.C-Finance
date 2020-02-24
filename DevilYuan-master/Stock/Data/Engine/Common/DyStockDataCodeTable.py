@@ -32,35 +32,35 @@ class DyStockDataCodeTable:
         self.NewName_CodeNameDict = {}
         self.NewCode_CodeNameDict = {}
         self.Same_CodeNameDict = {}
-
+    #上证指数
     @property
     def shIndex(self):
         return DyStockCommon.shIndex
-
+    #深证成指
     @property
     def szIndex(self):
         return DyStockCommon.szIndex
-
+    #创业板指
     @property
     def cybIndex(self):
         return DyStockCommon.cybIndex
-
+    #中小板指
     @property
     def zxbIndex(self):
         return DyStockCommon.zxbIndex
-
+    #
     @property
     def etf50(self):
         return DyStockCommon.etf50
-
+    #
     @property
     def etf300(self):
         return DyStockCommon.etf300
-
+    #
     @property
     def etf500(self):
         return DyStockCommon.etf500
-
+    #
     @property
     def stockCodes(self):
         return self._stockCodesTable
@@ -76,7 +76,7 @@ class DyStockDataCodeTable:
     @property
     def stockSectors(self):
         return self._sectorCodesTable
-
+    #返回指数基金表
     @property
     def stockCodesFunds(self):
         return dict(self.stockCodes, **self.stockFunds)
@@ -84,7 +84,7 @@ class DyStockDataCodeTable:
     @property
     def stockAllCodesFunds(self):
         return dict(self.stockAllCodes, **self.stockFunds)
-
+    #
     @property
     def stockAllCodes(self):
         """
@@ -98,11 +98,11 @@ class DyStockDataCodeTable:
             大盘指数，个股，基金，板块指数
         """
         return dict(self.stockAllCodesFunds, **self.stockSectors)
-
+    #板块，以及指数
     @property
     def stockIndexesSectors(self):
         return dict(self.stockSectors, **DyStockCommon.indexes)
-
+    #获取指数股票代码，字典形式返回
     def getIndexStockCodes(self, index=None):
         if index is None:
             return self.stockCodes
@@ -113,14 +113,14 @@ class DyStockDataCodeTable:
                 codes[code] = name
 
         return codes
-
+    #通过名字获取代码
     def _getCodeByName(self, name):
         for code, name_ in self.stockAllCodesFunds.items():
             if name_ == name:
                 return code
 
         return None
-
+    #代码获取完整的股票代码
     def getCode(self, name):
         try:
             int(name[0])
@@ -129,13 +129,13 @@ class DyStockDataCodeTable:
                 return name + '.SH' if name[0] in ['6', '5'] else name + '.SZ'
             else:
                 return name.upper() # Dy format
-
+        #中文获取
         except Exception as ex:
             # chinese
             return self._getCodeByName(name)
 
         return None
-
+    #获取指数
     def getIndex(self, code):
         if code[-2:] == 'SH': return self.shIndex
 
@@ -146,7 +146,7 @@ class DyStockDataCodeTable:
 
         assert(0)
         return None
-
+    #更新股票名字，以及记载股票变换，以及新的股票
     def _setStockCodes(self, code, name):
         if code in self._stockCodesTable:
             if name == self._stockCodesTable[code]:
@@ -154,7 +154,7 @@ class DyStockDataCodeTable:
             else:
                 self.NewName_CodeNameDict[code] = self._stockCodesTable[code] + '->' + name
                 self._stockCodesTable[code] = name
-        else:
+        else:#否则就是新的股票
             self.NewCode_CodeNameDict[code] = name
             self._stockCodesTable[code] = name
 
@@ -163,7 +163,7 @@ class DyStockDataCodeTable:
 
         if len(self.Same_CodeNameDict) == len(self._stockCodesTable):
             return None, None, None
-
+        #证明现在还没有退市的股票
         if ( len(self.Same_CodeNameDict) + len(self.NewName_CodeNameDict) + len(self.NewCode_CodeNameDict) ) == len(self._stockCodesTable):
             return self.NewCode_CodeNameDict, self.NewName_CodeNameDict, None
 
@@ -182,7 +182,7 @@ class DyStockDataCodeTable:
         for code in exit: del self._stockCodesTable[code]
 
         return self.NewCode_CodeNameDict, self.NewName_CodeNameDict, exit
-
+    #移除指数
     def _removeIndexes(self, codes):
         if codes:
             for index in self.stockIndexes:
@@ -190,7 +190,7 @@ class DyStockDataCodeTable:
                     codes.remove(index)
                 except Exception as ex:
                     pass
-
+    #移除板块，顺便加到板块表里
     def _removeSectors(self, codes):
         if codes is None:
             self._sectorCodesTable = {}
@@ -203,7 +203,7 @@ class DyStockDataCodeTable:
                     self._sectorCodesTable[sector] = DyStockCommon.sectors[sector]
                 except Exception as ex:
                     pass
-
+    #移除基金顺便加到基金表里
     def _removeFunds(self, codes):
         if codes is None:
             self._fundCodesTable = copy.copy(DyStockCommon.funds)
@@ -216,7 +216,7 @@ class DyStockDataCodeTable:
                     self._fundCodesTable[fund] = DyStockCommon.funds[fund]
                 except Exception as ex:
                     pass
-
+    #载入股票代码表（从数据库）
     def load(self, codes=None):
         """
             indexes are always loaded by default
@@ -234,7 +234,7 @@ class DyStockDataCodeTable:
         codes = copy.copy(codes)
 
         # 大盘指数不需要载入
-        self._removeIndexes(codes)
+        self._removeIndexes(codes)#因为默认载入，所以无需额外在载入
 
         # 板块代码不需要从数据库载入
         self._removeSectors(codes)
@@ -252,7 +252,7 @@ class DyStockDataCodeTable:
 
         self._info.print('股票代码表载入完成')
         return True
-
+    #更新股票代码到数据库
     def _update2Db(self, codes):
 
         # convert to MongoDB format
@@ -260,7 +260,8 @@ class DyStockDataCodeTable:
 
         # update into DB
         return self._mongoDbEngine.updateStockCodes(codesForDb)
-
+    
+    #从网关，跟新到数据库
     def _set(self, codes):
         """
             set codes gotten from Gateway to DB
@@ -275,14 +276,15 @@ class DyStockDataCodeTable:
         if newCode or newName:
             newNameTemp = {code: name[name.rfind('->') + 2:] for code, name in newName.items()}
 
-            if not self._update2Db(dict(newCode, **newNameTemp)):
+            if not self._update2Db(dict(newCode, **newNameTemp)):#
                 return False
 
         # print updated result
         self._print(newCode, newName, exit)
 
         return True
-
+    
+    #更新数据库股票代码表
     def update(self):
         self._info.print('开始更新股票代码表...')
 
@@ -302,7 +304,7 @@ class DyStockDataCodeTable:
 
         self._info.print('股票代码表更新完成')
         return True
-
+    #打印信息，新加，更名，以及退市股
     def _print(self, newCode, newName, exit):
         if not (newCode or newName or exit):
             self._info.print("股票相同")

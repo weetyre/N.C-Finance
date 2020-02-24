@@ -3,7 +3,7 @@ import math
 from .DyStockStopMode import *
 from ...DyStockTradeCommon import *
 
-
+# 阶梯止损模式
 class DyStockStopLossStepMode(DyStockStopMode):
     
     def __init__(self, accountManager, initSLM=0.9, step=0.1, increment=0.09):
@@ -35,7 +35,7 @@ class DyStockStopLossStepMode(DyStockStopMode):
             tick = ticks.get(code)
             if tick is None:
                 continue
-
+            # 计算止损比例
             currSL = self._initSLM * (1 + self._increment)**int((math.log(pos.high/pos.cost)/math.log(1 + self._step)))
 
             if tick.price < pos.cost*currSL:

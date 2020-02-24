@@ -4,7 +4,7 @@ from ....Common.DyStockCommon import *
 
 class DyStockDataSectorCodeTable(object):
     """
-        按日期的板块成份股票代码表
+        按日期的板块成份股票代码表(r)
         除了数据更新到数据库外，板块的成份股代码表最终还是要通过DyStockDataCodeTable载入
     """
 

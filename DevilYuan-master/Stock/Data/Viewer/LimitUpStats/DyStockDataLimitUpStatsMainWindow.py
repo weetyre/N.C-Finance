@@ -4,7 +4,7 @@ from DyCommon.Ui.DyBasicMainWindow import *
 from DyCommon.Ui.DyDataFrameTableWidget import *
 from ....Common.DyStockCommon import *
 
-
+#封版率统计
 class DyStockDataLimitUpStatsMainWindow(DyBasicMainWindow):
     name = 'DyStockDataLimitUpStatsMainWindow'
 
