@@ -137,14 +137,14 @@ class DyStockPos:
         self.holdingPeriod += 1
 
         return True
-    #
+    ##
     def _processAdj(self, tick):
         # 回测时@self.preClose不是None，不考虑首日开盘的股票。
-        # 实盘时，持仓的同步则由Broker驱动。
+        # 实盘时，持仓的同步则由Broker驱动。第一次该股票是持仓是空时，是没有open,就是默认none
         if self.preClose is None: # 在调用 onopen 的时候就已经赋值了，调用days数据库获取前日收盘价
             return
         # 已同步的话不用除权
-        if self.sync:
+        if self.sync:#
             return
 
         assert tick.preClose is not None
@@ -178,7 +178,7 @@ class DyStockPos:
         self._processAdj(tick)
         # 更新一系列信息
         self._updatePrice(tick.price, tick.high, tick.low)
-    #
+    # 处理前复权以及更新当前持仓相关价格指标
     def onBar(self, bar):
         self.onTick(bar)
     #
@@ -188,7 +188,7 @@ class DyStockPos:
 
         self.closeHigh = self.price if self.closeHigh is None else max(self.price, self.closeHigh)
     #
-    @classmethod
+    @classmethod# 恢复昨日持仓，给cta策略用
     def restorePos(cls, pos, strategyCls=None):
         """
             根据磁盘的持仓，创建出一个持仓实例

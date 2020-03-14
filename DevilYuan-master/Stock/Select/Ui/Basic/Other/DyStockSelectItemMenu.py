@@ -11,7 +11,7 @@ from EventEngine.DyEvent import *
 from .....Common.Ui.Deal.DyStockDealDetailsMainWindow import *
 from ....Strategy.Stats.DySS_Correlation import *
 
-
+# 股票选股item菜单
 class DyStockSelectItemMenu(object):
 
     def __init__(self, interface):
@@ -29,15 +29,15 @@ class DyStockSelectItemMenu(object):
         self._browsers = []
 
         self._initMenu()
-
+    # 初始化策略菜单，主要是正对相关性策略
     def _initStrategyMenu(self):
-        if self._interface.strategyName == DySS_Correlation.chName:
+        if self._interface.strategyName == DySS_Correlation.chName:# 如果是相关性策略，则进入下述内容，
             # 创建操作
             scatterChartAction = QAction('散列图', self._interface)
             scatterChartAction.triggered.connect(self._scatterChartAct)
 
             self._interface.menu.addAction(scatterChartAction)
-
+    # 初始化菜单
     def _initMenu(self):
         menu = self._interface.menu
 
@@ -126,9 +126,9 @@ class DyStockSelectItemMenu(object):
                 break
 
         self._dataViewer.plotDealsDist(code, date, n)
-
+    # 分时图
     def _timeShareChartAct(self):
-        code, date = self._interface.getCodeDate()
+        code, date = self._interface.getCodeDate()# 策略回归周期结果的这个类
         if code is None: return
 
         # get triggered action
@@ -145,22 +145,22 @@ class DyStockSelectItemMenu(object):
                 break
 
         self._dataViewer.plotTimeShareChart(code, date, n)
-
+    # 散列图
     def _scatterChartAct(self):
-        target, code, date, n = self._interface.getTargetCodeDateN()
+        target, code, date, n = self._interface.getTargetCodeDateN()# 跟哪个目标比较，代码，基准日期，向前n
         if target is None: return
 
-        self._dataViewer.plotScatterChart(target, code, date, n)
-
+        self._dataViewer.plotScatterChart(target, code, date, n)# 绘制散列图
+    # 成交明细
     def _dealDetailsAct(self):
         code, date = self._interface.getCodeDate()
         if code is None: return
 
         window = DyStockDealDetailsMainWindow(self._dataViewer, self._interface)
-        window.set(code, date)
+        window.set(code, date) # 设置代码以及日期
 
-        window.show()
-
+        window.show()# 展示窗口
+    # 个股资料
     def _stockInfoAct(self):
         code, name = self._interface.getCodeName()
         if code is None: return
@@ -179,8 +179,8 @@ class DyStockSelectItemMenu(object):
 
         browser.show()
 
-        self._browsers.append(browser)
-
+        self._browsers.append(browser)# 打开一个浏览器
+    # 行业对比
     def _industryCompareAct(self):
         code, date = self._interface.getCodeDate()
         if code is None: return
@@ -196,7 +196,7 @@ class DyStockSelectItemMenu(object):
         event.data['name'] = name
         event.data['widget'] = self._interface
         event.data['baseDate'] = date
-        event.data.update(data)
+        event.data.update(data)# 跟新现有数据，data是从对话框获取的
 
         self._interface.eventEngine.put(event)
 
@@ -205,7 +205,7 @@ class DyStockSelectItemMenu(object):
         if code is None: return
 
         self._interface.dataViewer.plotTA(code, [-DyStockCommon.dayKChartPeriodNbr, date, DyStockCommon.dayKChartPeriodNbr])
-
+    # 波动分布
     def _volatilityDistAct(self):
         code, date = self._interface.getCodeDate()
         if code is None: return
@@ -216,10 +216,10 @@ class DyStockSelectItemMenu(object):
         if not DySingleEditDlg(data, '波动分布[{0}]'.format(name), '基准日期[{0}]向前N日(不包含基准日期)'.format(date), 90).exec_():
             return
 
-        self._interface.dataViewer.plotVolatilityDist(code, date, data['data'])
-
+        self._interface.dataViewer.plotVolatilityDist(code, date, data['data'])# 获取了必要的值
+    #  ATR Extreme通道
     def _atrExtremeAct(self):
         code, date = self._interface.getCodeDate()
         if code is None: return
 
-        self._interface.dataViewer.plotAtrExtreme(code, [-DyStockCommon.dayKChartPeriodNbr, date, DyStockCommon.dayKChartPeriodNbr])
+        self._interface.dataViewer.plotAtrExtreme(code, [-DyStockCommon.dayKChartPeriodNbr, date, DyStockCommon.dayKChartPeriodNbr])# 日K线前后交易周期

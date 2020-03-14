@@ -19,7 +19,7 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
         super().__init__(ctaEngine, info, state, strategyParam)# 如果是回测，那么这个CT引擎就是回测CTA引擎
 
         self._curInit()
-
+    #
     def _onOpenConfig(self):
         self._monitoredStocks.extend(self.codes)# 扩充list
     # 模板已经初始化过了，所以自己就不用特殊的初始化了。
@@ -31,7 +31,7 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
         # 当日初始化
         self._curInit(date)
 
-        self._onOpenConfig()
+        self._onOpenConfig()# 加入策略监控数据
 
         return True
     #
@@ -70,16 +70,16 @@ class DyST_BankIntraDaySpread(DyStockCtaTemplate):
         # 刚回测时没有当前持仓
         else:
             increases = {}
-            for code in self.codes:
+            for code in self.codes:# 循环遍历每一个过滤后的股票
                 tick = ticks.get(code) # 
                 if tick is None:
                     continue
-
+                # 这里就贯彻着银行日内差的策略
                 increases[code] = (tick.price - tick.preClose)/tick.preClose*100
 
-            codes = sorted(increases, key=lambda k: increases[k])
+            codes = sorted(increases, key=lambda k: increases[k]) # 更具日内差，升序排列，最大的放后面
             if codes:
-                self.buyByRatio(ticks.get(codes[0]), 50, self.cAccountLeftCashRatio)
+                self.buyByRatio(ticks.get(codes[0]), 50, self.cAccountLeftCashRatio)# 买入差别最小的
     # 
     def onBars(self, bars):
         self.onTicks(bars)

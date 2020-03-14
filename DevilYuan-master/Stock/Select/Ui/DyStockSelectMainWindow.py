@@ -54,7 +54,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
         # at last, raise log dock widget
         self._dockLog.raise_()
-        
+    #
     def _initCentral(self):
         """ 初始化中心区域 """
         widgetParam, dockParam = self._createDock(DyStockSelectParamWidget, '策略参数', Qt.RightDockWidgetArea)
@@ -66,9 +66,9 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         self._widgetSelectResult, dockSelectResult = self._createDock(DyStockSelectSelectResultWidget, '选股结果', Qt.RightDockWidgetArea, self._mainEngine.eventEngine, widgetParam)
         self._widgetRegressionResult, dockRegressionResult = self._createDock(DyStockSelectRegressionResultWidget, '回归结果', Qt.RightDockWidgetArea, self._mainEngine.eventEngine, widgetParam)
 
-        self.tabifyDockWidget(self._dockLog, dockSelectResult)
+        self.tabifyDockWidget(self._dockLog, dockSelectResult)# 靠到log的旁边
         self.tabifyDockWidget(self._dockLog, dockRegressionResult)
-
+    #
     def _initMenu(self):
         """ 初始化菜单 """
         # 创建菜单
@@ -148,16 +148,16 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         self._testedStocksAction.triggered.connect(self._testedStocks)
         menu.addAction(self._testedStocksAction)
         self._testedStocksAction.setCheckable(True)
-
+    # 选股引擎得异常捕捉
     def _enableSelectEngineExceptionAct(self):
-        DyStockSelectCommon.enableSelectEngineException = self._enableSelectEngineExceptionAction.isChecked()
-
+        DyStockSelectCommon.enableSelectEngineException = self._enableSelectEngineExceptionAction.isChecked()# 类变量
+    # 这是一个测试画图得事件
     def _test(self):
-        event = DyEvent(DyEventType.plotReq)
+        event = DyEvent(DyEventType.plotReq)# 画图请求事件
         event.data['type'] = 'test'
 
         self._mainEngine.eventEngine.put(event)
-
+    # 打开策略结果
     def _openStrategySelectResultAct(self):
         defaultDir = DyCommon.createPath('Stock/User/Save/Strategy/选股')
         fileName, _ = QFileDialog.getOpenFileName(None, "打开策略选股/回归结果", defaultDir, "JSON files (*.json)", options=QFileDialog.DontUseNativeDialog)
@@ -165,7 +165,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         # open
         try:
             with open(fileName) as f:
-                data = json.load(f)
+                data = json.load(f)# 载入当前数据
         except Exception:
             return
 
@@ -183,11 +183,11 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
             return
 
         # load
-        if self._widgetSelectResult.load(data, strategyCls):
+        if self._widgetSelectResult.load(data, strategyCls):# 载入并且最大化显示
             return
 
         self._widgetRegressionResult.load(data, strategyCls)
-
+    # 指数连续日线统计
     def _indexConsecutiveDayLineStatsAct(self):
         if self._greenLineStatsAction.isChecked():
             greenLine = True
@@ -197,16 +197,16 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
             self._redLineStatsAction.setChecked(False)
 
         data = {}
-        if not DyDateDlg(data).exec_():
+        if not DyDateDlg(data).exec_():# 获取开始日期以及结束日期的
             return
 
         event = DyEvent(DyEventType.plotReq)
         event.data =  data
         event.data['type'] = 'indexConsecutiveDayLineStats'
-        event.data['greenLine'] = greenLine
+        event.data['greenLine'] = greenLine # TF决定到底统计的是哪一跟线
 
         self._mainEngine.eventEngine.put(event)
-
+    # 封半率统计
     def _limitUpStatsAct(self):
         data = {}
         if not DyDateDlg(data).exec_():
@@ -217,7 +217,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['type'] = 'limitUpStats'
 
         self._mainEngine.eventEngine.put(event)
-
+    # 日内最高价和最低价分布
     def _highLowDistAct(self):
         data = {}
         if not DyDateDlg(data).exec_():
@@ -225,13 +225,13 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
         event = DyEvent(DyEventType.plotReq)
         event.data =  data
-        event.data['type'] = 'highLowDist'
+        event.data['type'] = 'highLowDist'# 画什么图由type指定
 
         self._mainEngine.eventEngine.put(event)
-
+    # 热点分析
     def _focusAnalysisAct(self):
         data = {}
-        if not DyDateDlg(data).exec_():
+        if not DyDateDlg(data).exec_():# 获取日期区间
             return
 
         event = DyEvent(DyEventType.plotReq)
@@ -239,7 +239,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['type'] = 'focusAnalysis'
 
         self._mainEngine.eventEngine.put(event)
-
+    # 杰卡德指数
     def _jaccardIndexAct(self):
         data = {}
         if not DyStockSelectJaccardIndexDlg(data).exec_():
@@ -250,9 +250,9 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['type'] = 'jaccardIndex'
 
         self._mainEngine.eventEngine.put(event)
-
+    # 布林统计
     def _bBandsStats(self):
-        data = {}
+        data = {}# 这是要出的数据
         if not DyStockSelectBBandsStatsDlg(data).exec_():
             return
 
@@ -260,22 +260,22 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data =  data
         event.data['type'] = 'bBandsStats'
 
-        self._mainEngine.eventEngine.put(event)
-
+        self._mainEngine.eventEngine.put(event)# put引擎绘图
+    # 回归进程的数量
     def _setProcessNbr(self):
-        data = {'nbr':DyStockSelectRegressionEngine.periodNbr}
+        data = {'nbr':DyStockSelectRegressionEngine.periodNbr}# 4
         if DyProcessNbrDlg(data, self).exec_():
             DyStockSelectRegressionEngine.periodNbr = data['nbr']
 
             self._mainEngine._info.print('回归进程数设为{0}'.format(data['nbr']), DyLogData.ind)
-
+    # 日K线前后周期数
     def _setDayKChartPeriodNbr(self):
-        data = {'periodNbr': DyStockCommon.dayKChartPeriodNbr}
+        data = {'periodNbr': DyStockCommon.dayKChartPeriodNbr}# 90
         if DyStockSelectDayKChartPeriodDlg(data, self).exec_():
             DyStockCommon.dayKChartPeriodNbr = data['periodNbr']
 
             self._mainEngine._info.print('股票(指数)日K线前后交易日周期设为{0}'.format(data['periodNbr']), DyLogData.ind)
-
+    # 测试股票
     def _testedStocks(self):
         isTested =  self._testedStocksAction.isChecked()
 
@@ -288,11 +288,11 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
                 self._testedStocksAction.setChecked(False)
 
         # put event
-        event = DyEvent(DyEventType.stockSelectTestedCodes)
+        event = DyEvent(DyEventType.stockSelectTestedCodes)# 调试股票事件
         event.data = codes
 
         self._mainEngine.eventEngine.put(event)
-
+    # 股票选股事件put
     def _stockSelect(self):
         strategyCls, param = self._widgetStrategy.getStrategy()
         if strategyCls is None: return
@@ -305,7 +305,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['param'] = param
 
         self._mainEngine.eventEngine.put(event)
-
+    # 未知
     def _stockSelectForTrade(self):
         strategyCls, param = self._widgetStrategy.getStrategy()
         if strategyCls is None: return
@@ -319,7 +319,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['param']['forTrade'] = None
 
         self._mainEngine.eventEngine.put(event)
-
+    # 股票回归得按钮，put股票回归事件
     def _stockRegression(self):
         strategyCls, param = self._widgetStrategy.getStrategy()
         if strategyCls is None: return
@@ -338,7 +338,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         event.data['endDate'] = data['endDate']
 
         self._mainEngine.eventEngine.put(event)
-
+    # 初始化工具栏
     def _initToolBar(self):
         """ 初始化工具栏 """
         # 操作工具栏
@@ -371,12 +371,12 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
         # K线工具栏
         toolBar = self.addToolBar('K线')
-        toolBar.setObjectName('K线')
+        toolBar.setObjectName('K线')# 这种工具栏得名字是不会显示在上面的
 
         # K线周期菜单Action
-        self._kPeriodMenuAction = QAction('K线周期', self)
+        self._kPeriodMenuAction = QAction('K线周期', self)# 后面得self是相关类的意思
         toolBar.addAction(self._kPeriodMenuAction)
-        self._kPeriodMenuAction.triggered.connect(self._kPeriodMenuAct)
+        self._kPeriodMenuAction.triggered.connect(self._kPeriodMenuAct)# 他会弹出来
 
         # K线周期菜单
         self._kPeriodMenu = QMenu(self)
@@ -410,8 +410,8 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
             self._rollingWindowWMenu.addAction(action)
 
             # set default rolling window w
-            if int(action.text()) == DyStockCommon.rollingWindowW:
-                action.setChecked(True)
+            if int(action.text()) == DyStockCommon.rollingWindowW:# 默认4 ，绘制技术分析表的时候用
+                action.setChecked(True)# 如果是默认的，先让此处于已选择的状态
                 self._curRollingWindowWAction = action
                 self._rollingWindowWMenuAction.setText('滑动窗口(w):{0}'.format(DyStockCommon.rollingWindowW))
 
@@ -429,7 +429,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
             action.triggered.connect(self._hsarsAct)
             self._hsarMenu.addAction(action)
 
-            if action.text() == DyStockCommon.hsarMode:
+            if action.text() == DyStockCommon.hsarMode:# 默认极值平均模式，绘制技术分析表用
                 action.setChecked(True)
                 self._curHsarAction = action
                 self._hsarMenuAction.setText('支撑和阻力:{0}'.format(DyStockCommon.hsarMode))
@@ -458,37 +458,37 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
             if int(action.text()) in DyStockCommon.trendLinePeriods:
                 action.setChecked(True)
                 self._trendLinePeriodMenuAction.setText('趋势线周期:{0}'.format(','.join([str(x) for x in DyStockCommon.trendLinePeriods])))
-
+    # k线周期那个东西弹出来
     def _kPeriodMenuAct(self):
         self._kPeriodMenu.popup(QCursor.pos())
-
+    # 趋势线周期
     def _trendLinePeriodMenuAct(self):
         self._trendLinePeriodMenu.popup(QCursor.pos())
-
+    # 滑动窗口弹出来
     def _rollingWindowWMenuAct(self):
         self._rollingWindowWMenu.popup(QCursor.pos())
-
+    # 支撑和阻力弹出来
     def _hsarMenuAct(self):
         self._hsarMenu.popup(QCursor.pos())
-
+    # 改变趋势线周期
     def _trendLinePeriodAct(self):
         periods = []
         for action in self._trendLinePeriodMenu.actions():
             if action.isChecked():
                 periods.append(int(action.text()))
 
-        DyStockCommon.trendLinePeriods = periods
+        DyStockCommon.trendLinePeriods = periods# 改变趋势线周期
         self._trendLinePeriodMenuAction.setText('趋势线周期:{0}'.format(','.join([str(x) for x in DyStockCommon.trendLinePeriods])))
-
+    # 清除所有趋势线周期
     def _trendLinePeriodClearAllAct(self):
         # clear all
         for action in self._trendLinePeriodMenu.actions():
             if action.isChecked():
                 action.setChecked(False)
-
+        # 且改为默认的趋势线周期
         DyStockCommon.trendLinePeriods = []
         self._trendLinePeriodMenuAction.setText('趋势线周期:{0}'.format(','.join([str(x) for x in DyStockCommon.trendLinePeriods])))
-
+    # 点中每一个K线周期的
     def _kPeriodAct(self):
         self._curKPeriodAction.setChecked(False)
 
@@ -496,15 +496,15 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         for action in self._kPeriodMenu.actions():
             if action.isChecked():
                 # 设置K线周期
-                DyStockCommon.dayKChartPeriodNbr = int(action.text())
+                DyStockCommon.dayKChartPeriodNbr = int(action.text())# 设置K线周期
 
                 self._curKPeriodAction = action
-                self._kPeriodMenuAction.setText('K线周期:{0}'.format(DyStockCommon.dayKChartPeriodNbr))
+                self._kPeriodMenuAction.setText('K线周期:{0}'.format(DyStockCommon.dayKChartPeriodNbr))# 设置大的菜单显示
                 break
 
         if not self._curKPeriodAction.isChecked():
-            self._curKPeriodAction.setChecked(True)
-
+            self._curKPeriodAction.setChecked(True)# 保证当前的项被选择
+    # HSAR 的动作函数
     def _hsarsAct(self):
         self._curHsarAction.setChecked(False)
 
@@ -520,7 +520,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
         if not self._curHsarAction.isChecked():
             self._curHsarAction.setChecked(True)
-
+    # 设置对应的滑动窗口
     def _rollingWindowWAct(self):
         self._curRollingWindowWAction.setChecked(False)
 
@@ -536,22 +536,22 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
         if not self._curRollingWindowWAction.isChecked():
             self._curRollingWindowWAction.setChecked(True)
-
+    # 关闭事件
     def closeEvent(self, event):
         """ 关闭事件 """
         self._mainEngine.exit()
 
         return super().closeEvent(event)
-            
+    # 画图确认
     def _plotAckHandler(self, event):
         # unpack
         plot = event.data['plot']
 
         # plot
-        plot(event)
-
+        plot(event)#
+    # 画图确认事件
     def _registerEvent(self):
         """ 注册GUI更新相关的事件监听 """
-        self.signalPlot.connect(self._plotAckHandler)
+        self.signalPlot.connect(self._plotAckHandler)# 主要就是注册得画图事件
 
-        self._mainEngine.eventEngine.register(DyEventType.plotAck, self.signalPlot.emit)
+        self._mainEngine.eventEngine.register(DyEventType.plotAck, self.signalPlot.emit)# 事件类型画图请求

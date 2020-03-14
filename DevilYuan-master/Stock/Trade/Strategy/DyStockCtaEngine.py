@@ -23,7 +23,7 @@ class DyStockCtaEngine(object):
         一个账户可以绑定多个策略，行情推送顺序则由策略启动顺序决定
         Note: !!!所有关于策略和账户的操作只能由stockCtaEngine hand处理
     """
-
+    # 这是账户字典映射
     accountManagerMap = {
                          'yh': DyStockYhAccountManager,
                          'ths': DyStockThsAccountManager,
@@ -39,7 +39,7 @@ class DyStockCtaEngine(object):
                          'simu9': DyStockSimuAccountManager9,
                          }
 
-
+    # 时间状态
     class TimeState:
         nonTrade = 0
         callAuction = 1
@@ -313,7 +313,7 @@ class DyStockCtaEngine(object):
         self._info.print('股票CTA引擎: 账号[{0}]绑定策略[{1}]'.format(self.accountManagerMap[strategyCls.broker].brokerName, strategyCls.chName), DyLogData.ind1)
 
         return True
-
+    #
     def _getAccountManager(self, strategyCls):
         """
             获取指定策略绑定到的账户管理实例
@@ -685,7 +685,7 @@ class DyStockCtaEngine(object):
         # Deal should impact positions, so put UI strategy positions update event
         for strategy in strategies:
             self._updateStrategyPos(strategy)
-
+    # 推送市场强度事件
     def putStockMarketStrengthUpdateEvent(self, strategyCls, time, marketStrengthInfo):
         event = DyEvent(DyEventType.stockMarketStrengthUpdate)
         event.data['class'] = strategyCls
@@ -704,7 +704,7 @@ class DyStockCtaEngine(object):
         event.data = data
 
         self._eventEngine.put(event)
-
+    # 触发策略行情监控事件
     def putStockMarketMonitorUiEvent(self, strategyCls, data=None, newData=False, op=None, signalDetails=None, datetime_=None):
         """
             触发策略行情监控事件(通常用于通知GUI更新)
@@ -975,7 +975,7 @@ class DyStockCtaEngine(object):
             pnl = (price - cost)*volume
 
         return cost, pnlRatio, pnl
-
+    # 委托卖出
     def sell(self, strategyCls, tick, volume, sellReason=None, signalInfo=None, price=None):
         """
             @return: DyStockEntrust object or None
@@ -984,7 +984,7 @@ class DyStockCtaEngine(object):
         code = tick.code
         name = tick.name
         if price is None:
-            price = getattr(tick, strategyCls.sellPrice)
+            price = getattr(tick, strategyCls.sellPrice)# 五档的买盘，因为我卖肯定要有接手的
 
         ret = True
 
@@ -1061,7 +1061,7 @@ class DyStockCtaEngine(object):
 
     def sellByRatio(self, strategy, tick, ratio, ratioMode, sellReason=None, signalInfo=None):
         return DyStockCtaEngineExtra.sellByRatio(self, self._getAccountManager(strategy.__class__), strategy, tick, ratio, ratioMode, sellReason, signalInfo)
-
+    # 获取购买量
     def getBuyVol(self, cash, code, price):
         return DyStockTradeCommon.getBuyVol(cash, code, price)
 
@@ -1072,7 +1072,7 @@ class DyStockCtaEngine(object):
     @property
     def errorDataEngine(self):
         return self._errorDataEngine
-
+    # 回测上下文
     @property
     def backTestingContext(self):
         return None

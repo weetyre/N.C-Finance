@@ -21,10 +21,10 @@ class DyStockBackTestingStrategyEngineProxy(threading.Thread):
         self._childQueues = []
 
         self.start()
-
+    # 就负责往时间引擎里面加东西
     def run(self):
         while True:
-            event = self._queue.get()
+            event = self._queue.get()# 这个——queue 是outqueue
 
             self._eventEngine.put(event)
     #子进程开始回测

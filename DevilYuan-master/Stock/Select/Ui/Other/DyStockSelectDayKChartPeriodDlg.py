@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+# 日k线前后交易日周期
 class DyStockSelectDayKChartPeriodDlg(QDialog):
 
     def __init__(self, data, parent=None):

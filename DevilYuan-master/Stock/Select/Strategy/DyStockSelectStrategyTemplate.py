@@ -52,7 +52,7 @@ class DyStockSelectStrategyTemplate(object):
 
     #---------- 类方法 ----------
     def getAutoColName():
-        return DyStockSelectStrategyTemplate.__baseColNames[1]
+        return DyStockSelectStrategyTemplate.__baseColNames[1]# 当日涨幅
 
     #---------- 只被引擎调用 ----------
     def onPostDaysLoad(self, startDate, baseDate, n=0):

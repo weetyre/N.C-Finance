@@ -58,7 +58,7 @@ class DyTableWidget(QTableWidget):
         self._initItemMenu()
 
         self._initRows()
-
+    # 初始化每行，主要初始化标记项目，以及前景背景色，以及相关
     def _initRows(self):
         self._itemsMap = {} # 由行关键字建立的item的字典, {key: [item]}
 
@@ -131,16 +131,16 @@ class DyTableWidget(QTableWidget):
             self._itemsMap[rowKey].append(None)
 
         self._itemsMap[rowKey][col] = item
-
+    # 获得列的位置
     def _getColPos(self, colName):
         for i in range(self.columnCount()):
-            item = self.horizontalHeaderItem(i)
+            item = self.horizontalHeaderItem(i)# 这是列头的item
 
             if colName == item.text():
                 return i
 
         return None
-
+    # 更新每一个单元格
     def _updateItem(self, row, col, value):
         """
             Update one item, @row and @col can be string or integer. It's gengeral function.
@@ -149,7 +149,7 @@ class DyTableWidget(QTableWidget):
         if isinstance(row, str):
             self._updateItemByRowKey(row, col, value)
         else:
-            self._updateItemByRowPos(row, col, value)
+            self._updateItemByRowPos(row, col, value) # 根据位置来更新
 
     def _updateItemByRowPos(self, row, col, value):
         if isinstance(col, str):
@@ -164,7 +164,7 @@ class DyTableWidget(QTableWidget):
             col = colPos
 
         # now we take it by positions
-        self._updateItemByPos(row, col, value)
+        self._updateItemByPos(row, col, value)# 根据位置来更新
 
     def _getColPosWithCreation(self, colName):
         colPos = self._getColPos(col)
@@ -176,13 +176,13 @@ class DyTableWidget(QTableWidget):
             self.setHorizontalHeaderItem(colPos, item)
 
         return colPos
-
+    # 设置自动前景色
     def _setAutoRowForeground(self, item):
         if self._autoForegroundCol is None:
             return
 
         # ignore 'Org.' column
-        if self.__index and item.column() == 0:
+        if self.__index and item.column() == 0: # 前面是原始插入的行索引包括TF
             return
 
         # get forground of reference item
@@ -237,9 +237,9 @@ class DyTableWidget(QTableWidget):
         # set auto row color
         self._setAutoRowForeground(item)
 
-        if self._enableAutoScroll:
+        if self._enableAutoScroll: # 自动滚动
             self.scrollToItem(item)
-
+    # 快速设置item值
     def _setItemDataFast(self, item, value):
         """
             快速设置Item的值
@@ -313,7 +313,7 @@ class DyTableWidget(QTableWidget):
             self.setItem(row, col, item)
 
         # Should call @setItem firstly, then set data
-        self._setItemData(item, value)
+        self._setItemData(item, value) # 设置那个item的值
 
         return item
         
@@ -326,7 +326,7 @@ class DyTableWidget(QTableWidget):
         if isinstance(indices, tuple):
             row, col = indices
         else:
-            row, col = indices, None # add one row
+            row, col = indices, None # add one row 也就是通过行的索引来更新
 
         # update Org.
         if self.__index:
@@ -413,7 +413,7 @@ class DyTableWidget(QTableWidget):
         if colItem:
             colItem.setText(name)
             self.resizeColumnsToContents()
-
+    # 设置列名，开启索引的话，会新增一行
     def setColNames(self, names=None):
         """ @names:[name1, name2] """
 
@@ -425,10 +425,10 @@ class DyTableWidget(QTableWidget):
         else:
             newNames = names
 
-        self.setColumnCount(len(newNames))
+        self.setColumnCount(len(newNames))# 设置列数
 
-        self.setHorizontalHeaderLabels(newNames)
-        self.resizeColumnsToContents()
+        self.setHorizontalHeaderLabels(newNames)# 设置 头部的标签
+        self.resizeColumnsToContents()# 重新设置大小
 
     def setItemForeground(self, row, col, color):
         if self.__index: col += 1
@@ -691,7 +691,7 @@ class DyTableWidget(QTableWidget):
 
         # highlight
         self._setHighlight(item)
-
+    # 取消所有的标记
     def _mark(self, item):
         if item is None:
             return
@@ -897,7 +897,7 @@ class DyTableWidget(QTableWidget):
 
         for _ in range(rowCount):
             self.removeRow(0)
-
+    # 返回所有值
     def getAll(self):
         """ 以列表方式返回table的所有值，Org.列除外 """
 
@@ -905,9 +905,9 @@ class DyTableWidget(QTableWidget):
         for row in range(self.rowCount()):
             rowItems = []
 
-            colCount = (self.columnCount() - 1) if self.__index else self.columnCount()
+            colCount = (self.columnCount() - 1) if self.__index else self.columnCount()# 删除org列
             for col in range(colCount):
-                rowItems.append(self[row, col])
+                rowItems.append(self[row, col])# 这是核心的添加算法
 
             tableItems.append(rowItems)
 
@@ -1080,7 +1080,7 @@ class DyTableWidget(QTableWidget):
             color = None
 
         return color
-
+    # 获取前景色
     def _getForeground(self, rowData, autoForegroundCol, item):
 
         # 如果@rowData的item个数小于等于@autoForegroundCol
@@ -1088,35 +1088,35 @@ class DyTableWidget(QTableWidget):
         try:
             value = rowData[autoForegroundCol]
 
-            color = self.getForegroundOverride(value)
+            color = self.getForegroundOverride(value) # 根据这个值来确定是红色还是绿色
         except Exception as ex:
             color = None
         
         if color is None:
-            if item.background() == Qt.white:
+            if item.background() == Qt.white:# 如果背景是白的，就是黑色
                 color = Qt.black
 
             else: # for qdarkstyle
                 color = QColor(192, 192, 192)
             
         return color
-
+    # 更新org那一列
     def _updateOrg(self, row):
         if not self.__index: return
 
-        item = self.item(row, 0)
+        item = self.item(row, 0)# 获得item，行索引，以及列索引，更新下一个org一般就是他是没有的
         if item is None:
-            item = DyTableWidgetItem(self._role)
-            self.setItem(row, 0, item)
+            item = DyTableWidgetItem(self._role)# 设置一个item，必须新建一个item
+            self.setItem(row, 0, item)# 先是行索引，后是列索引
 
-            item.setData(self._role, row + 1)
+            item.setData(self._role, row + 1)# 设置那一个编号
 
     def clearAllRows(self):
         self._clearVisualEffects()
 
         self.setRowCount(0)
         self._initRows()
-
+    # 快速批量添加行数据
     def fastAppendRows(self, rows, autoForegroundColName=None, new=False):
         """
             快速批量添加行数据，忽略细节
@@ -1126,52 +1126,52 @@ class DyTableWidget(QTableWidget):
         self.setSortingEnabled(False)
 
         if new:
-            self._clearVisualEffects()
+            self._clearVisualEffects() # 取消了所有的标记
 
-            self.setRowCount(len(rows))
-            rowStart = 0
+            self.setRowCount(len(rows))# 设置行数
+            rowStart = 0 # 初始化行索引
 
             self._initRows()
         else:
-            rowStart = self.rowCount()
-            self.setRowCount(rowStart + len(rows))
+            rowStart = self.rowCount() # 就继续插
+            self.setRowCount(rowStart + len(rows))# 设置行总数
 
         if autoForegroundColName is not None:
-            self._autoForegroundCol = self._getColPos(autoForegroundColName)
+            self._autoForegroundCol = self._getColPos(autoForegroundColName)# 指定前景色关键列
 
             # column position in input raw data(@rows)
             if self._autoForegroundCol is not None:
-                autoForegroundCol = self._autoForegroundCol - 1 if self.__index else self._autoForegroundCol
+                autoForegroundCol = self._autoForegroundCol - 1 if self.__index else self._autoForegroundCol# 这个index是TF，指的是是否开启索引
 
-        offset = 1 if self.__index else 0
+        offset = 1 if self.__index else 0 # 这里会设置刚才的偏移
         item = None
         for row, rowData in enumerate(rows, rowStart):
-            self._updateOrg(row)
+            self._updateOrg(row)# 输入行索引
 
-            for col, value in enumerate(rowData, offset):
+            for col, value in enumerate(rowData, offset):#
                 # create new if not existing
-                item = self.item(row, col)
+                item = self.item(row, col) # 获取一个item，当然是空的
                 if item is None:
                     item = DyTableWidgetItem(self._role)
                     self.setItem(row, col, item)
 
                 # set item data
-                self._setItemDataFast(item, value)
+                self._setItemDataFast(item, value) # 设置值
 
                 # set foreground
                 if autoForegroundColName is not None and self._autoForegroundCol is not None:
                     if col == offset: # only get auto foreground when begining of row
                         color = self._getForeground(rowData, autoForegroundCol, item)
 
-                    item.setForeground(color)
-        
+                    item.setForeground(color)# 设置此item 前景色
+        # 重设值列和行
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
-
+        # 启用分类
         self.setSortingEnabled(True)
 
         if self._enableAutoScroll and item is not None:
-            self.scrollToItem(item)
+            self.scrollToItem(item) # 自动滚动到那一行
 
     def fastAppendColumns(self, columnNames, columnsData):
         """

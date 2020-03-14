@@ -162,7 +162,7 @@ class DyStockDeal:
         self.sellReason = sellReason
         self.signalInfo = signalInfo
 
-
+# 委托单
 class DyStockEntrust:
     """
         股票委托单，只为实盘

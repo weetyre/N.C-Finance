@@ -2,8 +2,8 @@ from ....Strategy.DyStockSelectStrategyTemplate import *
 from .....Common.Ui.Basic.DyStockTableWidget import *
 from ..Dlg.DyStockSelectRefactoryParamsDlg import *
 
-
-class DyStockSelectStrategySelectResultWidget(DyStockTableWidget):
+# 选股策略结果组件，这个是被选股结果组件调用的，主要作用是提供一个供操纵的表格
+class DyStockSelectStrategySelectResultWidget(DyStockTableWidget):# 这个父类主要提供表格的相关操作
 
     def __init__(self, eventEngine, strategyCls, baseDate, paramWidget=None):
         """
@@ -15,15 +15,15 @@ class DyStockSelectStrategySelectResultWidget(DyStockTableWidget):
         super().__init__(eventEngine, name=strategyCls.chName, baseDate=baseDate)
 
         self._paramWidget = paramWidget
-
+    #
     def _initHeaderMenu(self):
-        super()._initHeaderMenu()
+        super()._initHeaderMenu()# 先使用父类的菜单
 
-        self._headerMenu.addSeparator()
+        self._headerMenu.addSeparator()# 加入分隔符
 
         # 策略相关菜单
         menu = self._headerMenu.addMenu('策略相关')
-
+        # 就两个，一个是重构，一个是贝叶斯统计
         action = QAction('重构...', self)
         action.triggered.connect(self._refactoryAct)
         menu.addAction(action)
@@ -69,7 +69,7 @@ class DyStockSelectStrategySelectResultWidget(DyStockTableWidget):
                 code, name = self.getRightClickCodeName()
 
                 self._strategyCls.itemMenu[action.text()](self._dataViewer, self._paramWidget.get(self._strategyCls.chName), code)
-
+    # 添加股票，传入行数据以及表头进行添加
     def appendStocks(self, rows, header, autoForegroundColName=None, new=True):
         if autoForegroundColName is None:
             autoForegroundColName = DyStockSelectStrategyTemplate.getAutoColName()
@@ -116,10 +116,10 @@ class DyStockSelectStrategySelectResultWidget(DyStockTableWidget):
         rows = self._strategyCls.refactory(df, params)
 
         return rows
-
+    # 是否已经重构
     def _hasRefactory(self):
         return hasattr(self._strategyCls, 'refactory')
-
+    # 获得重构参数
     def _getRefactoryParams(self):
         return self._strategyCls.getRefactoryParams()
 

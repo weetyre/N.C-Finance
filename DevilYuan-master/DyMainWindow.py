@@ -12,7 +12,7 @@ import json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtWidgets import QMainWindow, QDialog, QAction, QLabel, QCheckBox, QTextEdit, QPushButton, QGridLayout
+from PyQt5.QtWidgets import QMainWindow, QDialog, QAction, QLabel, QCheckBox, QTextEdit, QPushButton, QGridLayout,QStyleFactory
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -203,8 +203,10 @@ if __name__ == "__main__":
     app.setWindowIcon(QtGui.QIcon('DevilYuan.png'))
     MainWindow = DyMainWindow()
     MainWindow.show()
-
+    # 黑色主题
     import qdarkstyle
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    #app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    # 其他基本主题 一共有四个
+    app.setStyle("fusion")
 
     sys.exit(app.exec_())

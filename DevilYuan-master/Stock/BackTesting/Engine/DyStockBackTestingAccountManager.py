@@ -98,7 +98,7 @@ class DyStockBackTestingAccountManager:
             value += pos.totalVolume * pos.price
 
         return value
-    #
+    # 指定股票获取该持仓的总额
     def getCurCodePosMarketValue(self, code):
         """
             get market value of position of sepcified code
@@ -175,7 +175,7 @@ class DyStockBackTestingAccountManager:
 
             self._curDeals.append(deal) # 当日成交
             self._deals.append(deal)# 历史成交
-            self._curWaitingPushDeals.append(deal) # 等待推送得成交
+            self._curWaitingPushDeals.append(deal) # 等待推送得成交，供策略持仓更新策略自己的持仓
 
             # update positions
             if type == DyStockOpType.buy: # 买入
@@ -207,7 +207,7 @@ class DyStockBackTestingAccountManager:
         """
         # 撮合委托
         dealedEntrusts = []
-        for entrust in self._curNotDoneEntrusts:
+        for entrust in self._curNotDoneEntrusts:# 这个为成交的委托是重点，因为所有策略都会往这里面加委托，然后进行持仓上的处理
             tick = ticks.get(entrust.code)
             if tick is None:
                 continue
@@ -229,7 +229,7 @@ class DyStockBackTestingAccountManager:
     #
     def _isBarLimitUp(self, bar):
         return bar.low == bar.high and (bar.high - bar.preClose)/bar.preClose*100 >= DyStockCommon.limitUpPct
-    #
+    #这个是当日会多次运行，如果是m或者tick
     def _CrossCurNotDoneEntrustsByBars(self, bars):
         """
             每Bar撮合当日未成交的委托
@@ -302,7 +302,7 @@ class DyStockBackTestingAccountManager:
         self._curCash -= cash
 
         # 生成新的委托
-        return self._newEntrust(DyStockOpType.buy, datetime, strategyCls, code, name, price, volume, signalInfo=signalInfo, tickOrBar=tickOrBar)
+        return self._newEntrust(DyStockOpType.buy, datetime, strategyCls, code, name, price, volume, signalInfo=signalInfo, tickOrBar=tickOrBar)# 调用这个函数会加入未完成委托以及现在委托
     #
     def sell(self, datetime, strategyCls, code, price, volume, sellReason=None, signalInfo=None, tickOrBar=None):
         """
@@ -347,7 +347,7 @@ class DyStockBackTestingAccountManager:
             self._riskGuardCount -= 1
     #监控
     def onMonitor(self):
-        return list(self._curPos)
+        return list(self._curPos)# 返回当前持仓
     #
     def onTicks(self, ticks):
         # 撮合委托
@@ -367,7 +367,7 @@ class DyStockBackTestingAccountManager:
 
         # 止时
         self._stopTimeMode.onTicks(ticks)
-    #
+    #当日会多次运行
     def onBars(self, bars):
         # 撮合委托
         self._CrossCurNotDoneEntrustsByBars(bars)
@@ -376,7 +376,7 @@ class DyStockBackTestingAccountManager:
         for code, pos in self._curPos.items():
             bar = bars.get(code)
             if bar is not None:
-                pos.onBar(bar)
+                pos.onBar(bar) # 当日除复权，以及价格更新，单一bar或者tick实例循环更新
 
         # 止损
         self._stopLossMode.onBars(bars)
@@ -449,7 +449,7 @@ class DyStockBackTestingAccountManager:
             return False
 
         # 初始化当前持仓
-        for _, pos in self._curPos.items():
+        for _, pos in self._curPos.items():# 并且还会调用持仓的onopen
             if not pos.onOpen(date, self._dataEngine):
                 return False
 
@@ -479,7 +479,7 @@ class DyStockBackTestingAccountManager:
     def popCurWaitingPushEntrusts(self):
         entrusts = self._curWaitingPushEntrusts
 
-        self._curWaitingPushEntrusts = []
+        self._curWaitingPushEntrusts = [] # 策略会添加到这里，并且账户本身的三个大策略也会加里面，但是同时也会加到未完成的委托里。
 
         return entrusts
     # 
@@ -490,7 +490,7 @@ class DyStockBackTestingAccountManager:
         """
         # 构造持仓同步数据
         syncData = {}
-        for code, pos in self._curPos.items():
+        for code, pos in self._curPos.items():# 对于账户而言，当前持仓是永久的
             if pos.sync: # 只跟策略同步 同步过的持仓。若持仓当日停牌或 者前面tick数据缺失，则持仓不会被同步。所以也不能假设停牌，而把复权因子设为1。
                 syncData[code] = {'priceAdjFactor': pos.priceAdjFactor,
                                   'volumeAdjFactor': pos.volumeAdjFactor,

@@ -8,7 +8,7 @@ from . import DyStockSelectStrategyWidgetAutoFields
 
 class DyStockSelectStrategyWidget(DyTreeWidget):
 
-    strategyFields = DyStockSelectStrategyWidgetAutoFields
+    strategyFields = DyStockSelectStrategyWidgetAutoFields # 策略类返回的是
     
 
     def __init__(self, paramWidget=None):
@@ -21,7 +21,7 @@ class DyStockSelectStrategyWidget(DyTreeWidget):
         if paramWidget is not None:
             self._paramWidget.setStrategyWidget(self)
 
-        self._relatedActions = None
+        self._relatedActions = None# 相关联的操作
 
         self._curStrategyCls = None
         self._curLeafItem = None
@@ -78,14 +78,14 @@ class DyStockSelectStrategyWidget(DyTreeWidget):
     @property
     def curStrategyCls(self):
         return self._curStrategyCls
-
+    # 获得策略类以及对应的参数
     def getStrategy(self):
         if self._paramWidget is None: return self._curStrategyCls, {}
 
         if self._curStrategyCls is None:
             return None, None
 
-        return self._curStrategyCls, self._paramWidget.get(self._curLeafItem.text(0))
+        return self._curStrategyCls, self._paramWidget.get(self._curLeafItem.text(0))# 调用的是策略参数的get，后面策略的意义是获取策略中文名
 
     def _saveParam(self, strategyChName, param):
         orderedParam = self._strategies[strategyChName].param
@@ -105,7 +105,7 @@ class DyStockSelectStrategyWidget(DyTreeWidget):
             self.blockSignals(False)
 
             self.on_itemChanged(self._curLeafItem, 0)
-
+    # 设置相关联操作
     def setRelatedActions(self, actions):
         self._relatedActions = actions
 

@@ -351,7 +351,7 @@ class DySS_High2SendStocks(DyStockSelectStrategyTemplate):
         df = df.ix[scoreSeries.index]
 
         return df
-
+    #
     def refactory(df, params):
         """
             @return: new rows list

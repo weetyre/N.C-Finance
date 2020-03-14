@@ -93,5 +93,5 @@ class DyStockDealDetailsMainWindow(DyBasicMainWindow):
         self._widgetDealDetails.backward()
 
     def set(self, code, date):
-        self._widgetInfo.set(code, date)
-        self._widgetDealDetails.set(code, date)
+        self._widgetInfo.set(code, date)# 股票信息
+        self._widgetDealDetails.set(code, date)# 成交明细

@@ -37,7 +37,7 @@ class DyStockStopLossStepMode(DyStockStopMode):
                 continue
             # 计算止损比例
             currSL = self._initSLM * (1 + self._increment)**int((math.log(pos.high/pos.cost)/math.log(1 + self._step)))
-
+            #
             if tick.price < pos.cost*currSL:
                 self._accountManager.closePos(tick.datetime, code, getattr(tick, DyStockTradeCommon.sellPrice), DyStockSellReason.stopLossStep, tickOrBar=tick)
 

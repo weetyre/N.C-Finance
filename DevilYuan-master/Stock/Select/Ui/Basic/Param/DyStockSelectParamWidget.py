@@ -26,8 +26,8 @@ class DyStockSelectParamWidget(QTabWidget):
             self._strategyParamWidgets[strategyName].setToolTip(tooltips)#设置提示
 
         self.setCurrentWidget(self._strategyParamWidgets[strategyName])#设置当前的组件
-    #获得里面的参数
-    def get(self, strategyName):
+    #获得里面的参数，一按回测按钮会往里面走
+    def get(self, strategyName):# 这里是显示策略中文名
         return self._strategyParamWidgets[strategyName].get()
     #关闭这个标签
     def _closeTab(self, index):

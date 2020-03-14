@@ -20,7 +20,7 @@ class DyStockSelectSelectEngine(object):
         self._eventEngine = eventEngine
         self._info = info
 
-        self._testedStocks = None
+        self._testedStocks = None# 会由事件确认
 
         self._init()
 
@@ -40,12 +40,12 @@ class DyStockSelectSelectEngine(object):
         # 独立于daysEnigne，因为ticksEngine载入数据时，需要载入日线数据做参照。
         # 这样可以避免先前@self._daysEngine载入的数据被污染。
         self._ticksEngine = self._errorDataEngine.ticksEngine
-
+    # 停止
     def stop(self):
         self._isStopped = True
-
+    # 初始化
     def _init(self):
-        self._isStopped = False
+        self._isStopped = False# 停止了么？
 
         self._strategy = None
 
@@ -65,10 +65,10 @@ class DyStockSelectSelectEngine(object):
         self._isTicks = False
         self._startTicksDay = None
         self._endTicksDay = None
-
+        # 返回结果
         self._result = None
         self._resultForTrade = None
-
+    # 载入日数据
     def _onLoadDays(self):
         # 获取策略需要载入数据的日期范围
         startDate, endDate = self._strategy.onDaysLoad()
@@ -106,12 +106,12 @@ class DyStockSelectSelectEngine(object):
         dates = self._strategy.onPostDaysLoad(startDate, baseDate, n)
 
         # 从股票数据引擎载入数据. 如果策略指定了codes，则优先codes
-        if not self._daysEngine.load(dates, codes=self._testedStocks if self._codes is None else self._codes):
+        if not self._daysEngine.load(dates, codes=self._testedStocks if self._codes is None else self._codes):# 如果策略关注代码为空，这个codes是刚才调用之前设置好的
             return False
 
         # 设置日线相关数据
-        self._isDays = True
-        
+        self._isDays = True # 设置日线相关数据
+        # 这是日线数据同一日期
         if isinstance(self._endDay, int):
             self._startDay = self._daysEngine.tDaysOffset(self._startDay, 0)
             self._endDay = self._daysEngine.tDaysOffset(self._startDay, self._endDay)
@@ -120,12 +120,12 @@ class DyStockSelectSelectEngine(object):
             self._endDay = self._daysEngine.tDaysOffset(self._endDay, 0)
 
         if self._endDay < self._startDay:
-            self._startDay, self._endDay = self._endDay, self._startDay
+            self._startDay, self._endDay = self._endDay, self._startDay# 重新确定载入顺序
 
-        self._baseDay = self._daysEngine.tDaysOffset(baseDate, 0)
+        self._baseDay = self._daysEngine.tDaysOffset(baseDate, 0)# 最后返回基准日期
 
         return True
-
+    # 载入tick数据
     def _onLoadTicks(self):
         # 获取策略需要载入数据的日期范围
         startDate, endDate = self._strategy.onTicksLoad()
@@ -165,10 +165,10 @@ class DyStockSelectSelectEngine(object):
         # 而Ticks的数据载入则是每个股票的Ticks分别载入。
 
         return True
-
+    # 第三步调用load函数
     def _onLoad(self):
         # get loaded codes
-        self._codes = self._strategy.onCodes()
+        self._codes = self._strategy.onCodes()# 先载入策略需要的代码
 
         # days
         if not self._onLoadDays():
@@ -179,7 +179,7 @@ class DyStockSelectSelectEngine(object):
             return False
 
         return True
-
+    # 补充个股日线数据
     def _autoFillDays(self, code, orgDf):
         """
             补全个股日线数据
@@ -194,11 +194,11 @@ class DyStockSelectSelectEngine(object):
             if orgDf is None or self._baseDay not in orgDf.index: # 基准日期不在原始切片数据里，则没有补全的意义
                 return None
 
-        if not self._errorDaysEngine.loadCode(code, self._onDaysLoadDates):
+        if not self._errorDaysEngine.loadCode(code, self._onDaysLoadDates):# 载入的日期，注：不用管最后一个日期统一化，因为都是一样得
             return orgDf
 
         return self._errorDaysEngine.getDataFrame(code)
-
+    # 运行日线数据
     def _runDaysLoop(self):
         if not self._isDays:
             return
@@ -206,10 +206,10 @@ class DyStockSelectSelectEngine(object):
         self._info.print("开始运行日线数据...")
 
         # init progress
-        self._progress.init(len(self._daysEngine.stockAllCodesFunds), 100, 5)
+        self._progress.init(len(self._daysEngine.stockAllCodesFunds), 100, 5)# 单步
 
         # index loop
-        for index in self._daysEngine.stockIndexes:
+        for index in self._daysEngine.stockIndexes:# 指数4支
             df = self._daysEngine.getDataFrame(index, self._startDay, self._endDay)
             if df is not None:
                 self._strategy.onIndexDays(index, df)
@@ -217,7 +217,7 @@ class DyStockSelectSelectEngine(object):
             self._progress.update()
 
         # ETF loop
-        for etfCode in self._daysEngine.stockFunds:
+        for etfCode in self._daysEngine.stockFunds:# 基金3支
             df = self._daysEngine.getDataFrame(etfCode, self._startDay, self._endDay)
             if df is not None:
                 self._strategy.onEtfDays(etfCode, df)
@@ -225,12 +225,12 @@ class DyStockSelectSelectEngine(object):
             self._progress.update()
 
         # stock loop
-        for code in self._daysEngine.stockCodes:
+        for code in self._daysEngine.stockCodes:# 更新普通股票
             df = self._daysEngine.getDataFrame(code, self._startDay, self._endDay)
 
             # 策略需要补全数据
             if self._expectedDaysSize is not None:
-                df = self._autoFillDays(code, df)
+                df = self._autoFillDays(code, df)# 会输入df进行验证
 
             if df is not None or self._strategy.fullyPushDays:
                 try:
@@ -238,18 +238,18 @@ class DyStockSelectSelectEngine(object):
                 except AssertionError:
                     raise
                 except Exception as ex:
-                    if DyStockSelectCommon.enableSelectEngineException:
+                    if DyStockSelectCommon.enableSelectEngineException:# 是否打卡股票选股异常的捕捉
                         self._info.print('{0}[{1}]: onStockDays异常:{2}'.format(code, self._daysEngine.stockAllCodes[code], repr(ex)), DyLogData.error)
 
             self._progress.update()
 
         self._info.print("日线数据运行完成")
-
+    # 紧接着运行tick数据
     def _runTicksLoop(self):
         if not self._isTicks:
             return
 
-        codes = self._strategy.getResultCodes() if self._isDays else self._daysEngine.stockCodes
+        codes = self._strategy.getResultCodes() if self._isDays else self._daysEngine.stockCodes# 根据日线数据获取选股结果代码，否则获取载入代码
 
         self._info.print("开始运行Ticks数据，总共{0}只股票...".format(len(codes)))
 
@@ -259,7 +259,7 @@ class DyStockSelectSelectEngine(object):
         for code in codes:
             if self._ticksEngine.loadCodeN(code, [self._startTicksDay, self._endTicksDay]):
 
-                dfs = self._ticksEngine.getDataFrame(code, adj=True, continuous=self._strategy.continuousTicks)
+                dfs = self._ticksEngine.getDataFrame(code, adj=True, continuous=self._strategy.continuousTicks)# 基于最新的因子前复权获得
                 try:
                     self._strategy.onStockTicks(code, dfs)
                 except AssertionError:
@@ -271,13 +271,13 @@ class DyStockSelectSelectEngine(object):
             self._progress.update()
 
         self._info.print("Ticks数据运行完成")
-
+    # 第四步运行loop选股策略
     def _runLoop(self):
         self._info.print("开始运行选股策略: {0}".format(self._strategy.chName), DyLogData.ind)
 
         self._runDaysLoop()
         self._runTicksLoop()
-
+    # 第二步调用run函数
     def _run(self):
         # load
         if not self._onLoad():
@@ -298,32 +298,32 @@ class DyStockSelectSelectEngine(object):
         self._strategy.onDone()
 
         # done for Engine
-        self._result = self._strategy.onDoneForEngine(self._dataEngine, self._errorDataEngine)
+        self._result = self._strategy.onDoneForEngine(self._dataEngine, self._errorDataEngine)# 策略要给引擎返回结果
 
         # to trade
-        self._resultForTrade = self._strategy.toTrade()
+        self._resultForTrade = self._strategy.toTrade()# 为了实盘选股的结果
 
         return True
-
+    #
     @property
     def result(self):
         """ 选股结果 """
         return self._result
-
+    #
     @property
     def resultForTrade(self):
         """ 为实盘的选股结果 """
         return self._resultForTrade
-
+    # 会在CTA里面调设置调试股票
     def setTestedStocks(self, codes=None):
         self._testedStocks = codes
-
+    # 先运行这个
     def runStrategy(self, strategyCls, paramters):
         self._info.print("开始准备运行选股策略: {0}".format(strategyCls.chName), DyLogData.ind)
-        self._info.initProgress()
+        self._info.initProgress()# 初始化进度条
 
         # init
-        self._init()
+        self._init()# 先执行一遍初始化
 
         # create strategy instance
         self._strategy = strategyCls(paramters, self._info)
@@ -331,7 +331,7 @@ class DyStockSelectSelectEngine(object):
         # run
         if self._run():
             # ack
-            event = DyEvent(DyEventType.stockSelectStrategySelectAck)
+            event = DyEvent(DyEventType.stockSelectStrategySelectAck)# 运行完之后就确认
             event.data['class'] = strategyCls
             event.data['result'] = self._result
             event.data['baseDate'] = self._strategy.baseDate
@@ -339,7 +339,7 @@ class DyStockSelectSelectEngine(object):
             self._eventEngine.put(event)
 
             # finish
-            self._eventEngine.put(DyEvent(DyEventType.finish))
+            self._eventEngine.put(DyEvent(DyEventType.finish))# 发送一个所有任务都完成的操作
 
             ret = True
         else:
@@ -349,17 +349,17 @@ class DyStockSelectSelectEngine(object):
             ret = False
 
         return ret
-
+    # 获取策略类以及参数运行策略，其他地方put一个请求事件就开始运行
     def _stockSelectStrategySelectReqHandler(self, event):
         # unpack
         strategyCls = event.data['class']
         paramters = event.data['param']
 
         self.runStrategy(strategyCls, paramters)
-
+    # 设置选股的测试股票
     def _stockSelectTestedCodesHandler(self, event):
         self._testedStocks = event.data
 
     def _registerEvent(self):
-        self._eventEngine.register(DyEventType.stockSelectStrategySelectReq, self._stockSelectStrategySelectReqHandler, DyStockSelectEventHandType.engine)
-        self._eventEngine.register(DyEventType.stockSelectTestedCodes, self._stockSelectTestedCodesHandler, DyStockSelectEventHandType.engine)
+        self._eventEngine.register(DyEventType.stockSelectStrategySelectReq, self._stockSelectStrategySelectReqHandler, DyStockSelectEventHandType.engine)# 0号运行
+        self._eventEngine.register(DyEventType.stockSelectTestedCodes, self._stockSelectTestedCodesHandler, DyStockSelectEventHandType.engine)# 0号运行

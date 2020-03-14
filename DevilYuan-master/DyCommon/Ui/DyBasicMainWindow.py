@@ -59,7 +59,7 @@ class DyBasicMainWindow(QMainWindow):
         for action in self._mutexActions:
             if action != self._runningAction:
                 action.setDisabled(True)# 其他按钮先不能点击，先确保这个action 运行完毕
-
+    # 中止运行的互斥操作
     def _endRunningMutexAction(self):
         """ called once finish, fail or stopAck event received """
         if self._runningAction is None: return False
@@ -83,7 +83,7 @@ class DyBasicMainWindow(QMainWindow):
     #停止正在运行的互斥操作，让那个停止按钮无法点击
     def _stopRunningMutexAction(self):
         self._runningAction.setDisabled(True)
-
+    # 所有的事件停止都由这个操作
     def _endHandler(self, event):
         """
             if program not processed carefully, event finish and stopAck might comming both.
@@ -110,7 +110,7 @@ class DyBasicMainWindow(QMainWindow):
         eventEngine.register(DyEventType.stopAck, self.signalStopAck.emit)
         eventEngine.register(DyEventType.finish, self.signalFinish.emit)
         eventEngine.register(DyEventType.fail, self.signalFail.emit)
-
+    # 保存窗口设置
     def _saveWindowSettings(self):
         """保存窗口设置"""
         settings = QtCore.QSettings('DevilYuan', 'DevilYuanQuant')
@@ -121,7 +121,7 @@ class DyBasicMainWindow(QMainWindow):
         """载入窗口设置"""
         settings = QtCore.QSettings('DevilYuan', 'DevilYuanQuant')
         try:
-            ret = self.restoreState(settings.value(self.name + 'State'))
+            ret = self.restoreState(settings.value(self.name + 'State')) # 这是用的父类的方法进行恢复
             ret = self.restoreGeometry(settings.value(self.name + 'Geometry'))    
         except Exception as ex:
             pass
@@ -130,15 +130,15 @@ class DyBasicMainWindow(QMainWindow):
         self._saveWindowSettings()
 
         return super().closeEvent(event)
-    #
+    # 创建停靠组件
     def _createDock(self, widgetClass, widgetName, widgetArea, *param):
         """创建停靠组件"""
 
-        widget = widgetClass(*param)#根据自己写的特定类自定义组件
+        widget = widgetClass(*param)#根据自己写的特定类自定义组件，参数是继承参数
 
         dock = QDockWidget(widgetName, self)
         dock.setWidget(widget)
         dock.setObjectName(widgetName)
-        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        dock.setFeatures(QDockWidget.NoDockWidgetFeatures) # 没有什么额外的特征
         self.addDockWidget(widgetArea, dock)
-        return widget, dock
+        return widget, dock # dock才是QT本身的

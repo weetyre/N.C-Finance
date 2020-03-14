@@ -19,8 +19,8 @@ class DyStockSelectTestedStocksDlg(QDialog):
 
     def _init(self):
         path = DyCommon.createPath('Stock/User/Config/Testing')
-        self._file = os.path.join(path, 'DyStockSelectTestedStocks.dy')
-
+        self._file = os.path.join(path, 'DyStockSelectTestedStocks.dy')# 返回此文件得路径
+    # 打开DY格式得文件读取
     def _read(self):
         if os.path.exists(self._file):
             with open(self._file) as f:
@@ -29,7 +29,7 @@ class DyStockSelectTestedStocksDlg(QDialog):
             codes = ""
 
         return codes
-
+    # 写入此文件
     def _save(self):
         with open(self._file, 'w') as f:
             f.write(self._codesTextEdit.toPlainText())

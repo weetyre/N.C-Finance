@@ -40,7 +40,7 @@ class DyStockCtaBarData(object):
         self.bidPrices = None # list bid1->bid5, 0 -> 4
         
         self.askPrices = None # list
-
+    # 这个方法可以获取股票价格
     def __getattr__(self, name):
         """
             获取股票价格

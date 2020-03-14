@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QCheckBox
 
-
+# 行业对比对话框
 class DyStockSelectIndustryCompareDlg(QDialog):
 
     def __init__(self, name, baseDate, data, parent=None):
@@ -9,7 +9,7 @@ class DyStockSelectIndustryCompareDlg(QDialog):
         self._data = data
 
         self._initUi(name, baseDate)
-
+    # 初始化UI
     def _initUi(self, name, baseDate):
         self.setWindowTitle('行业对比[{0}]-基准日期[{1}]'.format(name, baseDate))
  

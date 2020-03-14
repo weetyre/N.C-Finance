@@ -269,7 +269,7 @@ class DyEventEngine(threading.Thread):
                 hands = self._eventMap.get(event.type)
                 if hands is not None:
                     for hand in hands: # hand which is listening this event
-                        self._handQueues[hand].put(event)
+                        self._handQueues[hand].put(event)# 又放到最外的类，最终放到event线程那个类里面
     #第一步运行4组，放入eventengine（一般外部调用第一）
     def registerTimer(self, handler, hand=None, interval=1):
         if hand is None:
@@ -313,15 +313,15 @@ class DyEventEngine(threading.Thread):
 
     def stop(self):
         pass
-    #第二：start
+    #第二：start，外部功能模块在实例化引擎的时候，第二步就是start
     def start(self):
         for hand in self._hands:
-            hand.start()
+            hand.start()# 每一个事件线程start
 
         if self._timerHand:
             self._timerHand.start()
 
-        super().start()
+        super().start()# 最后start 自己的run函数
 
 
 class DyDummyEventEngine:

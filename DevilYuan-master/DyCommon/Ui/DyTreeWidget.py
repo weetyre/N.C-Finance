@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
-#进行页面布局设置，因为有很多小器件
+#进行页面布局设置，因为有很多小器件#
 class DyTreeWidget(QTreeWidget):
     """description of class"""
 

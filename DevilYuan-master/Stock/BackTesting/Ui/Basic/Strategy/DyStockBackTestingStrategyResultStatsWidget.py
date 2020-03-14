@@ -9,13 +9,13 @@ from DyCommon.DyCommon import *
 from DyCommon.Ui.DyTableWidget import *
 from EventEngine.DyEvent import *
 
-
+# 这是账户信息显示菜单栏
 class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
 
     header = ['日期', '初始资金', '总市值', '持仓市值', '资金',
               '盈亏(%)', '年化盈亏(%)', '最大回撤(%)', '最大亏损(%)', '最大盈利(%)',
               '胜率(%)', '盈亏比(%/金额)', '夏普比率']
-
+    #
     def __init__(self, dataEngine):
         super().__init__(None, True, False)
 
@@ -57,11 +57,11 @@ class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
 
         self._curPnlRatio = (totalValue - initCash)/initCash * 100
 
-        self._maxProfit = max(self._maxProfit, self._curPnlRatio)
-        self._maxLoss = min(self._maxLoss, self._curPnlRatio)
+        self._maxProfit = max(self._maxProfit, self._curPnlRatio) # 计算最大盈利
+        self._maxLoss = min(self._maxLoss, self._curPnlRatio)# 计算最大亏损
 
         curDrop = (self._maxProfit - self._curPnlRatio)/(100 + self._maxProfit) * 100
-        self._maxDrop = max(self._maxDrop, curDrop)
+        self._maxDrop = max(self._maxDrop, curDrop) # 最大回撤
 
         # 胜率 & 盈利和
         for deal in ackData.deals:
@@ -81,7 +81,7 @@ class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
         hitRate = self._hits[0]*100/totalHits if totalHits > 0 else 'N/A'
 
         # close Ack data
-        if ackData.isClose:
+        if ackData.isClose: # 是不是收盘后的ACK 值isClose
             # 相比初始资金的每日盈亏(%)
             self._closePnl[ackData.datetime.strftime("%Y-%m-%d")] = [self._curPnlRatio]
             self._closePosRatio[ackData.datetime.strftime("%Y-%m-%d")] = [posValue/totalValue*100]
@@ -101,7 +101,7 @@ class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
             self[0] = [ackData.day, initCash, totalValue, posValue, curCash,
                     self._curPnlRatio, annualisedPnlRatio, self._maxDrop, self._maxLoss, self._maxProfit,
                     hitRate, profitLossRatio, sharpe]
-
+    # 根据每笔交易计算盈亏比
     def _calcProfitLossRatio(self):
         """
             根据每笔交易计算盈亏比
@@ -115,7 +115,7 @@ class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
             ratio = '{:.2f}/{:.2f}'.format(pctRatio, pnlRatio)
 
         return ratio
-
+    # 计算夏普比
     def _annualisedSharpe(self):
         # pnl ratio of strategy DF
         df = pd.DataFrame(self._closePnl).T
@@ -173,7 +173,7 @@ class DyStockBackTestingStrategyResultStatsWidget(DyTableWidget):
         axPos.plot(x, df['持仓股票数'].values, label='持仓股票数', color='r')
 
         axPos.legend(loc='upper left', frameon=False)
-        
+
     def _itemDoubleClicked(self, item):
         # close data of strategy DF
         df = pd.DataFrame(self._closeData).T

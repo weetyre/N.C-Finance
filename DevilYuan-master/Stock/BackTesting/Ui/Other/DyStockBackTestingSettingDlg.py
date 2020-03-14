@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QComboBox, QCheckBox, QGridLayout, QLabel, QLineEdit
 
 from DyCommon.Ui.DyTableWidget import *
 
-#回测设置窗口
+#回测设置窗口#
 class DyStockBackTestingSettingDlg(QDialog):
     #默认设置
     settings = \

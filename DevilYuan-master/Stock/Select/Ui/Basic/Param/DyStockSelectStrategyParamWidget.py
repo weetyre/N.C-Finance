@@ -3,7 +3,7 @@ from collections import OrderedDict
 from DyCommon.Ui.DyTableWidget import *
 from EventEngine.DyEvent import *
 
-#一个表格
+#这是设置策略参数的
 class DyStockSelectStrategyParamWidget(DyTableWidget):
 
     def __init__(self):
@@ -23,7 +23,7 @@ class DyStockSelectStrategyParamWidget(DyTableWidget):
             if '权重' in name:
                 self.setItemBackground(0, i, Qt.yellow)
                 self.setItemForeground(0, i, Qt.black)
-    #得到表格的参数
+    #得到表格的参数，一点回测按钮，就会跑到这里来，获得表格里的参数
     def get(self):
         colNbr = self.columnCount()
         param = OrderedDict()

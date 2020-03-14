@@ -72,11 +72,11 @@ class DyStockBackTestingStrategyEngine(object):
             self._periodNbr = 1
         else:
             self._paramGroupNbr = 1
-            self._periodNbr = self.periodNbr
+            self._periodNbr = self.periodNbr # 6
 
     def _stockSelectTestedCodesHandler(self, event):
         self._testedStocks = event.data
-
+    # 转换代码参数
     def _convertCodeParamValue(self, value):
         """ 转换代码参数
             格式: {代码: 股票基金;3}, {代码: 股票;3}, {代码: 600066.SH,300034;2}, {代码: 股票}
@@ -91,11 +91,11 @@ class DyStockBackTestingStrategyEngine(object):
             combinationNbr = 1
 
         if '股票' in codes or '基金' in codes or '上证' in codes or '深证' in codes or '创业板' in codes or '中小板' in codes:
-            self._errorDaysEngine.loadCodeTable()
+            self._errorDaysEngine.loadCodeTable()# 载入股票代码表
 
             newCodes = []
             if '股票' in codes:
-                codes_ = self._errorDaysEngine.stockCodes
+                codes_ = self._errorDaysEngine.stockCodes# 返回所有的股票代码
                 newCodes += list(codes_)
             else:
                 if '上证' in codes:
@@ -121,14 +121,14 @@ class DyStockBackTestingStrategyEngine(object):
             codes = newCodes
         else:
             codes = codes.split(',')
-            codes = DyStockCommon.getDyStockCodes(codes)
+            codes = DyStockCommon.getDyStockCodes(codes) # 直接转化成对应格式的代码
 
-        return list(itertools.combinations(codes, combinationNbr))
-
+        return list(itertools.combinations(codes, combinationNbr))# 返回combinationNbr 长度的排列组合
+    # 转换数值参数，闭合方式
     def _convertParamValue(self, value):
         """ 转换数值参数，闭合方式 """
-
-        if not isinstance(value, str):
+        # value format: range;step or value e.g. 1:10;1 or 1
+        if not isinstance(value, str):# 如果不是字符串，那就直接返回
             return [value]
 
         # get range and step
@@ -138,7 +138,7 @@ class DyStockBackTestingStrategyEngine(object):
         value = [start, end, step]
 
         for i, v in enumerate(value):
-            value[i] = DyCommon.toNumber(v)
+            value[i] = DyCommon.toNumber(v)# v 从start 开始 step 递进
 
         start, end, step = value
 
@@ -149,10 +149,10 @@ class DyStockBackTestingStrategyEngine(object):
             start += step
 
         if end not in ret:
-            ret.append(end)
+            ret.append(end) # 确保end添加进去
 
         return ret
-
+    # 创建参数组合
     def _createParamGroups(self, param):
         """
             @param: OrderedDict, {name: value}
@@ -169,42 +169,42 @@ class DyStockBackTestingStrategyEngine(object):
             else:
                 values.append(self._convertParamValue(value))
 
-        values = list(itertools.product(*values))
+        values = list(itertools.product(*values)) # ((x,1) for x in values for 1 in 1)
 
         # get combination with {param: value}
         names = list(param)
         for value in values:
             group = OrderedDict()
             for key, v in zip(names, value):
-                group[key] = v
+                group[key] = v # key 是那一个名字，后面的v 是转化玩的参数
 
-            self._paramGroups.append(group)
+            self._paramGroups.append(group)# 字典列表
 
     def _backTestingParamGroups(self):
         """
             类似于窗口推进方式回测参数组合
         """
-        if not (self._paramGroups or self._runningBackTestingParamGroups):
+        if not (self._paramGroups or self._runningBackTestingParamGroups):# 如果都是空，就证明运行完了
             self._eventEngine.put(DyEvent(DyEventType.finish))
             return True
 
-        while len(self._runningBackTestingParamGroups) < self._paramGroupNbr:
-            if not self._paramGroups:
+        while len(self._runningBackTestingParamGroups) < self._paramGroupNbr:# 循环执行参数组，直到结束
+            if not self._paramGroups:# 如果是空直接返回，为了保险
                 break
 
-            self._paramGroupCount += 1
+            self._paramGroupCount += 1 # # 回测参数组合计数
 
             self._info.print("开始回测策略: {0}, 参数组合: {1}...".format(self._strategyCls.chName, self._paramGroupCount), DyLogData.ind)
 
             """ 开始一个参数组合的回测 """
             # pop one param group
-            param = self._paramGroups.pop(0)
+            param = self._paramGroups.pop(0)# 弹出一组参数
 
             # it's one new running paramGroup
-            self._runningBackTestingParamGroups[self._paramGroupCount] = []
+            self._runningBackTestingParamGroups[self._paramGroupCount] = [] # 创建一个新的在运行的
 
             # notify Ui to create new param group widget for strategy
-            event = DyEvent(DyEventType.newStockStrategyBackTestingParam)
+            event = DyEvent(DyEventType.newStockStrategyBackTestingParam) # 新建策略的一个回测参数组合
             event.data['class'] = self._strategyCls
             event.data['param'] = {'groupNo': self._paramGroupCount, 'data': param}
 
@@ -212,32 +212,32 @@ class DyStockBackTestingStrategyEngine(object):
 
             """ 开始一个参数组合的多个周期回测 """
             # 分成@self._periodNbr个周期，通过子进程并行运行
-            stepSize = (len(self._tradeDays) + self._periodNbr - 1)//self._periodNbr
+            stepSize = (len(self._tradeDays) + self._periodNbr - 1)//self._periodNbr # 参数组合，周期始终为1，那就是相当于一次执行完
             if stepSize == 0: return False
 
             for i in range(0, len(self._tradeDays), stepSize):
                 # period
-                tradeDays_ = self._tradeDays[i:i + stepSize]
+                tradeDays_ = self._tradeDays[i:i + stepSize]# i 肯定从0开始
 
                 # notify Ui to create new period widget for strategy
-                event = DyEvent(DyEventType.newStockStrategyBackTestingPeriod)
+                event = DyEvent(DyEventType.newStockStrategyBackTestingPeriod) # # 新建策略参数组合的一个回测周期
                 event.data['class'] = self._strategyCls
                 event.data['paramGroupNo'] = self._paramGroupCount
                 event.data['period'] = [tradeDays_[0], tradeDays_[-1]]
 
-                self._eventEngine.put(event)
+                self._eventEngine.put(event) # 去提醒UI去创建对应界面
 
                 sleep(1) # !!!sleep so that UI windows can be created firstly.
 
                 # it's one new running period for one new paramGroup
-                self._runningBackTestingParamGroups[self._paramGroupCount].append(event.data['period'])
+                self._runningBackTestingParamGroups[self._paramGroupCount].append(event.data['period'])# 添加新的周期，同一个参数组合，有可能分成多个周期并行运行
 
                 # create subprocess for processing each period
                 reqData = DyStockBackTestingStrategyReqData(self._strategyCls, tradeDays_, self._settings, param, self._testedStocks, self._paramGroupCount)
-                self._proxy.startBackTesting(reqData)
+                self._proxy.startBackTesting(reqData) # 多进程并行运行
 
         return True
-
+    # 回测，且拆开数据包，策略请求完毕，就会在这拆数据
     def _backTesting(self, reqData):
         # unpack
         strategyCls = reqData.strategyCls
@@ -268,7 +268,7 @@ class DyStockBackTestingStrategyEngine(object):
 
         # 推进回测策略回测参数组合
         return self._backTestingParamGroups()
-
+    # 回测数据请求handler
     def _stockStrategyBackTestingReqHandler(self, event):
         # back testing
         if not self._backTesting(event.data):

@@ -276,7 +276,7 @@ class DyStatsTableWidget(DyTableWidget):
                 self.__numberScatter(xName, yName, data)
 
             break
-
+    # 不是一个数字列名
     def _isNonNbrColName(self, colName):
         if colName == 'Org.' or colName == '*' or colName == '代码' or colName == '名称' or '日期' in colName:
             return True
@@ -368,7 +368,7 @@ class DyStatsTableWidget(DyTableWidget):
 
         pd.scatter_matrix(df)
         plt.gcf().show()
-
+    # 获取数字DF
     def getNumberDataFrame(self):
         """
             get number DataFrame
@@ -419,7 +419,7 @@ class DyStatsTableWidget(DyTableWidget):
                     data.append(value)
 
         return pd.Series(data, name = colName) if data else None
-
+    # 获取数字列名
     def getNumberColNames(self):
         """ get number column names """
 

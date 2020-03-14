@@ -50,7 +50,7 @@ class DyStockDataViewer(object):
     @property
     def eventEngine(self):
         return self._eventEngine
-
+    # 设置调试股票
     def setTestedStocks(self, codes):
         self._testedStocks = codes
     #
@@ -210,9 +210,9 @@ class DyStockDataViewer(object):
         axPrice.legend(loc='upper left', frameon=False)
 
         return periods
-
+    # 绘制分时图
     def _plotTimeShareChart(self, code, date, left=None, right=None, top=None, bottom=None):
-        def _timeFormatter(x, pos):
+        def _timeFormatter(x, pos):# 时间格式化
             if not (0 <= int(x) < df.shape[0]):
                 return None
 
@@ -225,9 +225,9 @@ class DyStockDataViewer(object):
 
         try:
             # get previous close
-            df = self._daysEngine.getDataFrame(code)
+            df = self._daysEngine.getDataFrame(code) #
             preTDay = self._daysEngine.codeTDayOffset(code, date, -1)
-            preClose = df.ix[preTDay, 'close']
+            preClose = df.ix[preTDay, 'close'] # 收盘价
 
             # 获取当日数据
             date = self._daysEngine.codeTDayOffset(code, date, 0)
@@ -253,22 +253,22 @@ class DyStockDataViewer(object):
         """ 分时图 """
         # create grid spec
         gs = GridSpec(4, 1)
-        gs.update(left=left, right=right, top=top, bottom=bottom, hspace=0.15)
+        gs.update(left=left, right=right, top=top, bottom=bottom, hspace=0.15)# 更新位置
 
         # subplot for price time share
         axPrice = plt.subplot(gs[:-1, :])
-        axPrice.grid(True)
+        axPrice.grid(True)# 为了价格出来的子图
         
-        increaseStr = '%.2f' % ((close - preClose)*100/preClose)
-        turnStr = '%.2f' % turn
-        color = 'k' if close == preClose else 'r' if close > preClose else 'g'
+        increaseStr = '%.2f' % ((close - preClose)*100/preClose) # 涨幅
+        turnStr = '%.2f' % turn# 换手率
+        color = 'k' if close == preClose else 'r' if close > preClose else 'g'# 颜色
         axPrice.set_title('{0}({1})@{2},涨幅:{3}%,换手:{4}%'.format(self._daysEngine.stockAllCodesFunds[code], code, date, increaseStr, turnStr), color=color)
 
         # set x ticks
         x = [x for x in range(df.shape[0])]
         xspace = max((len(x)+9)//10, 1)
-        axPrice.xaxis.set_major_locator(FixedLocator(x[:-xspace-1: xspace] + x[-1:]))
-        axPrice.xaxis.set_major_formatter(FuncFormatter(_timeFormatter))
+        axPrice.xaxis.set_major_locator(FixedLocator(x[:-xspace-1: xspace] + x[-1:]))# x周的区间
+        axPrice.xaxis.set_major_formatter(FuncFormatter(_timeFormatter))# 且格式化时间格式
 
         # set y limit
         maxYLimit = max(abs(high - preClose), abs(low - preClose))
@@ -295,7 +295,7 @@ class DyStockDataViewer(object):
         c = 'k' if moneyFlow == 0 else 'r' if moneyFlow > 0 else 'g'
         moneyFlow = '新浪:净流入{0}(万元)'.format(moneyFlow//10000)
 
-        axPrice.text(0.5, 0.9, moneyFlow, color=c, transform=axPrice.transAxes)
+        axPrice.text(0.5, 0.9, moneyFlow, color=c, transform=axPrice.transAxes) # 绘制资金流
 
         # 万得
         if mfAmt is not None:
@@ -343,7 +343,7 @@ class DyStockDataViewer(object):
         _, top = axVolume.get_ylim()
         top = top * ((turn*100)/volumeSum)
         top = '%.2f万分之'%top
-        axVolume.text(1, 1, top, color='r', transform=axVolume.transAxes)
+        axVolume.text(1, 1, top, color='r', transform=axVolume.transAxes) # 绘制完毕
     #大函数调用同名的小函数，绘制图像使用
     def plotTimeShareChart(self, code, date, n):
 
@@ -353,7 +353,7 @@ class DyStockDataViewer(object):
         DyMatplotlib.newFig()
 
         # plot stock time share chart
-        self._plotTimeShareChart(code, date, left=0.05, right=0.95, top=0.95, bottom=0.05)
+        self._plotTimeShareChart(code, date, left=0.05, right=0.95, top=0.95, bottom=0.05) # 后面是具体的位置
 
         # plot index time share chart
         #self._plotTimeShareChart(self._daysEngine.getIndex(code), date, left=0.05, right=0.95, top=0.45, bottom=0.05)
@@ -362,7 +362,7 @@ class DyStockDataViewer(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[::2]], visible=False)
         f.show()
-
+    # 绘制散列图
     def plotScatterChart(self, target, code, baseDate, n):
 
         codes = [code]
@@ -376,7 +376,7 @@ class DyStockDataViewer(object):
             targetCode = self._daysEngine.getIndex(code)
 
         # load
-        if not self._daysEngine.load([baseDate, n], codes=codes):
+        if not self._daysEngine.load([baseDate, n], codes=codes):# 两个代码load日期
             return
 
         try:
@@ -391,17 +391,17 @@ class DyStockDataViewer(object):
             startDay = df.index[0].strftime("%Y-%m-%d")
             endDay = df.index[-1].strftime("%Y-%m-%d")
             
-            DyMatplotlib.newFig()
+            DyMatplotlib.newFig()# 生成一个新的图
 
             df.plot.scatter(x=targetName, y=name)
             
-            f = plt.gcf()
-            f.axes[0].set_title('收盘价散列图[{0}, {1}]'.format(startDay, endDay))
+            f = plt.gcf()# 获取当前的图
+            f.axes[0].set_title('收盘价散列图[{0}, {1}]'.format(startDay, endDay))# 向当前画布添加图表，并作为当前的图表
 
-            f.show()
+            f.show()# 展示图
         except Exception as ex:
             pass
-    #绘制散点图
+    # 绘制传播图
     def plotSpreadChart(self, target, code, baseDate, n):
         def _dateFormatter(x, pos):
             if not (0 <= int(x) < spreads.shape[0]):
@@ -759,7 +759,7 @@ class DyStockDataViewer(object):
         # layout
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-    #
+    # 波动率分布图
     def plotVolatilityDist(self, code, baseDate, forwardNTDays):
         """
             波动率分布图

@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QTabWidget
 from .DyStockBackTestingStrategyParamGroupResultWidget import *
 from .Other.DyStockBackTestingStrategyResultOverviewWindow import *
 
-
+#
 class DyStockBackTestingStrategyResultWidget(QTabWidget):
     """ 策略多个参数组合的回测窗口 """
 

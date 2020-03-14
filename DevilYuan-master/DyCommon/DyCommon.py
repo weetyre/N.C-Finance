@@ -37,9 +37,9 @@ class DyInfo(object):
         event.data = DyLogData(description, type)
 
         self._eventEngine.put(event)
-    #单进度条
+    #单进度条，更新事件
     def progressSingle(self, percent):
-        if self._progressSingle != percent:
+        if self._progressSingle != percent:# 数值不一样才需要更新，对于一直是100% ，那就更新一次
             self._progressSingle = percent
             #注册一个单进度条事件
             event = DyEvent(DyEventType.progressSingle)
@@ -389,7 +389,7 @@ class DyMatplotlib:
     figNbr = 8
     #绘图时会调用此函数
     def newFig():
-        figs = plt.get_fignums()
+        figs = plt.get_fignums()# 获取当前图片的编号，list列表
 
         for fig in range(1, DyMatplotlib.figNbr + 1):
             if fig not in figs:
@@ -453,7 +453,7 @@ class DyProgress(object):
         # notify Ui progress
         if percent%self._singleUpdateUiStep == 0 or percent == 100:
             self._printConsoleProgressSingle(percent)
-            self._info.progressSingle(percent)
+            self._info.progressSingle(percent)# info推送更新事件到log引擎
 
         # new start for single progress
         if self._singleReqCount == 0:
@@ -515,7 +515,7 @@ class DyProgress(object):
 
 class DyCommon:
     exePath = None # @DyMainWindow.py的所在目录
-
+    # 数字转化
     def toNumber(v):
         """
             优先转成int，float，若没法转换，则返回本身值。
@@ -552,7 +552,7 @@ class DyCommon:
         pathList = path.split('/')
         for path in ['DevilYuanMagicBox'] + pathList:
             parentPath = os.path.join(parentPath, path)
-            if not os.path.exists(parentPath):
+            if not os.path.exists(parentPath):# 如果存在此路径那就不在创，否则创建
                 os.mkdir(parentPath)
 
         return parentPath

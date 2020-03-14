@@ -26,7 +26,7 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
         self.tabCloseRequested.connect(self._closeTab)
 
         self._initTabBarMenu()
-
+    # 初始化表头右键菜单
     def _initTabBarMenu(self):
         """ 初始化表头右键菜单 """
         # 设置Tab右键菜单事件
@@ -53,15 +53,15 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
 
         # 初始化二级菜单
         self._probDistMenu = None
-
+    # 显示上下文菜单
     def _showTabContextMenu(self, position):
-        self._rightClickedTabIndex = self.tabBar().tabAt(position)
+        self._rightClickedTabIndex = self.tabBar().tabAt(position)# 获得右键索引
 
         # 如果二级菜单没有添加，动态添加二级菜单
         if self._probDistMenu is None:
-            colNames = self.widget(self._rightClickedTabIndex).getNumberColNames()
+            colNames = self.widget(self._rightClickedTabIndex).getNumberColNames()# 获取数字列名
             if colNames:
-                self._probDistMenu = self._tabBarMenu.addMenu('概率分布')
+                self._probDistMenu = self._tabBarMenu.addMenu('概率分布')# 这是一个子菜单
 
                 # 创建操作
                 for name in colNames:
@@ -72,24 +72,24 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
                     self._probDistMenu.addAction(probDistAction)
 
         self._tabBarMenu.popup(QCursor.pos())
-
+    #  概率分布
     def _probDistAct(self):
         # get triggered action
         for action in self._probDistMenu.actions():
             if action.isChecked():
                 action.setChecked(False)
-                self.widget(self._rightClickedTabIndex).probDistAct(action.text())
+                self.widget(self._rightClickedTabIndex).probDistAct(action.text())# 概率分布
                 return
-
+    #
     def _describeAct(self):
         self.widget(self._rightClickedTabIndex).describe()
-
+    #
     def _mergePeriodAct(self):
         self.widget(self._rightClickedTabIndex).mergePeriod(self.tabText(self._rightClickedTabIndex))
-
+    #
     def _scatterMatrixAct(self):
         self.widget(self._rightClickedTabIndex).scatterMatrix()
-
+    # 获取回归的结果
     def _stockSelectStrategyRegressionAckHandler(self, event):
         # unpack
         strategyCls = event.data['class']
@@ -102,7 +102,7 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
 
         # remove tab window's tabs if existing
         if self._newRegressionStrategyCls == strategyCls and tabName in self._strategyWidgets:
-            self._strategyWidgets[tabName].removeAll()
+            self._strategyWidgets[tabName].removeAll()# 移除那个策略tab
 
         # create new strategy result tab
         if tabName not in self._strategyWidgets:
@@ -117,13 +117,13 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
         self._strategyWidgets[tabName].append(period, day, result)
 
         self.parentWidget().raise_()
-
+    # 注册事件
     def _registerEvent(self):
-        self.signal.connect(self._stockSelectStrategyRegressionAckHandler)
+        self.signal.connect(self._stockSelectStrategyRegressionAckHandler) # 获取数据
         self._eventEngine.register(DyEventType.stockSelectStrategyRegressionAck, self.signal.emit)
 
-        self._eventEngine.register(DyEventType.stockSelectStrategyRegressionReq, self._stockSelectStrategyRegressionReqHandler)
-
+        self._eventEngine.register(DyEventType.stockSelectStrategyRegressionReq, self._stockSelectStrategyRegressionReqHandler)# 回归请求
+    # 关闭tab所进行的操作
     def _closeTab(self, index):
         tabName = self.tabText(index)
         self._strategyWidgets[tabName].close()
@@ -131,10 +131,10 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
         del self._strategyWidgets[tabName]
 
         self.removeTab(index)
-
+    # 回归请求，也就是确认一个新的回归类
     def _stockSelectStrategyRegressionReqHandler(self, event):
         self._newRegressionStrategyCls = event.data['class']
-
+    # 载入数据，重新恢复窗口
     def load(self, data, strategyCls):
         """
             @data: JSON data

@@ -41,7 +41,7 @@ class DyStockBackTestingMainWindow(DyBasicMainWindow):
         
     def _initCentral(self):
         """初始化中心区域"""
-        widgetParam, dockParam = self._createDock(DyStockSelectParamWidget, '策略参数', Qt.RightDockWidgetArea)
+        widgetParam, dockParam = self._createDock(DyStockSelectParamWidget, '策略参数', Qt.RightDockWidgetArea)# 前一个参数就是传进去换成widget
 
         self._widgetStrategy, dockStrategy = self._createDock(DyStockBackTestingStrategyWidget, '策略', Qt.LeftDockWidgetArea, widgetParam)#最后一个是继承类
         widgetProgress, dockProgress = self._createDock(DyProgressWidget, '进度', Qt.LeftDockWidgetArea, self._mainEngine.eventEngine)
@@ -123,20 +123,20 @@ class DyStockBackTestingMainWindow(DyBasicMainWindow):
             self._mainEngine.setProcessMode(text) # 参数组合或者周期
     # 点击回测后会触发以下事件
     def _backTesting(self):
-        strategyCls, param = self._widgetStrategy.getStrategy()
+        strategyCls, param = self._widgetStrategy.getStrategy()# 这个调用的是那个继承选择策略类的那个类，因为有所有类以供选择
         if strategyCls is None: return
 
         data = {}
-        if not DyStockBackTestingSettingDlg(data).exec_():# 打开回测的设置窗口
+        if not DyStockBackTestingSettingDlg(data).exec_():# 先获得策略类，然后打开回测的设置窗口，并且顺便获取data
             return
 
         # change UI
-        self._startRunningMutexAction(self._backTestingAction)
+        self._startRunningMutexAction(self._backTestingAction)# 开始互斥，不能进行其他操作
         # 开始回测请求，发送一些刚才对话框的参数
         event = DyEvent(DyEventType.stockStrategyBackTestingReq)
         event.data = DyStockBackTestingStrategyReqData(strategyCls, [data['startDate'], data['endDate']], data, param)
         #这里直接开始处理策略，应为刚才已经注册过了
-        self._mainEngine.eventEngine.put(event)
+        self._mainEngine.eventEngine.put(event)# put之后策略回测引擎的对应请求函数立马开始运行
     #
     def closeEvent(self, event):
         """ 关闭事件 """

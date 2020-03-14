@@ -2,7 +2,7 @@ from datetime import *
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
-
+# 杰卡德指数对话框
 class DyStockSelectJaccardIndexDlg(QDialog):
 
     def __init__(self, data, parent=None):
@@ -56,7 +56,7 @@ class DyStockSelectJaccardIndexDlg(QDialog):
         param = param.split(';')
         paramDict = {}
         for param_ in param:
-            day, increase = param_.split(',')
+            day, increase = param_.split(',')# 周期，涨幅
             paramDict[int(day)] = int(increase)
 
         self._data['param'] = paramDict

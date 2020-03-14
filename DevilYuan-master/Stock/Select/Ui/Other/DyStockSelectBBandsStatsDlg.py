@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton
 
 from ....Common.DyStockCommon import *
 
-
+# 股票选股布林统计对话框
 class DyStockSelectBBandsStatsDlg(QDialog):
 
     def __init__(self, data, parent=None):
@@ -13,9 +13,9 @@ class DyStockSelectBBandsStatsDlg(QDialog):
         self._data = data
 
         self._initUi()
-
+        # 链接那个对话框是否可用
         self._stocksButtonGroup.buttonClicked.connect(self._radioButtonClicked)
-
+    # 初始化UI
     def _initUi(self):
         self.setWindowTitle('股票代码')
  
@@ -81,13 +81,13 @@ class DyStockSelectBBandsStatsDlg(QDialog):
  
  
         self.setLayout(grid)
-
+    #
     def _radioButtonClicked(self, button):
         if button.text() == '股票代码':
             self._stockLineEdit.setEnabled(True)
         else:
             self._stockLineEdit.setEnabled(False)
-
+    # 获取股票代码
     def _getStockCode(self):
         checkedButton = self._stocksButtonGroup.checkedButton()
         text = checkedButton.text()
@@ -96,7 +96,7 @@ class DyStockSelectBBandsStatsDlg(QDialog):
             return DyStockCommon.getDyStockCode(self._stockLineEdit.text())
 
         return DyStockCommon.getIndexByName(text)
-
+    # 返回数据
     def _ok(self):
         self._data['startDate'] = self._startDateLineEdit.text()
         self._data['endDate'] = self._endDateLineEdit.text()

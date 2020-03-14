@@ -36,7 +36,7 @@ class DyStockDataWindow(object):
     @property
     def dataViewer(self):
         return self._dataViewer
-
+    # 设置测试股票，会由对应的主引擎调取
     def setTestedStocks(self, codes):
         self._testedStocks = codes
     
@@ -395,7 +395,7 @@ class DyStockDataWindow(object):
         f = plt.gcf()
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
         f.show()
-
+    # 这里是对应的绘图请求
     def plotReqBBandsStats(self, code, startDate, endDate,  bBand1Period=10, bBand2Period=20):
         # fowarding 59 days for calculating MAs
         dates = [-59, startDate, endDate]
@@ -405,8 +405,8 @@ class DyStockDataWindow(object):
             return
 
         # put event to UI
-        event = DyEvent(DyEventType.plotAck)
-        event.data['plot'] = self.plotAckBBandsStats
+        event = DyEvent(DyEventType.plotAck)# 发送到UI 的ACK那面去处理
+        event.data['plot'] = self.plotAckBBandsStats# 链接绘图函数
         event.data['code'] = code
         event.data['startDate'] = startDate
         event.data['endDate'] = endDate

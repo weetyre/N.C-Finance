@@ -36,7 +36,7 @@ class DyStockCtaEngineExtra(object):
         cash *= ratio/100
 
         return cash
-
+    # 按照比例买入
     def buyByRatio(ctaEngine, accountManager, strategyCls, tick, ratio, ratioMode, signalInfo=None):
         code = tick.code
         price = getattr(tick, strategyCls.buyPrice)
@@ -58,7 +58,7 @@ class DyStockCtaEngineExtra(object):
                 cash = DyStockCtaEngineExtra._getCashByRatio(accountManager, strategyCls, ratio, ratioMode)
                 cash = min(curCash, cash)
 
-                if not strategyCls.allowSmallCashBuy:
+                if not strategyCls.allowSmallCashBuy:# 一下就是防止小单买入
                     # 如果剩余资金不足总资产的@allPosPreliminaryRatio%，则满仓
                     if (curCash - cash)/curCapital*100 < DyStockTradeCommon.allPosPreliminaryRatio:
                         cash = curCash
@@ -71,8 +71,8 @@ class DyStockCtaEngineExtra(object):
             # 计算股票的可买数量
             volume = DyStockTradeCommon.getBuyVol(cash, code, price)
 
-        return ctaEngine.buy(strategyCls, tick, volume, signalInfo)
-
+        return ctaEngine.buy(strategyCls, tick, volume, signalInfo)# 买股票
+    #
     def sellByRatio(ctaEngine, accountManager, strategy, tick, ratio, ratioMode, sellReason=None, signalInfo=None):
         """
             @strategy: 策略实例，为了获取策略的持仓。这样不会卖掉其他策略的相同持仓。

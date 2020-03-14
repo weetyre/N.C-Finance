@@ -114,7 +114,7 @@ class DyStockCtaTemplate(object):
         self._curCodeBuyCountDict = {} # {code: buy count}，当日标的的买入次数字典
 
         self._posSync = False # 策略持仓是否已经跟账户同步过
-    
+    #
     def _loadOnClose(self):
         """
             载入前一交易日策略的收盘保存数据
@@ -130,11 +130,11 @@ class DyStockCtaTemplate(object):
             for code, pos in positions.items():
                 self._curPos[code] = DyStockPos.restorePos(pos, self.__class__)
 
-            del savedData['pos']
+            del savedData['pos']# 仅清空持仓数据
 
         # 保存持仓之外的数据
         self._preSavedData = savedData
-
+    # 这是股票关注的代码
     def onOpenCodes(self):
         """
             策略开盘关注的股票代码（由用户选择继承实现）
@@ -171,8 +171,8 @@ class DyStockCtaTemplate(object):
         # 初始化当日相关数据
         self.__curInit(date)
 
-        # 载入策略开盘准备数据
-        self._preparedData = self.loadPreparedData(date, codes=codes)
+        # 载入策略开盘准备数据#
+        self._preparedData = self.loadPreparedData(date, codes=codes) # 返回{}还是会跳过去，载入前一日的保存数据
         if self._preparedData is None:
             return False
 
@@ -184,7 +184,7 @@ class DyStockCtaTemplate(object):
         if self._preparedPosData is None:
             return False
 
-        self._monitoredStocks.extend(list(self._curPos))
+        self._monitoredStocks.extend(list(self._curPos))# 开始新的一天也会初始化
 
         return True
     #
@@ -211,7 +211,7 @@ class DyStockCtaTemplate(object):
             func(self, ticks)
 
         return wrapper
-
+    #
     def onTicks(self, ticks):
         """
             收到行情Ticks推送（Tick模式下，必须由用户继承实现）
@@ -219,7 +219,7 @@ class DyStockCtaTemplate(object):
             @ticks: {code: DyStockCtaTickData}
         """
         raise NotImplementedError
-
+    #
     def onBarsWrapper(func):
         """
             子类@onBars的装饰器
@@ -234,18 +234,18 @@ class DyStockCtaTemplate(object):
             func(self, bars)
 
         return wrapper
-
+    #
     def onBars(self, bars):
         """
             收到行情Bars推送（Bar模式下，必须由用户继承实现）
             @bars: {code: DyStockCtaBarData}
         """
         raise NotImplementedError
-
+    #
     def onStop(self):
         """ 停止策略（必须由用户继承实现）"""
         raise NotImplementedError
-
+    #
     def onCloseWrapper(func):
         """
             子类@onClose的装饰器
@@ -257,7 +257,7 @@ class DyStockCtaTemplate(object):
             super(self.__class__, self).onClose(*args, **kwargs)
 
         return wrapper
-
+    #更新持仓收盘
     def _onClosePos(self):
         codes = list(self._curPos)
         for code in codes:
@@ -266,7 +266,7 @@ class DyStockCtaTemplate(object):
 
         for _, pos in self._curPos.items():
             pos.onClose()
-
+    #
     def onClose(self):
         """
             策略每天收盘后的数据处理（由用户选择继承实现）
@@ -296,7 +296,7 @@ class DyStockCtaTemplate(object):
             @return: None- prepare错误, {}-策略没有准备数据
         """
         return {}
-
+    #
     @classmethod
     def preparePos(cls, date, dataEngine, info, posCodes=None, errorDataEngine=None, backTestingContext=None):
         """
@@ -306,10 +306,10 @@ class DyStockCtaTemplate(object):
             @return: None-prepare position data错误, {}-策略没有持仓准备数据
         """
         return {}
-    
+    # 获取购买量
     def getBuyVol(self, cash, code, price):
         return self._ctaEngine.getBuyVol(cash, code, price)
-
+    # 浮点数转化字符串
     @classmethod
     def value2Str(cls, value):
         """
@@ -326,7 +326,7 @@ class DyStockCtaTemplate(object):
                     value = ''
 
         return str(value)
-
+    #回测时，将实盘推送给UI的信号明细转成对应的信号信息
     def __convert2SignalInfo(self, signalDetails=None):
         """
             回测时，将实盘推送给UI的信号明细转成对应的信号信息
@@ -349,7 +349,7 @@ class DyStockCtaTemplate(object):
                 signalInfo += '{0}:{1}'.format(name, value)
 
         return signalInfo
-    #
+    # 买入前的检查
     def __checkBuy(self, tick):
         """
             买入前的检查
@@ -364,8 +364,8 @@ class DyStockCtaTemplate(object):
             self._curCodeBuyCountDict[tick.code] > self.curCodeBuyMaxNbr:
             return False
 
-        return True
-
+        return True # 经过风控，可以买入
+    # 委托买入
     def buy(self, tick, volume, signalDetails=None, price=None):
         """
             委托买入
@@ -391,7 +391,7 @@ class DyStockCtaTemplate(object):
             self._add2CurNotDoneEntrusts(entrust)
 
         return entrust
-    
+    # 委托卖出
     def sell(self, tick, volume, sellReason=DyStockSellReason.strategy, signalDetails=None, price=None):
         """
             @signalDetails: [], 信号明细，回测时会转换成信号信息
@@ -402,15 +402,15 @@ class DyStockCtaTemplate(object):
         # 二次保护，防止卖出其他策略的仓位
         if self.getCodePosAvailVolume(tick.code) < volume:
             return None
-
+        # 如果是回测，是回测CTA引擎卖
         entrust = self._ctaEngine.sell(self.__class__, tick, volume, sellReason, self.__convert2SignalInfo(signalDetails), price)
         if entrust is not None:
-            self._curEntrusts[entrust.dyEntrustId] = entrust
+            self._curEntrusts[entrust.dyEntrustId] = entrust # 同时加到CTA策略的委托
 
             self._add2CurNotDoneEntrusts(entrust)
 
         return entrust
-
+    # 撤销委托,回测总返回false
     def cancel(self, code=None):
         """
             撤销委托
@@ -419,10 +419,10 @@ class DyStockCtaTemplate(object):
         """
         if code is None:
             ret = True
-            for _, entrusts in self._curNotDoneEntrusts.items():
-                for _, entrust in entrusts.items():
-                    # 撤销委托
-                    ret = self._ctaEngine.cancel(self.__class__, entrust) and ret
+            for _, entrusts in self._curNotDoneEntrusts.items():# 前面是code
+                for _, entrust in entrusts.items():#前面是委托代码
+                    # 撤销委托 回测引擎总会返回false
+                    ret = self._ctaEngine.cancel(self.__class__, entrust) and ret # and 运算，只要有一个是false，那就统统是false
 
         else:
             entrusts = self._curNotDoneEntrusts.get(code)
@@ -435,7 +435,7 @@ class DyStockCtaTemplate(object):
                     ret = self._ctaEngine.cancel(self.__class__, entrust) and ret
 
         return ret
-
+    # 关闭持仓，卖出原因策略卖出，就是持仓股票全卖了
     def closePos(self, tick, sellReason=DyStockSellReason.strategy, signalDetails=None):
         """
             @signalDetails: [], 信号明细，回测时会转换成信号信息
@@ -444,7 +444,7 @@ class DyStockCtaTemplate(object):
         self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])
 
         # get code position of strategy
-        volume = self.getCodePosAvailVolume(tick.code)
+        volume = self.getCodePosAvailVolume(tick.code)# 就是持仓全卖了
         if volume == 0:
             return None
 
@@ -456,7 +456,7 @@ class DyStockCtaTemplate(object):
             self._add2CurNotDoneEntrusts(entrust)
 
         return entrust
-    #
+    # 按照比例买入股票
     def buyByRatio(self, tick, ratio, ratioMode, signalDetails=None):
         """
             按照比例买入股票：
@@ -470,23 +470,23 @@ class DyStockCtaTemplate(object):
             @ratio: % 或者是现金值
             @signalDetails: [], 信号明细，回测时会转换成信号信息
         """
-        if not self.enableBuy:
+        if not self.enableBuy:# 买入开关已开
             return None
 
         # 不管买入成功与否，首先推送信号明细到UI
-        self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])
+        self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])# 这个还没有实现
 
         if not self.__checkBuy(tick):
             return None
 
-        entrust = self._ctaEngine.buyByRatio(self.__class__, tick, ratio, ratioMode, self.__convert2SignalInfo(signalDetails))
+        entrust = self._ctaEngine.buyByRatio(self.__class__, tick, ratio, ratioMode, self.__convert2SignalInfo(signalDetails))# 返回一个新的委托
         if entrust is not None:
-            self._curEntrusts[entrust.dyEntrustId] = entrust
+            self._curEntrusts[entrust.dyEntrustId] = entrust # 同步CTA委托list，这个entrust 已经加入账户管理的未处理委托了
 
-            self._add2CurNotDoneEntrusts(entrust)
+            self._add2CurNotDoneEntrusts(entrust) # 添加到现在没有成交的委托
 
         return entrust
-
+    # 按照比例卖出股票
     def sellByRatio(self, tick, ratio, ratioMode, sellReason=DyStockSellReason.strategy, signalDetails=None):
         """
             按照比例卖出股票
@@ -503,7 +503,7 @@ class DyStockCtaTemplate(object):
             self._add2CurNotDoneEntrusts(entrust)
 
         return entrust
-
+    # 对于回测CTA是空
     def putEvent(self, type, data):
         """
             推送一个事件到事件引擎
@@ -511,34 +511,34 @@ class DyStockCtaTemplate(object):
             @data: 事件数据，一般为dict
         """
         self._ctaEngine.putEvent(type, data)
-
+    # 对于回测CTA是空
     def putStockMarketMonitorUiEvent(self, data=None, newData=False, op=None, signalDetails=None, datetime_=None):
         """
             参数说明参照DyStockCtaEngine
             @datetime_: 行情数据时有效
         """
         self._ctaEngine.putStockMarketMonitorUiEvent(self.__class__, data, newData, op, signalDetails, datetime_)
-
+    # 更新市场强度事件
     def putStockMarketStrengthUpdateEvent(self, time, marketStrengthInfo):
         if time is None:
             return
 
         self._ctaEngine.putStockMarketStrengthUpdateEvent(self.__class__, time, marketStrengthInfo.copy())
-
+    #
     def _callPrepare(self, date, codes, isBackTesting):
         """
             调用策略的@prepare接口
         """
-        if self._newPrepareInterface is None:
+        if self._newPrepareInterface is None:# 刚开始就是空的
             try:
                 data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting) # 如果策略没有事先，就用自带得，返回是 {} 空， 出现tpye错误也会在最后一个参数出现
-                
+                # 第一次运行由于输入是TF,但是原始是None 所以格式不服会报错，转为新接口
                 self._newPrepareInterface = False 
 
                 warningStr = "DevilYuan-Warning: 策略[{}]请使用@prepare新接口: def prepare(cls, date, dataEngine, info, codes=None, errorDataEngine=None, backTestingContext=None)".format(self.chName)
                 print(warningStr)
             except TypeError:
-                # new @parepare interface
+                # new @parepare interface，银行日内差不需要事先这个接口，因为不需要准备预留数据，所以为None
                 data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._ctaEngine.backTestingContext)
 
                 self._newPrepareInterface = True
@@ -551,7 +551,7 @@ class DyStockCtaTemplate(object):
             data = self.prepare(date, self._ctaEngine.dataEngine, self._info, codes, self._ctaEngine.errorDataEngine, self._strategyParam, isBackTesting)
 
         return data
-
+    #
     def _callPreparePos(self, date, posCodes, isBackTesting):
         """
             调用策略的@preparePos接口
@@ -603,8 +603,8 @@ class DyStockCtaTemplate(object):
                 self._info.print('没有足够的历史数据，策略的准备数据载入失败', DyLogData.error)
                 return None
 
-            # prepare
-            data = self._callPrepare(date, codes, isBackTesting)
+            # prepare接口调用
+            data = self._callPrepare(date, codes, isBackTesting)# 返回{} 所以也会跳
             if data is None:
                 self._info.print('策略准备数据失败', DyLogData.error)
                 return None
@@ -621,7 +621,7 @@ class DyStockCtaTemplate(object):
                 self._info.print('策略的准备数据载入完成')
             
         return data
-
+    #
     def loadPreparedPosData(self, date, posCodes=None):
         """
             策略开盘前载入所需的持仓准备数据。在策略的@onOpen实现里被调用。
@@ -660,7 +660,7 @@ class DyStockCtaTemplate(object):
                 self._info.print('策略的持仓准备数据载入完成')
             
         return data
-
+    # 根据策略获取准备的数据（和选股有关，未看）
     def getPreparedDataBySelectStrategy(date, dataEngine, selectStrategyCls, param, codes=None):
         """
             运行选股策略，获得策略实盘或者回测准备数据。既然是策略准备数据，则是前一交易日的数据。
@@ -689,7 +689,7 @@ class DyStockCtaTemplate(object):
             return None
 
         return DyStockCtaTemplate.__stockSelectEngine.resultForTrade
-
+    #主要更新成本价
     def onPos(self, positions):
         """
             券商账户持仓更新事件
@@ -701,18 +701,18 @@ class DyStockCtaTemplate(object):
             if newPos is None:
                 continue
 
-            pos.cost = newPos.cost
-
+            pos.cost = newPos.cost # 账户更新了CTA策略的成本价
+    # 委托更新事件
     def onEntrust(self, entrust):
         """
             委托状态更新事件
             !!!若策略需要知道对应委托的具体数据，必须通过@entrust.dyEntrustId获取对应的entrust实例。
             因为这里entrust实例改变了。
         """
-        self._curEntrusts[entrust.dyEntrustId] = entrust
+        self._curEntrusts[entrust.dyEntrustId] = entrust # 更新现在委托， entrust 会变，但是id不变，因为这是状态改变了
 
-        self._tryRemoveFromCurNotDoneEntrusts(entrust)
-
+        self._tryRemoveFromCurNotDoneEntrusts(entrust) # 删除已完成的委托，有可能委托未完成所以没有删除
+    #成交后更新CTA的持仓
     def onDeal(self, deal):
         """ 成交事件 """
         # 防止同一成交推送多次
@@ -724,14 +724,14 @@ class DyStockCtaTemplate(object):
 
         #----- update positions -----
         # new position
-        if deal.code not in self._curPos:
+        if deal.code not in self._curPos:# 能进入这里面的，只能是买，因为要增加持仓，对于当天是暂时的
             if deal.type == DyStockOpType.buy: # the type should be buy, if not means some error.
                 pos = DyStockPos(deal.datetime, self.__class__, deal.code, deal.name, deal.price, deal.volume)
                 pos.sync = True
                 pos.priceAdjFactor = 1
                 pos.volumeAdjFactor = 1
-
-                self._curPos[deal.code] = pos
+                # 通过成交deal 添加过来的，直接同步，不需要除复权，因为已经加上了
+                self._curPos[deal.code] = pos # 对于策略而言，当前持仓只是当天暂时的
 
             else:
                 self._info.print('策略[{0}]的成交单[{1}], 成交类型不匹配'.format(self.chName, deal.dyDealId), DyLogData.error)
@@ -744,7 +744,7 @@ class DyStockCtaTemplate(object):
         else: # sell
             # we don't delete pos if total volume is 0, which will be done after market close.
             self._curPos[deal.code].removePos(deal.price, deal.volume)
-
+    # 可以买入吗
     def canBuy(self, tick):
         """
             可以买入吗？
@@ -755,7 +755,7 @@ class DyStockCtaTemplate(object):
             return False
 
         if tick.askPrices is None: # 回测
-            if (tick.price - tick.preClose)/tick.preClose*100 >= DyStockCommon.limitUpPct:
+            if (tick.price - tick.preClose)/tick.preClose*100 >= DyStockCommon.limitUpPct: # 涨停时的涨幅(%), >=
                 return False
 
         else: # 实盘
@@ -763,13 +763,13 @@ class DyStockCtaTemplate(object):
                 return False
 
         return True
-
+    # 添加到未成交的委托
     def _add2CurNotDoneEntrusts(self, entrust):
-        entrusts = self._curNotDoneEntrusts.setdefault(entrust.code, {})
+        entrusts = self._curNotDoneEntrusts.setdefault(entrust.code, {})#如果字典中包含有给定键，则返回该键对应的值，否则返回为该键设置的值。
 
         assert entrust.dyEntrustId not in entrusts
         entrusts[entrust.dyEntrustId] = entrust
-
+    #
     def _tryRemoveFromCurNotDoneEntrusts(self, entrust):
         """
             尝试删除已经完成的委托
@@ -789,7 +789,7 @@ class DyStockCtaTemplate(object):
 
     ################################## 仓位相关 ##################################
     ################################## 仓位相关 ##################################
-    def syncPos(self, syncData):
+    def syncPos(self, syncData):#
         """
             由于除权除息的原因，从券商管理类同步策略持仓数据
         """
@@ -798,7 +798,7 @@ class DyStockCtaTemplate(object):
         self._posSync = True 
 
         for code, pos in self._curPos.items():
-            if pos.sync:
+            if pos.sync:# 如果已同步，就继续
                 continue
 
             data = syncData.get(code)
@@ -825,8 +825,8 @@ class DyStockCtaTemplate(object):
             pos.priceAdjFactor = priceAdjFactor
             pos.volumeAdjFactor = volumeAdjFactor
 
-            pos.sync = True
-
+            pos.sync = True# 否则更新券商管理持仓
+    #
     def getCodePosOverCapital(self, code):
         """
             获取指定股票的持仓占比券商账户总资产(%)
@@ -840,7 +840,7 @@ class DyStockCtaTemplate(object):
             return None
 
         return codePosMarketValue/capital*100
-
+    #
     def getCashOverCapital(self):
         """
             获取现金占比券商账户总资产(%)
@@ -854,7 +854,7 @@ class DyStockCtaTemplate(object):
             return None
 
         return cash/capital*100
-
+    # 获取策略持仓的可卖股数
     def getCodePosAvailVolume(self, code):
         """
             获取策略持仓的可卖股数
@@ -864,7 +864,7 @@ class DyStockCtaTemplate(object):
             return 0
 
         return pos.availVolume
-
+    # 获取策略持仓的总股数
     def getCodePosTotalVolume(self, code):
         """
             获取策略持仓的总股数
@@ -874,7 +874,7 @@ class DyStockCtaTemplate(object):
             return 0
 
         return pos.totalVolume
-
+    # 子类@_processPreparedDataAdj的装饰器，处理数据前复权
     def processPreparedDataAdjWrapper(func):
         """
             子类@_processPreparedDataAdj的装饰器
@@ -905,7 +905,7 @@ class DyStockCtaTemplate(object):
             return True
 
         return wrapper
-
+    # 处理持仓前复权，
     def processPreparedPosDataAdjWrapper(func):
         """
             子类@_processPreparedPosDataAdj的装饰器
@@ -946,7 +946,7 @@ class DyStockCtaTemplate(object):
             return True
 
         return wrapper
-
+    # 处理数据前复权
     def processDataAdj(self, tick, preClose, dictData, keys, isPrice=True, keyCodeFormat=True):
         """
             处理一只股票数据的前复权。数据支持类型None，list，float，int，DataFrame，Series
@@ -977,7 +977,7 @@ class DyStockCtaTemplate(object):
                     continue
 
                 if isinstance(data_, list):
-                    data_[:] = list(map(lambda x, y: x*y, data_, [adjFactor]*len(data_)))
+                    data_[:] = list(map(lambda x, y: x*y, data_, [adjFactor]*len(data_))) # 使用乘法，处理前复权
                 else:
                     data[code] = data_*adjFactor
 
@@ -990,10 +990,10 @@ class DyStockCtaTemplate(object):
                         continue
 
                     if isinstance(data_, list):
-                        data_[:] = list(map(lambda x, y: x*y, data_, [adjFactor]*len(data_)))
+                        data_[:] = list(map(lambda x, y: x*y, data_, [adjFactor]*len(data_)))# 使用乘法，处理前复权
                     else:
                         data[key] = data_*adjFactor
-
+    # 处理一只股票OHLCV数据的前复权
     def processOhlcvDataAdj(self, tick, preClose, dictData, key, keyCodeFormat=True):
         """
             处理一只股票OHLCV数据的前复权
@@ -1044,7 +1044,7 @@ class DyStockCtaTemplate(object):
     @property
     def curDeals(self):
         return self._curDeals
-
+    # 返回现金
     @property
     def curCash(self):
         """

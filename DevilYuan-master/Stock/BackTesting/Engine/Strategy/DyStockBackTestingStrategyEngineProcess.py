@@ -24,7 +24,7 @@ def __setDbCache(reqData):
         DyStockDbCache.preLoadDaysSize = dbCachePreLoadDaysSize
 
     return useDbCache
-#
+# 在这里并行运行
 def dyStockBackTestingStrategyEngineProcess(outQueue, inQueue, reqData, config=None):
     """
         股票回测处理实体。每个回测处理实体由一个参数组合和一个回测周期组成。
