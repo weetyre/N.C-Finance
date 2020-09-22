@@ -1,6 +1,6 @@
 from ..DyStockTradeCommon import *
 
-#
+##
 class DyStockPos:
     """
         一只股票的持仓，一只股票对应一个实例
@@ -188,7 +188,7 @@ class DyStockPos:
 
         self.closeHigh = self.price if self.closeHigh is None else max(self.price, self.closeHigh)
     #
-    @classmethod# 恢复昨日持仓，给cta策略用
+    @classmethod# 恢复昨日持仓，给cta策略用，Manager在实盘启动的时候，也会根据磁盘存储的数据调用
     def restorePos(cls, pos, strategyCls=None):
         """
             根据磁盘的持仓，创建出一个持仓实例

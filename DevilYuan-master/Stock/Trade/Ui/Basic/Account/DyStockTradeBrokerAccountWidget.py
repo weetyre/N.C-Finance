@@ -5,7 +5,7 @@ from .DyStockTradeCurDealsWidget import *
 from .DyStockTradeCurEntrustsWidget import *
 from .DyStockTradePositionWidget import *
 
-
+# 真正显示具体的broker【模拟1，模拟2】
 class DyStockTradeBrokerAccountWidget(QTabWidget):
     """ 券商股票交易账户窗口 """
 
@@ -17,7 +17,7 @@ class DyStockTradeBrokerAccountWidget(QTabWidget):
         self._broker = broker
 
         self._initUi()
-
+    # 初始化ui
     def _initUi(self):
         self._widgets = []
 
@@ -36,7 +36,7 @@ class DyStockTradeBrokerAccountWidget(QTabWidget):
         widget = DyStockTradeCurDealsWidget(self._eventEngine, self._broker)
         self.addTab(widget, '当日成交')
         self._widgets.append(widget)
-
+    # 关闭窗口所要做的事情
     def closeEvent(self, event):
         for widget in self._widgets:
             widget.close()

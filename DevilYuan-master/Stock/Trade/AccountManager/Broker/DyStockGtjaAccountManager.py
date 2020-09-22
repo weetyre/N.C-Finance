@@ -1,7 +1,7 @@
 from ..DyStockAccountManager import *
 from ....Common.DyStockCommon import *
 
-#
+# 国泰明安Broker
 class DyStockGtjaAccountManager(DyStockAccountManager):
     """
         国泰君安Web管理类

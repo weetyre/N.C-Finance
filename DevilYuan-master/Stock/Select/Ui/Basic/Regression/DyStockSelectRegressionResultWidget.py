@@ -89,11 +89,11 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
     #
     def _scatterMatrixAct(self):
         self.widget(self._rightClickedTabIndex).scatterMatrix()
-    # 获取回归的结果
+    # 获取回归的结果，主要是显示，每一个基准日结束之后，都会执行一遍
     def _stockSelectStrategyRegressionAckHandler(self, event):
         # unpack
         strategyCls = event.data['class']
-        result = event.data['result']
+        result = event.data['result']# 回归结果（单结果）
         period = event.data['period']
         day = event.data['day']
         if result is None: return
@@ -102,18 +102,18 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
 
         # remove tab window's tabs if existing
         if self._newRegressionStrategyCls == strategyCls and tabName in self._strategyWidgets:
-            self._strategyWidgets[tabName].removeAll()# 移除那个策略tab
+            self._strategyWidgets[tabName].removeAll()# 移除那个策略tab，为了重新加载
 
         # create new strategy result tab
-        if tabName not in self._strategyWidgets:
+        if tabName not in self._strategyWidgets:# 第一次的时候要初始化这个实例，第二次就不需要了
             widget = DyStockSelectStrategyRegressionResultWidget(self._eventEngine, strategyCls, self._paramWidget)
-            self.addTab(widget, tabName)
+            self.addTab(widget, tabName)# 给当前tabName再加一个子tab
 
             # save
-            self._strategyWidgets[tabName] = widget
+            self._strategyWidgets[tabName] = widget# 建立起对应的关系
 
-        self._newRegressionStrategyCls = None
-
+        self._newRegressionStrategyCls = None# 之后就把他清空，供其他策略使用，并且确保不会执行existing 那个函数
+        # 之后每次在这个widget 里添加结果就行
         self._strategyWidgets[tabName].append(period, day, result)
 
         self.parentWidget().raise_()
@@ -131,9 +131,9 @@ class DyStockSelectRegressionResultWidget(QTabWidget):
         del self._strategyWidgets[tabName]
 
         self.removeTab(index)
-    # 回归请求，也就是确认一个新的回归类
+    # 回归请求，也就是确认一个新的回归类（这是一个同一个事件类，两个处理函数，这是其中一个，当然先执行这个）
     def _stockSelectStrategyRegressionReqHandler(self, event):
-        self._newRegressionStrategyCls = event.data['class']
+        self._newRegressionStrategyCls = event.data['class']# 新的回归策略类
     # 载入数据，重新恢复窗口
     def load(self, data, strategyCls):
         """

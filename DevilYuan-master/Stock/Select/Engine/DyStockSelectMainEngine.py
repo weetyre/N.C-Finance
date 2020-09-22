@@ -10,7 +10,7 @@ from .DyStockSelectViewerEngine import *
 class DyStockSelectMainEngine(object):
 
     def __init__(self):
-        self._eventEngine = DyEventEngine(DyStockSelectEventHandType.nbr, False)# 每一个大功能下都会开一个多事件引擎，并且指定线程数，这个为3
+        self._eventEngine = DyEventEngine(DyStockSelectEventHandType.nbr, False)# 每一个大功能下都会开一个多事件引擎，并且指定线程数，这个为3，不需要timer
         self._info = DyInfo(self._eventEngine)
 
         self._selectEngine = DyStockSelectSelectEngine(self._eventEngine, self._info)

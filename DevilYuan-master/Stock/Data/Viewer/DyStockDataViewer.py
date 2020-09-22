@@ -1210,8 +1210,8 @@ class DyStockDataViewer(object):
         dates[0] += 59 # restore date range
         baseDay, startDay, endDay = self._getTDays(code, dates)
 
-        #df = self._daysEngine.getDataFrame(code, startDay, endDay)
-        #DyStockDataML.predictReboundVol(df)
+        df = self._daysEngine.getDataFrame(code, startDay, endDay)
+        DyStockDataML.predictReboundVol(df)
 
         # plot stock
         periods = self._plotCandleStick(code, startDate=startDay, endDate=endDay, baseDate=baseDay, left=0.05, right=0.95, top=0.95, bottom=0.5, maIndicator=maIndicator)

@@ -40,7 +40,7 @@ class DyStockSelectStrategyRegressionResultWidget(QTabWidget):
         # tab window title
         tabName = '[' + ','.join(period) + ']'
 
-        if tabName not in self._strategyPeriodWidgets:
+        if tabName not in self._strategyPeriodWidgets:# 进一步生成周期小组件
             widget = DyStockSelectStrategyRegressionPeriodResultWidget(self._eventEngine, tabName, self._strategyCls, self._paramWidget)
             widget.setColNames(result[0])# 设置列名
             
@@ -48,9 +48,9 @@ class DyStockSelectStrategyRegressionResultWidget(QTabWidget):
             self.insertTab(tabPos, widget, tabName)# 插入tab
 
             # save
-            self._strategyPeriodWidgets[tabName] = widget
+            self._strategyPeriodWidgets[tabName] = widget # 之后同一个周期的就不会在发生处理
 
-        self._strategyPeriodWidgets[tabName].append(day, result[1:])# 基准日期，以及结果行添加
+        self._strategyPeriodWidgets[tabName].append(day, result[1:])# 基准日期，以及结果行添加，基准day会变化
 
         self.parentWidget().raise_()
     # 移除所有的周期窗口

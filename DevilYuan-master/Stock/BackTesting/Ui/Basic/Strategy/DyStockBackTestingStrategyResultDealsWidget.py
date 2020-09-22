@@ -3,7 +3,7 @@ from ....DyStockBackTestingCommon import *
 from .....Trade.DyStockTradeCommon import *
 from .....Common.Ui.Basic.DyStockTableWidget import *
 
-
+# 股票回测成交结果窗口
 class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):# 继承以至于提供右键菜单的功能
 
     sellReasonFGMap = {DyStockSellReason.stopLoss: Qt.darkGreen,
@@ -28,7 +28,7 @@ class DyStockBackTestingStrategyResultDealsWidget(DyStockTableWidget):# 继承�
         super().__init__(eventEngine, name=name, index=True, floatRound=3)
 
         self.setColNames(self.header)
-        
+        # 定位具体的列
         self._typeCol = self.header.index('交易类型(买入:0,卖出:0)')
         self._pnlCol = self.header.index('盈亏(0)')
         self._pnlRatioCol = self.header.index('盈亏(%)')

@@ -156,7 +156,7 @@ class DyStockCtaTemplate(object):
             return func(self, *args, **kwargs)
 
         return wrapper
-    #
+    # 初始化策略每天开盘前的数据
     def onOpen(self, date, codes=None):
         """
             初始化策略每天开盘前的数据，这些数据都与当日有关（必须由用户继承实现）
@@ -365,7 +365,7 @@ class DyStockCtaTemplate(object):
             return False
 
         return True # 经过风控，可以买入
-    # 委托买入
+    # 委托买入（策略手动买入也会经理这个）
     def buy(self, tick, volume, signalDetails=None, price=None):
         """
             委托买入
@@ -381,14 +381,14 @@ class DyStockCtaTemplate(object):
         # 不管买入成功与否，首先推送信号明细到UI
         self.putStockMarketMonitorUiEvent(signalDetails=None if signalDetails is None else [signalDetails])
 
-        if not self.__checkBuy(tick):
+        if not self.__checkBuy(tick):# 实盘买入时也会检查风控
             return None
 
         entrust = self._ctaEngine.buy(self.__class__, tick, volume, self.__convert2SignalInfo(signalDetails), price)
         if entrust is not None:
             self._curEntrusts[entrust.dyEntrustId] = entrust
 
-            self._add2CurNotDoneEntrusts(entrust)
+            self._add2CurNotDoneEntrusts(entrust)# 加入到未成交的委托
 
         return entrust
     # 委托卖出
@@ -511,16 +511,16 @@ class DyStockCtaTemplate(object):
             @data: 事件数据，一般为dict
         """
         self._ctaEngine.putEvent(type, data)
-    # 对于回测CTA是空
+    # 对于回测CTA是空（实盘时更新监控数据）
     def putStockMarketMonitorUiEvent(self, data=None, newData=False, op=None, signalDetails=None, datetime_=None):
         """
             参数说明参照DyStockCtaEngine
             @datetime_: 行情数据时有效
         """
-        self._ctaEngine.putStockMarketMonitorUiEvent(self.__class__, data, newData, op, signalDetails, datetime_)
+        self._ctaEngine.putStockMarketMonitorUiEvent(self.__class__, data, newData, op, signalDetails, datetime_)# class是具体的CTA策略类
     # 更新市场强度事件
     def putStockMarketStrengthUpdateEvent(self, time, marketStrengthInfo):
-        if time is None:
+        if time is None:# 如果时间是空，那就返回
             return
 
         self._ctaEngine.putStockMarketStrengthUpdateEvent(self.__class__, time, marketStrengthInfo.copy())
@@ -660,7 +660,7 @@ class DyStockCtaTemplate(object):
                 self._info.print('策略的持仓准备数据载入完成')
             
         return data
-    # 根据策略获取准备的数据（和选股有关，未看）
+    # 根据策略获取准备的数据（和选股有关）
     def getPreparedDataBySelectStrategy(date, dataEngine, selectStrategyCls, param, codes=None):
         """
             运行选股策略，获得策略实盘或者回测准备数据。既然是策略准备数据，则是前一交易日的数据。
@@ -1089,7 +1089,7 @@ class DyStockCtaTemplate(object):
             return self.etf300Tick
 
         return self.etf500Tick
-
+    #
     def getCurCodeBuyCount(self, code):
         """
             获取当日股票的买入次数

@@ -5,11 +5,11 @@ from Stock.Common.DyStockCommon import *
 from EventEngine.DyEvent import *
 from DyCommon.Ui.DyTableWidget import *
 
-
+# 股票实盘策略买对话框
 class DyStockTradeStrategyBuyDlg(QDialog):
 
-    stockMarketTicksSignal = QtCore.pyqtSignal(type(DyEvent()))
-    stockStrategyMonitoredCodesAckSignal = QtCore.pyqtSignal(type(DyEvent()))
+    stockMarketTicksSignal = QtCore.pyqtSignal(type(DyEvent()))# 更新表格的
+    stockStrategyMonitoredCodesAckSignal = QtCore.pyqtSignal(type(DyEvent()))#  # 策略手动买入相关事件，主要为了测试用
 
     def __init__(self, eventEngine, strategyCls):
         super().__init__()
@@ -25,16 +25,16 @@ class DyStockTradeStrategyBuyDlg(QDialog):
 
         self._registerEvent()
 
-        self._init()
-
-    def _init(self):
-        event = DyEvent(DyEventType.stockStrategyMonitoredCodesReq)
+        self._init()# 请求在其他地方已经注册过了，这里这负责put，或者注册ACK
+    # 主要是传入策略类
+    def _init(self):# 初始化这个之后，就会发送当前策略监控的股票
+        event = DyEvent(DyEventType.stockStrategyMonitoredCodesReq)#  请求策略监控股票池代码事件，因为买要看监控
         event.data = self._strategyCls
 
         self._eventEngine.put(event)
 
     def _initUi(self):
-        self.setWindowTitle(self._strategyCls.chName)
+        self.setWindowTitle(self._strategyCls.chName)# 策略中文名
         
         # 监控池
         monitoredCodesLabel = QLabel('策略监控股票池里的股票代码')
@@ -62,7 +62,7 @@ class DyStockTradeStrategyBuyDlg(QDialog):
         self._priceLabel = QLabel('股票现价')
         self._increaseLabel = QLabel('涨幅(%):')
 
-        self._bidAskTable = DyTableWidget(readOnly=True, index=False, floatRound=3)
+        self._bidAskTable = DyTableWidget(readOnly=True, index=False, floatRound=3)# 不适用索引，保留三位小数
         self._bidAskTable.setColNames([None, '价格(元)', '数量(手)'])
         self._bidAskTable.fastAppendRows([
                                             ['卖5', None, None],
@@ -113,8 +113,8 @@ class DyStockTradeStrategyBuyDlg(QDialog):
         self.setMinimumWidth(QApplication.desktop().size().width()//5)
 
 
-        self._buyCodeLineEdit.textChanged.connect(self._buyCodeChanged)
-
+        self._buyCodeLineEdit.textChanged.connect(self._buyCodeChanged)# 买入代码发生变化
+    # ok处理函数
     def _ok(self):
         try:
             if self._codeLabel.text() != self._tick.code:
@@ -124,26 +124,26 @@ class DyStockTradeStrategyBuyDlg(QDialog):
             QMessageBox.warning(self, '错误', '没有指定代码的Tick数据!')
             return
 
-        event = DyEvent(DyEventType.stockStrategyManualBuy)
+        event = DyEvent(DyEventType.stockStrategyManualBuy)# 策略手动买入事件，也就是说通过UI买入
         event.data['class'] = self._strategyCls
         event.data['tick'] = self._tick
-        event.data['volume'] = float(self._buyVolumeLineEdit.text()) * 100
+        event.data['volume'] = float(self._buyVolumeLineEdit.text()) * 100# 数量为手，所以乘个100
 
         # 不指定价格，则根据tick买入
-        price = self._buyPriceLineEdit.text()
+        price = self._buyPriceLineEdit.text()# 买入价格
         event.data['price'] = float(price) if price else None
 
         self._eventEngine.put(event)
-
+        # 买完之后，就解除注册事件
         self._unregisterEvent()
 
         self.accept()
-
+    # 取消
     def _cancel(self):
         self._unregisterEvent()
 
         self.reject()
-
+    # 获取输入股票代码
     def _getInputCode(self):
         if not self._monitoredCodes:
             return None
@@ -157,7 +157,7 @@ class DyStockTradeStrategyBuyDlg(QDialog):
             return None
 
         return code
-
+    # 买入股票代码变化，必须在监控的股票里
     def _buyCodeChanged(self):
         self._code = self._getInputCode()
         if self._code is None:
@@ -165,37 +165,37 @@ class DyStockTradeStrategyBuyDlg(QDialog):
             return
 
         self._codeLabel.setText(self._code)
-        
+    #
     def _stockStrategyMonitoredCodesAckSignalEmitWrapper(self, event):
         self.stockStrategyMonitoredCodesAckSignal.emit(event)
-
+    #
     def _stockMarketTicksSignalEmitWrapper(self, event):
         self.stockMarketTicksSignal.emit(event)
-
+    # 注册事件
     def _registerEvent(self):
-        self.stockMarketTicksSignal.connect(self._stockMarketTicksHandler)
+        self.stockMarketTicksSignal.connect(self._stockMarketTicksHandler)# 股票池行情的Tick事件, 包含指数
         self._eventEngine.register(DyEventType.stockMarketTicks, self._stockMarketTicksSignalEmitWrapper)
-
+        #  策略手动买入相关事件，主要为了测试用
         self.stockStrategyMonitoredCodesAckSignal.connect(self._stockStrategyMonitoredCodesAckHandler)
         self._eventEngine.register(DyEventType.stockStrategyMonitoredCodesAck, self._stockStrategyMonitoredCodesAckSignalEmitWrapper)
-
+    # 接注册两个事件
     def _unregisterEvent(self):
         self.stockMarketTicksSignal.disconnect(self._stockMarketTicksHandler)
         self._eventEngine.unregister(DyEventType.stockMarketTicks, self._stockMarketTicksSignalEmitWrapper)
 
         self.stockStrategyMonitoredCodesAckSignal.disconnect(self._stockStrategyMonitoredCodesAckHandler)
         self._eventEngine.unregister(DyEventType.stockStrategyMonitoredCodesAck, self._stockStrategyMonitoredCodesAckSignalEmitWrapper)
-
+    # 最终把股票策略监控的股票显示，在窗口开的时候，就会执行这个函数
     def _stockStrategyMonitoredCodesAckHandler(self, event):
         codes = event.data
 
-        self._monitoredCodes = codes
+        self._monitoredCodes = codes # 并赋值监控股票
         self._monitoredCodesTextEdit.setText(str(codes))
-
+    #  股票池行情的Tick事件函数, 包含指数，主要更新现在的窗口，窗口开着就会一直更新，是通过过一个timer事件引擎所控制
     def _stockMarketTicksHandler(self, event):
         ticks = event.data
 
-        self._tick = ticks.get(self._code)
+        self._tick = ticks.get(self._code)# 现在的股票代码，设置tick实例
         if self._tick is None:
             return
 
@@ -205,20 +205,20 @@ class DyStockTradeStrategyBuyDlg(QDialog):
         self._nameLabel.setText(tick.name)
 
         self._priceLabel.setText(str(tick.price))
-        if tick.price > tick.preClose:
+        if tick.price > tick.preClose:# 他是涨的
             self._priceLabel.setStyleSheet("color:red")
-        elif tick.price < tick.preClose:
+        elif tick.price < tick.preClose:# 他是跌的
             self._priceLabel.setStyleSheet("color:darkgreen")
-
+        # 涨幅计算
         increase = round((tick.price - tick.preClose)/tick.preClose*100, 2)
         self._increaseLabel.setText('涨幅(%): {0}%'.format(increase))
         if increase > 0:
-            self._increaseLabel.setStyleSheet("color:red")
+            self._increaseLabel.setStyleSheet("color:red")# 设置对应的颜色
         elif increase < 0:
             self._increaseLabel.setStyleSheet("color:darkgreen")
 
         self._bidAskTable.fastAppendRows([
-                                            ['卖5', tick.askPrices[4], round(tick.askVolumes[4]/100)],
+                                            ['卖5', tick.askPrices[4], round(tick.askVolumes[4]/100)],# 数量转化为手
                                             ['卖4', tick.askPrices[3], round(tick.askVolumes[3]/100)],
                                             ['卖3', tick.askPrices[2], round(tick.askVolumes[2]/100)],
                                             ['卖2', tick.askPrices[1], round(tick.askVolumes[1]/100)],
@@ -229,5 +229,5 @@ class DyStockTradeStrategyBuyDlg(QDialog):
                                             ['买3', tick.bidPrices[2], round(tick.bidVolumes[2]/100)],
                                             ['买4', tick.bidPrices[3], round(tick.bidVolumes[3]/100)],
                                             ['买5', tick.bidPrices[4], round(tick.bidVolumes[4]/100)]
-                                        ], new=True)
+                                        ], new=True)# 新加入
 

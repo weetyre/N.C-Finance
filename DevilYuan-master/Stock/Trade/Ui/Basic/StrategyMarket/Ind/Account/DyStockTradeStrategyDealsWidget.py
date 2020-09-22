@@ -1,6 +1,6 @@
 from DyCommon.Ui.DyTableWidget import *
 
-
+#
 class DyStockTradeStrategyDealsWidget(DyTableWidget):
     """ 策略成交窗口，不是当日成交是策略启动后的成交 """
 
@@ -10,7 +10,7 @@ class DyStockTradeStrategyDealsWidget(DyTableWidget):
         super().__init__(readOnly=True, index=True, floatRound=3)
 
         self.setColNames(self.header)
-
+    # 更新
     def update(self, deals):
         """
             @deals: [DyStockDeal]

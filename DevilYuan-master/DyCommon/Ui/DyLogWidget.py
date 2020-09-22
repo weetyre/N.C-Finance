@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor
 from .DyTableWidget import *
 from EventEngine.DyEvent import *
 
-#log表格相关逻辑
+#log表格相关逻辑#
 class DyLogWidget(DyTableWidget):
     #准备发送事件类信号，注意语法
     signal = QtCore.pyqtSignal(type(DyEvent()))

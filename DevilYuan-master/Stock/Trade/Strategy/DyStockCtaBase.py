@@ -1,6 +1,6 @@
 from datetime import datetime
 
-#
+# K线数据
 class DyStockCtaBarData(object):
     """ K线数据 """
 

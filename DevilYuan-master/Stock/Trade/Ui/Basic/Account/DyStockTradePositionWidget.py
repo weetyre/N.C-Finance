@@ -24,7 +24,7 @@ class DyStockTradePositionWidget(DyTableWidget):
 
     def _signalEmitWrapper(self, event):
         self.signal.emit(event)
-
+    # 持仓以及tick（新数据）都是调用的一个函数，都会更新持仓窗口
     def _registerEvent(self):
         self.signal.connect(self._stockPositionUpdateHandler)
         self._eventEngine.register(DyEventType.stockPositionUpdate + self._broker, self._signalEmitWrapper)
@@ -34,7 +34,7 @@ class DyStockTradePositionWidget(DyTableWidget):
         self.signal.disconnect(self._stockPositionUpdateHandler)
         self._eventEngine.unregister(DyEventType.stockPositionUpdate + self._broker, self._signalEmitWrapper)
         self._eventEngine.unregister(DyEventType.stockPositionTickUpdate + self._broker, self._signalEmitWrapper)
-        
+    # 以及更新窗口UI，持仓UI（由虚拟账户发送）
     def _stockPositionUpdateHandler(self, event):
         header = event.data['header']
         rows = event.data['rows']

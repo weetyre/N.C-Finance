@@ -12,12 +12,12 @@ from ...Data.Engine.DyStockDataEngine import *
 from ..WeChat.DyStockTradeWxEngine import *
 #from ..Rpc.DyStockTradeRpcEngine import DyStockTradeRpcEngine
 
-
+# 股票交易主引擎（负责初始化事件引擎，以及实例化消息实例）
 class DyStockTradeMainEngine(object):
     def __init__(self):
         self._eventEngine = DyEventEngine(DyStockTradeEventHandType.nbr)
         self._info = DyInfo(self._eventEngine)
-
+        # 数据引擎
         self._dataEngine = DyStockDataEngine(self._eventEngine, self._info, False)
 
         # 实时行情监控
@@ -38,7 +38,7 @@ class DyStockTradeMainEngine(object):
         # RPC
         #self._rpcEngine = DyStockTradeRpcEngine(self._eventEngine, self._info)
 
-        self._eventEngine.start()
+        self._eventEngine.start()# 开始运作
 
     @property
     def eventEngine(self):
@@ -47,7 +47,7 @@ class DyStockTradeMainEngine(object):
     @property
     def info(self):
         return self._info
-
+    #
     def exit(self):
         """退出程序前调用，保证正常退出"""        
         # 停止事件引擎

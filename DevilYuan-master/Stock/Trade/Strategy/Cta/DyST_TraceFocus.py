@@ -13,7 +13,7 @@ class DyST_TraceFocus(DyStockCtaTemplate):
     name = 'DyST_TraceFocus'
     chName = '追踪热点'
 
-    broker = 'simu9'
+    broker = 'simu9'# 策略决定邦定哪个模拟账户
 
     #--------------------- 风控相关 ---------------------
     curCodeBuyMaxNbr = 1
@@ -134,9 +134,9 @@ class DyST_TraceFocus(DyStockCtaTemplate):
             newStrengthInfo.rollingCounts = copy.copy(self.rollingCounts)
 
             return newStrengthInfo
-
+        # 市场强度更新 始终为 [ETF300][1s更新一次]
         def update(self, tick, strength):
-            if tick is None:
+            if tick is None:# tick作为参考tick
                 return
 
             self.cur = strength
@@ -156,8 +156,8 @@ class DyST_TraceFocus(DyStockCtaTemplate):
                 self.middleCount += 1
 
             # update rolling counts
-            self._updateRollingCounts(tick, strength)
-
+            self._updateRollingCounts(tick, strength)# 就是一节一节的更新
+        # 统计连续时间的市场强度
         def _updateRollingCounts(self, tick, strength):
             """
                 只统计连续时间的tick市场强度
@@ -167,10 +167,10 @@ class DyST_TraceFocus(DyStockCtaTemplate):
                 return
 
             # add and wrangle
-            self.timeList.insert(0, tick.datetime)
-            self.strengthList.insert(0, strength)
+            self.timeList.insert(0, tick.datetime)# 第一位插入，随着时间增长，tick会越弄越多，实现组多1800个tick循环
+            self.strengthList.insert(0, strength)# 第一位插入
 
-            self.timeList[:] =  self.timeList[:self.tickSizeList[-1]]
+            self.timeList[:] =  self.timeList[:self.tickSizeList[-1]]# 载入的list长度，默认1800
             self.strengthList[:] =  self.strengthList[:self.tickSizeList[-1]]
 
             # count
@@ -183,17 +183,17 @@ class DyST_TraceFocus(DyStockCtaTemplate):
                 else:
                     middleCount += 1
 
-                if i+1 not in self.tickSizeList:
+                if i+1 not in self.tickSizeList:# 为了截断数据[30,150,300,600,900,1800]# 最近
                     continue
 
                 # 刨去上午收盘时间段
-                if tick.datetime.hour > 12 and time.hour < 12:
-                    adjustSeconds = 90*60
+                if tick.datetime.hour > 12 and time.hour < 12:# 就是我最新的time，已经到下午了，你还是早上
+                    adjustSeconds = 90*60# 1.5H 11.30 到1.00 之间的时间要减去
                 else:
                     adjustSeconds = 0
 
-                seconds = (tick.datetime - time).total_seconds()
-                seconds = int(seconds) - adjustSeconds
+                seconds = (tick.datetime - time).total_seconds()# 最新的tick，基于30等一个tick的时间位移
+                seconds = int(seconds) - adjustSeconds# 跑去上午收盘时间段
                 deltaTime = '{0}m{1}s'.format(seconds//60, seconds%60)
 
                 # new list, so don't need deepcopy
@@ -521,7 +521,7 @@ class DyST_TraceFocus(DyStockCtaTemplate):
             for _, focusCodeInfo in self._focusCodePool.items():
                 focusCodeInfo.focusInfo = None
 
-            self._focusInfoPool = {}
+            self._focusInfoPool = {}# 热点信息池
 
             noFocusCodes = list(self._focusCodePool)
 
@@ -732,56 +732,57 @@ class DyST_TraceFocus(DyStockCtaTemplate):
 
         # 更新UI
         self._updateUi()
-
+    # 实盘时更新数据UI
     def _updateUi(self):
         """
             更新UI的数据窗口
         """
-        def _getDragonsData(focusInfo):
-            data = [None]*3
-            if not focusInfo.dragons:
+        def _getDragonsData(focusInfo):# 获取龙头股票
+            data = [None]*3#[None,None,None]
+            if not focusInfo.dragons:# 里面包含龙头股
                 return data
 
             for i, code in enumerate(focusInfo.dragons):
-                data[i] = self._focusCodePool[code].name
+                data[i] = self._focusCodePool[code].name# 从热点股票代码池里面获取数据，返回中文名
 
             return data
 
 
-        self._uiDataDict = {}
+        self._uiDataDict = {}# UIdata字典，
 
         # 按热点强度依次归类
-        data = []
+        data = [] # 最终返回到这里（热点公共信息+个股信息）
+        # 通过强度排序，且返回名字list，且倒叙
         focusList = sorted(self._focusInfoPool, key=lambda k: self._focusInfoPool[k].strength, reverse=True)
         for focus in focusList:
-            focusInfo = self._focusInfoPool[focus]
+            focusInfo = self._focusInfoPool[focus]# 获得具体的信息
 
             # 热点公共信息
             rowFocus = [focusInfo.name,
-                        self._focusStrengthMax[focus],
+                        self._focusStrengthMax[focus],# 热点最大的强度，事先归类好的
                         focusInfo.strength,
                         focusInfo.amount,
                         focusInfo.increase,
-                        focusInfo.limitUpNbr,
+                        focusInfo.limitUpNbr,# 涨停数
                         focusInfo.limitUpNbr/len(focusInfo.codes)*100,
-                        len(focusInfo.codes),
+                        len(focusInfo.codes),# 有几只股票
 
                         # 龙头
-                        focusInfo.dragonIncrease
+                        focusInfo.dragonIncrease# 龙头涨停
                         ]
-            rowFocus.extend(_getDragonsData(focusInfo))
+            rowFocus.extend(_getDragonsData(focusInfo))# 在扩充热点公共信息，龙一，龙二，龙三
                      
             # 个股信息，这里只更新龙头股的信息   
             for code in focusInfo.dragons:
-                focusCodeInfo = self._focusCodePool[code]
+                focusCodeInfo = self._focusCodePool[code]# 返回热点信息实例
 
-                highIncrease = (focusCodeInfo.highTick.price - focusCodeInfo.highTick.preClose)/focusCodeInfo.highTick.preClose*100
+                highIncrease = (focusCodeInfo.highTick.price - focusCodeInfo.highTick.preClose)/focusCodeInfo.highTick.preClose*100# 最高涨幅
 
-                increase = (focusCodeInfo.ticks[-1].price - focusCodeInfo.ticks[-1].preClose)/focusCodeInfo.ticks[-1].preClose*100
+                increase = (focusCodeInfo.ticks[-1].price - focusCodeInfo.ticks[-1].preClose)/focusCodeInfo.ticks[-1].preClose*100# 现在涨幅
                 preIncrease = (focusCodeInfo.ticks[0].price - focusCodeInfo.ticks[0].preClose)/focusCodeInfo.ticks[0].preClose*100
 
                 seconds = (focusCodeInfo.ticks[-1].datetime - focusCodeInfo.ticks[0].datetime).total_seconds()
-                increaseSpeed = (increase - preIncrease)/seconds*self.tickBufTimeSize if seconds > 0 else None
+                increaseSpeed = (increase - preIncrease)/seconds*self.tickBufTimeSize if seconds > 0 else None# 计算单位增速
 
                 rowCode = [code,
                            focusCodeInfo.name,
@@ -796,9 +797,9 @@ class DyST_TraceFocus(DyStockCtaTemplate):
                 # save data
                 rowData = rowCode + rowFocus
                 data.append(rowData)
-                self._uiDataDict[code] = rowData
-
-        self.putStockMarketMonitorUiEvent(data=data, newData=True, datetime_=self.marketDatetime)
+                self._uiDataDict[code] = rowData#
+        # 最终在这里添加到UI监控的数据TAB
+        self.putStockMarketMonitorUiEvent(data=data, newData=True, datetime_=self.marketDatetime)# 没有OP，没有信息明细
 
     def _calcFocusBuySignal(self, focus):
         """
@@ -1155,12 +1156,12 @@ class DyST_TraceFocus(DyStockCtaTemplate):
         buyCodes, sellCodes = self._calcSignal(ticks)
 
         self._execSignal(buyCodes, sellCodes, ticks)
-
+    # 计算市场强度
     def _calcMarketStrength(self):
         """
             计算市场强度
         """
-        # 按热点强度排序
+        # 按热点强度排序，降序，且只返回字符串
         focusList = sorted(self._focusInfoPool, key=lambda k: self._focusInfoPool[k].strength, reverse=True)
 
         # 去除热点'无'
@@ -1175,7 +1176,7 @@ class DyST_TraceFocus(DyStockCtaTemplate):
 
         first3FocusStrengthMean = 0
         if len(first3FocusList) > 0:
-            first3FocusStrengthMean = strengthTotal/len(first3FocusList)
+            first3FocusStrengthMean = strengthTotal/len(first3FocusList)# 前三热点强度均值
 
         # 热点强度均值
         strengthTotal = 0
@@ -1184,13 +1185,14 @@ class DyST_TraceFocus(DyStockCtaTemplate):
 
         focusStrengthMean = 0
         if len(focusList) > 0:
-            focusStrengthMean = strengthTotal/len(focusList)
+            focusStrengthMean = strengthTotal/len(focusList)# 热点强度均值（全部）
 
         # 市场强度
-        marketStrength = (first3FocusStrengthMean + focusStrengthMean)/2
+        marketStrength = (first3FocusStrengthMean + focusStrengthMean)/2# 获得市场强度
 
         # 市场强度打折
-        marketStrength *= len(focusList)/max(len(focusList), self.marketStrengthDiscountFocusNbr)
+        marketStrength *= len(focusList)/max(len(focusList), self.marketStrengthDiscountFocusNbr)# 热点太少，则需要打折市场强度
+
 
         # upate object
         self._marketStrengthInfo.update(self.etf300Tick, marketStrength)
@@ -1221,7 +1223,7 @@ class DyST_TraceFocus(DyStockCtaTemplate):
             self._enterDoorsill(tick)
 
         # 全盘追踪热点
-        self._traceFocus()
+        self._traceFocus()# 涉及到结果实时更新UI
 
         # 计算市场强度
         self._calcMarketStrength()

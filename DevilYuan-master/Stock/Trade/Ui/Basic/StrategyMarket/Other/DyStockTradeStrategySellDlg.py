@@ -6,15 +6,15 @@ from EventEngine.DyEvent import *
 from DyCommon.Ui.DyTableWidget import *
 from ..Ind.Account.DyStockTradeStrategyPosWidget import *
 
-
+# 策略持仓卖对话框
 class DyStockTradeStrategyPosSellWidget(DyStockTradeStrategyPosWidget):
     def __init__(self, parent, eventEngine, strategyCls):
         super().__init__(eventEngine, strategyCls)
 
-        self._parent = parent
+        self._parent = parent# parent 就是下面的类
 
         self.itemDoubleClicked.connect(self._itemDoubleClicked)
-
+    # item双击的操作
     def _itemDoubleClicked(self, item):
         row = item.row()
         
@@ -23,7 +23,7 @@ class DyStockTradeStrategyPosSellWidget(DyStockTradeStrategyPosWidget):
 
         self._parent.setSellCodePrice(code, price)
 
-
+# 股票卖出
 class DyStockTradeStrategySellDlg(QDialog):
 
     stockMarketTicksSignal = QtCore.pyqtSignal(type(DyEvent()))
@@ -45,13 +45,13 @@ class DyStockTradeStrategySellDlg(QDialog):
         self._registerEvent()
 
         self._init()
-
+    #
     def _init(self):
-        event = DyEvent(DyEventType.stockStrategyPosReq)
+        event = DyEvent(DyEventType.stockStrategyPosReq)# 请求策略当前持仓事件，因为我卖要看持仓，就会更新现在的持仓
         event.data = self._strategyCls
 
         self._eventEngine.put(event)
-
+    # 初始化UI
     def _initUi(self):
         self.setWindowTitle(self._strategyCls.chName)
         
@@ -130,9 +130,9 @@ class DyStockTradeStrategySellDlg(QDialog):
         self.setLayout(grid)
         self.setMinimumWidth(QApplication.desktop().size().width()//3)
 
-
+        # 卖出代码发生改变
         self._sellCodeLineEdit.textChanged.connect(self._sellCodeChanged)
-
+    # 卖出
     def _ok(self):
         try:
             if self._codeLabel.text() != self._tick.code:
@@ -163,11 +163,11 @@ class DyStockTradeStrategySellDlg(QDialog):
 
         self._posWidget.close()
         self.reject()
-
+    # 设置卖的代码和价格
     def setSellCodePrice(self, code, price):
         self._sellCodeLineEdit.setText(code[:6])
         self._sellPriceLineEdit.setText(str(price))
-
+    # 它必须是当前持仓里的
     def _getInputCode(self):
         if not self._curPos:
             return None
@@ -181,7 +181,7 @@ class DyStockTradeStrategySellDlg(QDialog):
             return None
 
         return code
-
+    # 卖出的动作发生一些改变
     def _sellCodeChanged(self):
         self._code = self._getInputCode()
         if self._code is None:
@@ -198,7 +198,7 @@ class DyStockTradeStrategySellDlg(QDialog):
 
     def _stockStrategyPosUpdateSignalEmitWrapper(self, event):
         self.stockStrategyPosUpdateSignal.emit(event)
-
+    # 注册事件
     def _registerEvent(self):
         self.stockMarketTicksSignal.connect(self._stockMarketTicksHandler)
         self._eventEngine.register(DyEventType.stockMarketTicks, self._stockMarketTicksSignalEmitWrapper)
@@ -208,7 +208,7 @@ class DyStockTradeStrategySellDlg(QDialog):
 
         self.stockStrategyPosUpdateSignal.connect(self._stockStrategyPosUpdateHandler)
         self._eventEngine.register(DyEventType.stockStrategyPosUpdate + self._strategyCls.name, self._stockStrategyPosUpdateSignalEmitWrapper)
-
+    # 解注册事件
     def _unregisterEvent(self):
         self.stockMarketTicksSignal.disconnect(self._stockMarketTicksHandler)
         self._eventEngine.unregister(DyEventType.stockMarketTicks, self._stockMarketTicksSignalEmitWrapper)
@@ -218,17 +218,17 @@ class DyStockTradeStrategySellDlg(QDialog):
 
         self.stockStrategyPosUpdateSignal.disconnect(self._stockStrategyPosUpdateHandler)
         self._eventEngine.unregister(DyEventType.stockStrategyPosUpdate + self._strategyCls.name, self._stockStrategyPosUpdateSignalEmitWrapper)
-
+    # 策略持仓更新确认
     def _stockStrategyPosAckHandler(self, event):
         self._curPos = event.data
 
         self._posWidget.update(event.data)
-
+    # 策略持仓更新（更新UI）
     def _stockStrategyPosUpdateHandler(self, event):
         self._curPos = event.data
 
         self._posWidget.update(event.data)
-
+    # 更新一个表格，并且指定TICK数据
     def _stockMarketTicksHandler(self, event):
         ticks = event.data
 

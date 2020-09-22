@@ -1,6 +1,6 @@
 from DyCommon.Ui.DyTableWidget import *
 
-
+# 股票实盘策略操作窗口
 class DyStockTradeStrategyMarketMonitorOpWidget(DyTableWidget):
     """ 股票实盘策略操作窗口 """
 
@@ -9,13 +9,13 @@ class DyStockTradeStrategyMarketMonitorOpWidget(DyTableWidget):
 
         self._strategyCls = strategyCls
 
-        self.setColNames(strategyCls.opHeader)
+        self.setColNames(strategyCls.opHeader)# 操作header
 
-        self._pnlColPos = []
+        self._pnlColPos = []# 盈亏列的位置
         for i, name in enumerate(strategyCls.opHeader, 1 if self.hasIndex() else 0):
             if '盈亏' in name:
-                self._pnlColPos.append(i)
-
+                self._pnlColPos.append(i)# 名字以及对应的位置
+    # 更新行，顺便设置盈亏前景色
     def update(self, data):
         """ @data: [[col0,col1,...]] """
 
@@ -39,6 +39,6 @@ class DyStockTradeStrategyMarketMonitorOpWidget(DyTableWidget):
                 except:
                     pass
 
-        self.setItemsForeground(rowKeys, (('买入', Qt.red), ('卖出', Qt.darkGreen)))
+        self.setItemsForeground(rowKeys, (('买入', Qt.red), ('卖出', Qt.darkGreen)))# 设置买入卖出的前景色
 
         self.setSortingEnabled(True)

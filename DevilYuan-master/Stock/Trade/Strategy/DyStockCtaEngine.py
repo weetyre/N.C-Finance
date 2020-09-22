@@ -16,7 +16,7 @@ from ..AccountManager.Broker.DyStockYhAccountManager import *
 from ..AccountManager.Broker.DyStockSimuAccountManager import *
 from ..AccountManager.Broker.DyStockThsAccountManager import *
 
-
+# 实盘CTA策略引擎
 class DyStockCtaEngine(object):
     """
         实盘CTA策略引擎
@@ -48,7 +48,7 @@ class DyStockCtaEngine(object):
         morningTradeBreak = 4
         afternoonTrade = 5
 
-
+    # 初始化
     def __init__(self, dataEngine, eventEngine, info):
         self._dataEngine = dataEngine
         self._eventEngine = eventEngine
@@ -67,7 +67,7 @@ class DyStockCtaEngine(object):
         self._errorDataEngine = DyStockDataEngine(eventEngine, errorInfo, registerEvent=False)
 
         self._curInit()
-
+    # 当日数据初始化，（注：计算机本地日期）
     def _curInit(self):
         """
             当日相关数据的初始化
@@ -104,7 +104,7 @@ class DyStockCtaEngine(object):
     @property
     def etf500Tick(self):
         return self.__etf500Tick
-
+    # 设置指数tick和ETF300/ETF500 tick。指数tick采用贪婪算法
     def _setTicks(self, ticks):
         """
             设置指数tick和ETF300/ETF500 tick。指数tick采用贪婪算法。
@@ -287,7 +287,8 @@ class DyStockCtaEngine(object):
         # 处理收盘
         if isClose:
             self._processClose()
-    
+
+    # 启动策略的账户管理者
     def _startAccountManager(self, strategyCls):
         """
             启动策略的账户管理者
@@ -302,7 +303,7 @@ class DyStockCtaEngine(object):
             # 账户管理的开盘前准备
             accountManager.onOpen(datetime.now().strftime("%Y-%m-%d"))
 
-            self._accountManagers[strategyCls.broker] = accountManager
+            self._accountManagers[strategyCls.broker] = accountManager# 添加映射
 
             # 登录策略的实盘交易接口
             event = DyEvent(DyEventType.stockLogin)
@@ -313,7 +314,7 @@ class DyStockCtaEngine(object):
         self._info.print('股票CTA引擎: 账号[{0}]绑定策略[{1}]'.format(self.accountManagerMap[strategyCls.broker].brokerName, strategyCls.chName), DyLogData.ind1)
 
         return True
-    #
+    # 获得指定的策略绑定账户实例（不同策略绑定不同的账户实例，就会有不同的像回测那样的管理流程，买卖流程）
     def _getAccountManager(self, strategyCls):
         """
             获取指定策略绑定到的账户管理实例
@@ -327,11 +328,11 @@ class DyStockCtaEngine(object):
             return None
 
         strategy = strategyTuple[0]
-        if strategy.state.isState(DyStockStrategyState.running):
+        if strategy.state.isState(DyStockStrategyState.running):# 如果策略属于运行状态，返回账户管理实例
             return accountManager
 
         return None
-
+    # 策略是监控状态，而不是运行，或者取消
     def _stopAccountManager(self, strategyCls, oneKeyHangUp=False):
         """
             停止策略的账户管理者
@@ -350,7 +351,7 @@ class DyStockCtaEngine(object):
             if strategy.name != strategyCls.name and \
                 strategyCls.broker == strategy.broker and \
                 strategy.state.isState(DyStockStrategyState.running):
-                return
+                return # 如果还有其他策略在使用同一个账户管理，则关闭
 
         # 退出策略的实盘交易接口
         event = DyEvent(DyEventType.stockLogout)
@@ -360,9 +361,9 @@ class DyStockCtaEngine(object):
         self._eventEngine.put(event)
 
         # 销毁券商账户管理者
-        self._accountManagers[strategyCls.broker].exit()
+        self._accountManagers[strategyCls.broker].exit()# 且对应的账户管理者也销毁
         del self._accountManagers[strategyCls.broker]
-
+    # 向UI推送，策略相关事件（持仓，委托，成交更新对应账户UI（Ind里））
     def _updateStrategyAccount(self, strategy):
         """
             向UI推送策略的账户相关事件
@@ -382,12 +383,12 @@ class DyStockCtaEngine(object):
         event.data = list(strategy.curDeals.values()) # [DyStockDeal]
 
         self._eventEngine.put(event)
-
+    # 不管点的是运行还是监控，都会运行这个（启动顺序1. 启动策略，2. 账户管理者。3.实盘交易接口 ）
     def _startStockCtaStrategyHandler(self, event):
         """ 启动策略, 创建唯一策略实例 """
         strategyCls = event.data['class']
-        state = event.data['state']
-
+        state = event.data['state']# 这是一个状态类的实例
+        # 两个都点显示  运行+监控
         self._info.print('开始启动策略: {0}, 状态: {1},...'.format(strategyCls.chName, state.state), DyLogData.ind)
 
         #　是否是唯一策略实例
@@ -399,7 +400,7 @@ class DyStockCtaEngine(object):
         sleep(1) # sleep so that UI related dynamic windows can be created firstly.
 
         # 实例化策略
-        strategy = strategyCls(self, self._info, state)
+        strategy = strategyCls(self, self._info, state)# 策略类直接实例化
 
         # 策略开盘前初始化
         if not strategy.onOpen(datetime.now().strftime("%Y-%m-%d"), strategy.onOpenCodes()):
@@ -407,12 +408,12 @@ class DyStockCtaEngine(object):
             return
 
         # 启动策略的账户管理
-        if state.isState(DyStockStrategyState.running):
+        if state.isState(DyStockStrategyState.running):# 如果监控+运行也可以，但是单独监控就不会执行
             if strategy.broker is not None: # Strategy has configured the broker
-                if not self._startAccountManager(strategyCls):
+                if not self._startAccountManager(strategyCls):# 然后启动账户管理者
                     return
 
-                # 从券商管理类同步策略持仓
+                # 从券商管理类同步策略持仓，开始券商管理类已经启动了交易接口
                 self._accountManagers[strategy.broker].syncStrategyPos(strategy)
         
         # 获取策略要监控的股票池
@@ -422,11 +423,11 @@ class DyStockCtaEngine(object):
         self._strategies[strategyCls.name] = (strategy, DyStockMarketFilter(monitoredStocks))
 
         # 添加到bar聚合字典
-        if 'bar' in strategyCls.liveMode:
+        if 'bar' in strategyCls.liveMode:# 实盘模式如果是Bar
             if strategyCls.liveMode not in self._barAggs:
-                self._barAggs[strategyCls.liveMode] = DyStockCtaBarAggFast(strategyCls.liveMode, monitoredStocks)
+                self._barAggs[strategyCls.liveMode] = DyStockCtaBarAggFast(strategyCls.liveMode, monitoredStocks)# 创建聚合Bar
             else:
-                self._barAggs[strategyCls.liveMode].add(monitoredStocks)
+                self._barAggs[strategyCls.liveMode].add(monitoredStocks)# 添加股票，为了聚合
 
         # 向股票市场发送监控的股票池
         monitoredStocks = monitoredStocks + [DyStockCommon.etf300, DyStockCommon.etf500] # always add ETF300 and ETF500 for 大盘参考。主要原因是历史分笔数据没有指数的，所以只能用ETF替代。
@@ -440,16 +441,16 @@ class DyStockCtaEngine(object):
         self._updateStrategyAccount(strategy)
 
         self._info.print('策略: {0}启动成功'.format(strategyCls.chName), DyLogData.ind)
-
+    # 复选框Uncheck
     def _stopStockCtaStrategyHandler(self, event):
         """ 停止策略 """
         strategyCls = event.data['class']
         oneKeyHangUp = True if event.data.get('oneKeyHangUp') else False
 
-        del self._strategies[strategyCls.name]
+        del self._strategies[strategyCls.name]# 映射删了
 
-        self._stopAccountManager(strategyCls, oneKeyHangUp)
-
+        self._stopAccountManager(strategyCls, oneKeyHangUp)# 停止账户管理器
+    # 更改策略状态后，根据具体的状态来运行
     def _changeStockCtaStrategyStateHandler(self, event):
         """ 改变策略状态 """
         strategyCls = event.data['class']
@@ -461,12 +462,12 @@ class DyStockCtaEngine(object):
             # 只考虑两种状态改变: 运行 -> 监控 或者 监控 -> 运行
             if strategy.state.isState(DyStockStrategyState.running) and \
                 (newState.isState(DyStockStrategyState.monitoring) and not newState.isState(DyStockStrategyState.running)):
-
+                # 原策略在运行状态，并且新状态是 监控
                 self._stopAccountManager(strategyCls)
 
             elif (strategy.state.isState(DyStockStrategyState.monitoring) and not strategy.state.isState(DyStockStrategyState.running)) and \
                 newState.isState(DyStockStrategyState.running):
-
+                # 如果原来是监控，不是在运行，且新状态是运行，那么开始账户
                 self._startAccountManager(strategyCls)
 
                 # 从券商管理类同步策略持仓
@@ -478,15 +479,15 @@ class DyStockCtaEngine(object):
             # 设置策略新的状态
             strategy.state = newState
 
-        elif strategyCls in self._strategyMirror:
+        elif strategyCls in self._strategyMirror:# 一键挂机时，交易日结束后的镜像
             self._strategyMirror[strategyCls] = newState
 
         else:
             self._info.print('股票CTA引擎: 改变策略[{}]状态错误'.format(strategyCls.chName), DyLogData.error)
-
+    # 注册相关事件
     def _registerEvent(self):
         self._eventEngine.register(DyEventType.stockMarketTicks, self._stockMarketTicksHandler, DyStockTradeEventHandType.stockCtaEngine)
-
+        # 开始，停止，策略状态改变
         self._eventEngine.register(DyEventType.startStockCtaStrategy, self._startStockCtaStrategyHandler, DyStockTradeEventHandType.stockCtaEngine)
         self._eventEngine.register(DyEventType.stopStockCtaStrategy, self._stopStockCtaStrategyHandler, DyStockTradeEventHandType.stockCtaEngine)
         self._eventEngine.register(DyEventType.changeStockCtaStrategyState, self._changeStockCtaStrategyStateHandler, DyStockTradeEventHandType.stockCtaEngine)
@@ -495,7 +496,7 @@ class DyStockCtaEngine(object):
         self._eventEngine.register(DyEventType.beginStockTradeDay, self._beginStockTradeDayHandler, DyStockTradeEventHandType.stockCtaEngine)
         self._eventEngine.register(DyEventType.endStockTradeDay, self._endStockTradeDayHandler, DyStockTradeEventHandType.stockCtaEngine)
 
-        # 交易接口的委托和成交回报事件
+        # 交易接口的 委托 和 成交回报 事件
         self._eventEngine.register(DyEventType.stockOnEntrust, self._stockOnEntrustHandler, DyStockTradeEventHandType.stockCtaEngine)
         self._eventEngine.register(DyEventType.stockOnDeal, self._stockOnDealHandler, DyStockTradeEventHandType.stockCtaEngine)
 
@@ -546,7 +547,7 @@ class DyStockCtaEngine(object):
                 event.data['oneKeyHangUp'] = True
 
                 self._stopStockCtaStrategyHandler(event)
-
+    # 这里用来更新每次打开
     def _stockStrategyMonitoredCodesReqHandler(self, event):
         strategyCls = event.data
 
@@ -559,7 +560,7 @@ class DyStockCtaEngine(object):
         event.data = filter.codes
 
         self._eventEngine.put(event)
-
+    # 手动买入处理函数
     def _stockStrategyManualBuyHandler(self, event):
         # unpack
         strategyCls = event.data['class']
@@ -602,7 +603,7 @@ class DyStockCtaEngine(object):
             self._info.print('策略[{0}] - 手工卖出, {1}[{2}], {3}股, 价格{4}: 成功'.format(strategy.chName, tick.code, tick.name, volume, price), DyLogData.ind1)
         else:
             self._info.print('策略[{0}] - 手工卖出, {1}[{2}], {3}股, 价格{4}: 失败'.format(strategy.chName, tick.code, tick.name, volume, price), DyLogData.error)
-
+    # 券商账户的股票持仓更新事件
     def _stockOnPosHandler(self, event):
         """
             券商账户的股票持仓更新事件
@@ -612,14 +613,14 @@ class DyStockCtaEngine(object):
         positions = event.data['pos']
 
         for strategy, _ in self._strategies.values():
-            if strategy.broker != broker:
+            if strategy.broker != broker:# 获取策略绑定的broker
                 continue
 
-            strategy.onPos(positions)
+            strategy.onPos(positions)# 发送到策略
 
             # 向UI推送更新
             self._updateStrategyPos(strategy)
-
+    # 来自账户管理类的股票持仓同步事件
     def _stockPosSyncFromAccountManagerHandler(self, event):
         """
             来自账户管理类的股票持仓同步事件
@@ -634,8 +635,9 @@ class DyStockCtaEngine(object):
             if strategy.broker != broker:
                 continue
 
-            strategy.syncPos(syncData)
+            strategy.syncPos(syncData)# 该策略同步持仓
 
+    # 股票委托回报推送事件
     def _stockOnEntrustHandler(self, event):
         """
             券商委托回报处理
@@ -654,7 +656,7 @@ class DyStockCtaEngine(object):
             strategy.onEntrust(copy.copy(entrust))
 
             # put UI event
-            # This is entrust from broker pushing, so it should be already existing in DevilYuan system.
+            # This is entrust from broker pushing, so it should be already existing in NcSystem system.
             self._updateStrategyEntrust(entrust)
 
     def _stockOnDealHandler(self, event):
@@ -718,7 +720,7 @@ class DyStockCtaEngine(object):
             @signalDetails: 策略信号明细数据, [[]]
             @datetime_: 行情数据时有效
         """
-        event = DyEvent(DyEventType.stockMarketMonitorUi + strategyCls.name)
+        event = DyEvent(DyEventType.stockMarketMonitorUi + strategyCls.name)# 股票UI监控窗口
 
         # data
         if data:
@@ -727,7 +729,7 @@ class DyStockCtaEngine(object):
                                   'datetime': datetime_
                                   }
 
-        # indication
+        # indication 推送指标
         ind = {}
         if op:
             ind['op'] = op
@@ -880,13 +882,13 @@ class DyStockCtaEngine(object):
         fileName = os.path.join(path, 'savedData.json')
         with open(fileName, 'w') as f:
             f.write(json.dumps(savedData, indent=4, cls=DyJsonEncoder))
-
+    # 更新策略委托向UI
     def _updateStrategyEntrust(self, entrust):
         """
             向UI推送策略委托事件
         """
         # because only one entrust, no need OrderedDict
-        event = DyEvent(DyEventType.stockStrategyEntrustsUpdate + entrust.strategyCls.name)
+        event = DyEvent(DyEventType.stockStrategyEntrustsUpdate + entrust.strategyCls.name) #股票策略委托更新事件
         event.data = {entrust.dyEntrustId: copy.copy(entrust)}
 
         self._eventEngine.put(event)
@@ -899,13 +901,13 @@ class DyStockCtaEngine(object):
         event.data = [deal]
 
         self._eventEngine.put(event)
-
+    # 向UI推送策略持仓更新事件
     def _updateStrategyPos(self, strategy):
         """
             向UI推送策略持仓更新事件
         """
         # 持仓
-        event = DyEvent(DyEventType.stockStrategyPosUpdate + strategy.name)
+        event = DyEvent(DyEventType.stockStrategyPosUpdate + strategy.name)# 更新手动卖对话框以及持仓UI
         event.data = copy.deepcopy(strategy.curPos)
 
         self._eventEngine.put(event)
@@ -927,7 +929,7 @@ class DyStockCtaEngine(object):
 
         opList.append(op)
         return False
-        
+    # 实盘手动买入对话框回到这里
     def buy(self, strategyCls, tick, volume, signalInfo=None, price=None):
         """
             @return: DyStockEntrust object or None
@@ -942,7 +944,7 @@ class DyStockCtaEngine(object):
         
         accountManager = self._getAccountManager(strategyCls)
         if accountManager: # 策略已经绑定实盘账户
-            ret = accountManager.buy(datetime, strategyCls, code, name, price, volume, signalInfo)
+            ret = accountManager.buy(datetime, strategyCls, code, name, price, volume, signalInfo)# 结果是一个新的委托
             if ret: # entrust, so put event to UI
                 self._updateStrategyEntrust(ret)
 
@@ -954,7 +956,7 @@ class DyStockCtaEngine(object):
             else:
                 if not self._isInStrategyNotBindAccountManagerOps(strategyCls, op[0]):
                     self.putStockMarketMonitorUiEvent(strategyCls, op=op)
-
+            # 有数据就不是T
             if ret is True:
                 ret = None
 
@@ -1283,7 +1285,7 @@ class DyStockCtaBarAgg:
 
         return bars if bars else None
 
-
+# 股票实时K线快速聚合
 class DyStockCtaBarAggFast:
     """
         股票实时K线快速聚合, 只支持分钟聚合
@@ -1294,13 +1296,13 @@ class DyStockCtaBarAggFast:
             @barMode: 'bar1m'
             @codes: [code]，需要聚合的代码
         """
-        unit = barMode[-1]
+        unit = barMode[-1]# 获取单位
         assert unit == 'm'
 
-        self._barWidth = int(barMode[3:-1])
+        self._barWidth = int(barMode[3:-1])# 几分钟
 
         self._bars = {code: [None, None] for code in codes} # {code: [current bar, previous tick]}
-
+    # 添加代码
     def add(self, codes):
         """
             添加代码
@@ -1308,9 +1310,9 @@ class DyStockCtaBarAggFast:
         """
         for code in codes:
             self._bars.setdefault(code, [None, None])
-
+    # 创建Bar
     def _createBar(self, refTick, tick, volume=0):
-        bar = DyStockCtaBarData(str(self._barWidth) + 'm')
+        bar = DyStockCtaBarData(str(self._barWidth) + 'm')# bar实例，加入bar模式
 
         bar.code = tick.code
         bar.name = tick.name
@@ -1328,14 +1330,14 @@ class DyStockCtaBarAggFast:
 
         bar.preClose = tick.preClose
 
-        bar.date = refTick.date
-        bar.time = refTick.time
-        bar.datetime = refTick.datetime
+        bar.date = refTick.date # bar结束的日期
+        bar.time = refTick.time # 时间
+        bar.datetime = refTick.datetime # python的datetime时间对象 # 结束日加现在时间
 
-        bar.volume = volume
+        bar.volume = volume # 成交量
 
         return bar
-
+    # 创建参考TIck
     def _createRefTick(self, tick):
         # adjust time of tick
         time = tick.time
@@ -1349,16 +1351,16 @@ class DyStockCtaBarAggFast:
         elif '11:30:00' >= time >= '09:30:00' or '15:00:00' >= time >= '13:00:00':
             pass
         else:
-            return None
+            return None# 非交易时间返回none
 
-        refTick = DyStockCtaTickData()
+        refTick = DyStockCtaTickData()# 创建tick数据
 
         refTick.date = tick.date
-        refTick.time = time
-        refTick.datetime = datetime.strptime(refTick.date + ' ' + refTick.time, '%Y-%m-%d %H:%M:%S')
+        refTick.time = time# 现在时间
+        refTick.datetime = datetime.strptime(refTick.date + ' ' + refTick.time, '%Y-%m-%d %H:%M:%S')# 结束日加现在时间
         
         return refTick
-
+    # 推入ticks
     def push(self, ticks):
         """
             推入ticks
@@ -1381,7 +1383,7 @@ class DyStockCtaBarAggFast:
                 bar = self._createBar(refTick, tick)
                 self._bars[code][0] = bar
 
-            # bar已经生成
+            # bar已经生成(如果刚初始化绝对分钟是相等的)
             if bar.datetime.minute != refTick.datetime.minute and \
                 refTick.datetime.minute%self._barWidth == 0:
 
@@ -1412,6 +1414,6 @@ class DyStockCtaBarAggFast:
                 bar.volume += tick.volume - preVolume
 
             # at last, save previous tick for each code
-            self._bars[code][1] = tick
+            self._bars[code][1] = tick # 处理完之后，相对于下一个就是前一个
 
-        return bars if bars else None
+        return bars if bars else None# 返回的是已经聚合好的bar

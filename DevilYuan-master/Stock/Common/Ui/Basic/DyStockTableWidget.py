@@ -442,7 +442,7 @@ class DyStockTableWidget(DyStatsTableWidget):
             volatilityVolumePeriod = int(data['data'])
 
             self._dataViewer.plotVolatilityChart(code, [-DyStockCommon.dayKChartPeriodNbr, date, DyStockCommon.dayKChartPeriodNbr], volatilityVolumePeriod)
-
+    # 双击item绘图
     def _itemDoubleClicked(self, item):
         code, baseDate = self.getCodeDate(item)
         if code is None or baseDate is None:
@@ -662,7 +662,7 @@ class DyStockTableWidget(DyStatsTableWidget):
             if dateCodeErList is None:
                 self._actAck(DyEventType.stockTableAddColumnsActAck, None, None)
                 return
-
+            #  扁平化ER数据好插入到table widget
             colNames, colData = DyStockDataAssembler.flatStockIndexEr(dateCodeErList, data['days'], data['backward'])
 
             self._actAck(DyEventType.stockTableAddColumnsActAck, colNames, colData)

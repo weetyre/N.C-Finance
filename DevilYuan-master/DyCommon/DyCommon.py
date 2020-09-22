@@ -96,7 +96,7 @@ class DyErrorProgressInfo(DyInfo):
 
             self._eventEngine.put(event)
 
-
+# 队列信息显示
 class DyQueueInfo:
     """ 队列信息显示，只有错误和警告得队列信息显示 """
     def __init__(self, outQueue):
@@ -107,7 +107,7 @@ class DyQueueInfo:
             event = DyEvent(DyEventType.log)
             event.data = DyLogData(description, type)
 
-            self._outQueue.put(event)
+            self._outQueue.put(event)# 都put到这里面
 
     def progressSingle(self, percent):
         pass

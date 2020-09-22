@@ -83,7 +83,7 @@ class WXBot:
         self.sid = ''
         self.skey = ''
         self.pass_ticket = ''
-        self.device_id = 'e' + repr(random.random())[2:17]
+        self.device_id = 'e' + repr(random.random())[2:17]# 随机生成
         self.base_request = {}
         self.sync_key_str = ''
         self.sync_key = []
@@ -152,7 +152,7 @@ class WXBot:
         :return: 转换后的Unicode字符串
         """
         return string
-
+    # 第六步获取联系人 包括联系人、公众号、群聊、特殊账号
     def get_contact(self):
         """获取当前账户的所有相关账号(包括联系人、公众号、群聊、特殊账号)"""
         dic_list = []
@@ -166,10 +166,10 @@ class WXBot:
             return False
         r.encoding = 'utf-8'
         dic = json.loads(r.text)
-        dic_list.append(dic)
+        dic_list.append(dic)# 人物列表，最后加到这里
 
-        while int(dic["Seq"]) != 0:
-            print ("[INFO] Geting contacts. Get %s contacts for now" % dic["MemberCount"])
+        while int(dic["Seq"]) != 0:# 随着获取，他的数字会减小，知直到等于0
+            print ("[INFO] Geting contacts. Get %s contacts for now" % dic["MemberCount"])# 数量
             url = self.base_uri + '/webwxgetcontact?seq=%s&pass_ticket=%s&skey=%s&r=%s' \
                       % (dic["Seq"], self.pass_ticket, self.skey, int(time.time()))
             r = self.session.post(url, data='{}', timeout=180)
@@ -177,11 +177,11 @@ class WXBot:
             dic = json.loads(r.text)
             dic_list.append(dic)
 
-        if self.DEBUG:
-            with open(os.path.join(self.temp_pwd,'contacts.json'), 'w') as f:
+        if self.DEBUG:# 不Dbug默认
+            with open(os.path.join(self.temp_pwd,'contacts.json'), 'w') as f:# 写入文件缓存目录
                 f.write(json.dumps(dic_list))
 
-        self.member_list = []
+        self.member_list = []# 只添加 Member （又分为四种）
         for dic in dic_list:
             self.member_list.extend(dic['MemberList'])
 
@@ -194,10 +194,10 @@ class WXBot:
                          'officialaccounts', 'notification_messages', 'wxid_novlwrv3lqwv11',
                          'gh_22b87fa7cb3c', 'wxitil', 'userexperience_alarm', 'notification_messages']
 
-        self.contact_list = []
-        self.public_list = []
-        self.special_list = []
-        self.group_list = []
+        self.contact_list = []# 联系人
+        self.public_list = []# 公众号
+        self.special_list = []# 特殊
+        self.group_list = []# 群
 
         for contact in self.member_list:
             if contact['VerifyFlag'] & 8 != 0:  # 公众号
@@ -212,18 +212,18 @@ class WXBot:
             elif contact['UserName'] == self.my_account['UserName']:  # 自己
                 self.account_info['normal_member'][contact['UserName']] = {'type': 'self', 'info': contact}
             else:
-                self.contact_list.append(contact)
+                self.contact_list.append(contact)# 联系人
                 self.account_info['normal_member'][contact['UserName']] = {'type': 'contact', 'info': contact}
 
         self.batch_get_group_members()
-
-        for group in self.group_members:
-            for member in self.group_members[group]:
+        # 然后对刚才的获取数据进行处理
+        for group in self.group_members:# 遍历GID
+            for member in self.group_members[group]:# 遍历每一个member
                 if member['UserName'] not in self.account_info:
                     self.account_info['group_member'][member['UserName']] = \
                         {'type': 'group_member', 'info': member, 'group': group}
 
-        if self.DEBUG:
+        if self.DEBUG:# 如果debug，把获取到的人写入文件
             with open(os.path.join(self.temp_pwd,'contact_list.json'), 'w') as f:
                 f.write(json.dumps(self.contact_list))
             with open(os.path.join(self.temp_pwd,'special_list.json'), 'w') as f:
@@ -333,7 +333,7 @@ class WXBot:
         #print dic['ContactList']
         return dic['ContactList']
 
-
+    # 批量获取群聊所有成员消息
     def batch_get_group_members(self):
         """批量获取所有群聊成员信息"""
         url = self.base_uri + '/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s' % (int(time.time()), self.pass_ticket)
@@ -352,8 +352,8 @@ class WXBot:
             members = group['MemberList']
             group_members[gid] = members
             encry_chat_room_id[gid] = group['EncryChatRoomId']
-        self.group_members = group_members
-        self.encry_chat_room_id_list = encry_chat_room_id
+        self.group_members = group_members# 群聊成员
+        self.encry_chat_room_id_list = encry_chat_room_id# 加密的对应聊天ID
 
     def get_group_member_name(self, gid, uid):
         """
@@ -466,7 +466,7 @@ class WXBot:
             if uid == account['UserName']:
                 return True
         return False
-
+    # 子类覆盖
     def handle_msg_all(self, msg):
         """
         处理所有消息，请子类化后覆盖此函数
@@ -511,7 +511,7 @@ class WXBot:
             str_msg_all = msg
             str_msg = msg
         return str_msg_all.replace(u'\u2005', ''), str_msg.replace(u'\u2005', ''), infos
-
+    # 获取消息内容
     def extract_msg_content(self, msg_type_id, msg):
         """
         content_type_id:
@@ -536,10 +536,10 @@ class WXBot:
         msg_id = msg['MsgId']
 
         if msg_type_id == 1 and mtype == 1:  # self
-            return {'type': 0, 'data': content}
+            return {'type': 0, 'data': content}# 类型加数据
 
         return None
-
+    # 处理同步的消息
     def handle_msg(self, r):
         """
         处理原始微信消息的内部函数
@@ -555,41 +555,41 @@ class WXBot:
         :param r: 原始微信消息
         """
         for msg in r['AddMsgList']:
-            user = {'id': msg['FromUserName'], 'name': 'unknown'}
+            user = {'id': msg['FromUserName'], 'name': 'unknown'}# 从哪个用户发过来的
 
-            if msg['FromUserName'] == self.my_account['UserName']:  # Self
+            if msg['FromUserName'] == self.my_account['UserName']:  # Self 发给自己
                 msg_type_id = 1
                 user['name'] = 'self'
             else:
                 continue
-
-            content = self.extract_msg_content(msg_type_id, msg)
+            # 目前只处理发给自己的消息
+            content = self.extract_msg_content(msg_type_id, msg)# 字典
             if content is None:
                 continue
 
             message = {'msg_type_id': msg_type_id,
-                       'msg_id': msg['MsgId'],
+                       'msg_id': msg['MsgId'],# 具体的消息ID
                        'content': content,
-                       'to_user_id': msg['ToUserName'],
-                       'user': user}
-            self.handle_msg_all(message)
-
+                       'to_user_id': msg['ToUserName'],# 发给谁
+                       'user': user}# 谁发的
+            self.handle_msg_all(message)# 处理发送消息
+    # 此函数在处理消息的间隙被调用
     def schedule(self):
         """
         做任务型事情的函数，如果需要，可以在子类中覆盖此函数
-        此函数在处理消息的间隙被调用，请不要长时间阻塞此函数
+        此函数在处理消息的间隙被调用，请不要长时间阻塞此函数（间隙10s）
         """
         pass
-
+    # 循环处理待会发送的各种消息
     def proc_msg(self):
-        self.test_sync_check()
+        self.test_sync_check()# 同步检查
         self.status = 'loginsuccess'  #WxbotManage使用
         while True:
             if self.status == 'wait4loginout':  #WxbotManage使用
                 return 
-            check_time = time.time()
+            check_time = time.time()# 返回现在时间，为了异常处理
             try:
-                [retcode, selector] = self.sync_check()
+                [retcode, selector] = self.sync_check()# 每循环一次，检查一次同步状态
                 # print '[DEBUG] sync_check:', retcode, selector
                 if retcode == '1100':  # 从微信客户端上登出
                     break
@@ -597,7 +597,7 @@ class WXBot:
                     break
                 elif retcode == '0':
                     if selector == '2':  # 有新消息
-                        r = self.sync()
+                        r = self.sync()# dit字典
                         if r is not None:
                             self.handle_msg(r)
                     elif selector == '3':  # 未知
@@ -607,7 +607,7 @@ class WXBot:
                     elif selector == '4':  # 通讯录更新
                         r = self.sync()
                         if r is not None:
-                            self.get_contact()
+                            self.get_contact()# 执行一遍通讯录更新
                     elif selector == '6':  # 可能是红包
                         r = self.sync()
                         if r is not None:
@@ -618,21 +618,21 @@ class WXBot:
                             self.handle_msg(r)
                     elif selector == '0':  # 无事件
                         pass
-                    else:
+                    else:# 什么都不是，为了debug
                         print ('[DEBUG] sync_check:', retcode, selector)
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
-                else:
+                else:# retcode 是其他，为了调试
                     print ('[DEBUG] sync_check:', retcode, selector)
                     time.sleep(10)
-                self.schedule()
+                self.schedule()#  做任务型事情的函数
             except:
                 print ('[ERROR] Except in proc_msg')
                 #print (format_exc())
             check_time = time.time() - check_time
-            if check_time < 0.8:
-                time.sleep(1 - check_time)
+            if check_time < 0.8:# 小于0.8秒
+                time.sleep(1 - check_time)# 睡眠，然后继续处理
 
     def apply_useradd_requests(self,RecommendInfo):
         url = self.base_uri + '/webwxverifyuser?r='+str(int(time.time()))+'&lang=zh_CN'
@@ -813,11 +813,11 @@ class WXBot:
             return False
         dic = r.json()
         return dic['BaseResponse']['Ret'] == 0
-
-    def send_msg_by_uid(self, word, dst='filehelper'):
+    # 通过UUID，发送信息
+    def send_msg_by_uid(self, word, dst='filehelper'):# 发给文件助手
         url = self.base_uri + '/webwxsendmsg?pass_ticket=%s' % self.pass_ticket
-        msg_id = str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')
-        word = self.to_unicode(word)
+        msg_id = str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')# 随机生成, 时间戳左移4位随后补上4位随机数
+        word = self.to_unicode(word)# 要发送的消息
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -836,7 +836,7 @@ class WXBot:
         except (ConnectionError, ReadTimeout):
             return False
         dic = r.json()
-        return dic['BaseResponse']['Ret'] == 0
+        return dic['BaseResponse']['Ret'] == 0 # 返回 发送是否成功
 
     def upload_media(self, fpath, is_img=False):
         if not os.path.exists(fpath):
@@ -990,43 +990,43 @@ class WXBot:
             if pm:
                 return pm.group(1)
         return 'unknown'
-
+    # 登录，获取必要的信息
     def run(self):
         try:
             self.get_uuid()
-            self.gen_qr_code(os.path.join(self.temp_pwd,'wxqr.png'))
+            self.gen_qr_code(os.path.join(self.temp_pwd,'wxqr.png'))# 生成二维码
             print ('[INFO] Please use WeChat to scan the QR code .')
 
-            result = self.wait4login()
+            result = self.wait4login()# 等待登录
             if result != SUCCESS:
                 print ('[ERROR] Web WeChat login failed. failed code=%s' % (result,))
-                self.status = 'loginout'
+                self.status = 'loginout'# 登出
                 return
 
             if self.login():
-                print ('[INFO] Web WeChat login succeed .')
+                print ('[INFO] Web WeChat login succeed .')# 登录成功
             else:
                 print ('[ERROR] Web WeChat login failed .')
                 self.status = 'loginout'
                 return
 
-            if self.init():
+            if self.init():# 紧接着初始化
                 print ('[INFO] Web WeChat init succeed .')
             else:
                 print ('[INFO] Web WeChat init failed')
                 self.status = 'loginout'
                 return
             self.status_notify()
-            if self.get_contact():
+            if self.get_contact():# 获取联系人
                 print ('[INFO] Get %d contacts' % len(self.contact_list))
                 print ('[INFO] Start to process messages .')
-            self.proc_msg()
-            self.status = 'loginout'
+            self.proc_msg() # 循环处理待会发送的各种消息
+            self.status = 'loginout' # 最后登出，运行结束
         except Exception as e:
             print ('[ERROR] Web WeChat run failed --> %s'%(e))
             self.status = 'loginout'
 
-
+    # 获取UUID
     def get_uuid(self):
         url = 'https://login.weixin.qq.com/jslogin'
         params = {
@@ -1043,20 +1043,20 @@ class WXBot:
         if pm:
             code = pm.group(1)
             self.uuid = pm.group(2)
-            return code == '200'
+            return code == '200'# 获取UUID，且返回码必须是200，证明登录成功
         return False
-
+    # 然后生成二维码
     def gen_qr_code(self, qr_file_path):
         string = 'https://login.weixin.qq.com/l/' + self.uuid
-        qr = pyqrcode.create(string)
+        qr = pyqrcode.create(string)# 生成
         if self.conf['qr'] == 'png':
             qr.png(qr_file_path, scale=8)
-            show_image(qr_file_path)
+            show_image(qr_file_path)# 展示照片
             # img = Image.open(qr_file_path)
             # img.show()
-        elif self.conf['qr'] == 'tty':
+        elif self.conf['qr'] == 'tty':# 打印到Console
             print(qr.terminal(quiet_zone=1))
-
+    # 请求URL，为了登录
     def do_request(self, url):
         r = self.session.get(url)
         r.encoding = 'utf-8'
@@ -1064,7 +1064,7 @@ class WXBot:
         param = re.search(r'window.code=(\d+);', data)
         code = param.group(1)
         return code, data
-
+    # 第三步，等待用户扫描二维码
     def wait4login(self):
         """
         http comet:
@@ -1078,26 +1078,26 @@ class WXBot:
         tip = 1
 
         try_later_secs = 1
-        MAX_RETRY_TIMES = 10
+        MAX_RETRY_TIMES = 10# 最大尝试次数
 
         code = UNKONWN
 
         retry_time = MAX_RETRY_TIMES
-        while retry_time > 0:
+        while retry_time > 0:#
             url = LOGIN_TEMPLATE % (tip, self.uuid, int(time.time()))
-            code, data = self.do_request(url)
-            if code == SCANED:
+            code, data = self.do_request(url)# 会卡住等待用户操作，有相应，才会进行下一步
+            if code == SCANED:# 201
                 print ('[INFO] Please confirm to login .')
-                tip = 0
+                tip = 0 # 进入下一循环登录
             elif code == SUCCESS:  # 确认登录成功
                 param = re.search(r'window.redirect_uri="(\S+?)";', data)
                 redirect_uri = param.group(1) + '&fun=new'
-                self.redirect_uri = redirect_uri
-                self.base_uri = redirect_uri[:redirect_uri.rfind('/')]
-                temp_host = self.base_uri[8:]
-                self.base_host = temp_host[:temp_host.find("/")]
-                return code
-            elif code == TIMEOUT:
+                self.redirect_uri = redirect_uri# 重定向URi
+                self.base_uri = redirect_uri[:redirect_uri.rfind('/')]# 得到基本uri
+                temp_host = self.base_uri[8:]# 得到临时host
+                self.base_host = temp_host[:temp_host.find("/")]# 得到基本host
+                return code # 直接返回，退出函数
+            elif code == TIMEOUT:# 超时，重试次数减1，且睡眠1s
                 print ('[ERROR] WeChat login timeout. retry in %s secs later...' % (try_later_secs,))
 
                 tip = 1  # 重置
@@ -1105,13 +1105,13 @@ class WXBot:
                 time.sleep(try_later_secs)
             else:
                 print ('[ERROR] WeChat login exception return_code=%s. retry in %s secs later...' %
-                       (code, try_later_secs))
+                       (code, try_later_secs))# 重试时间
                 tip = 1
                 retry_time -= 1
-                time.sleep(try_later_secs)
+                time.sleep(try_later_secs)# 登录错误，重试次数也减1
 
         return code
-
+    # 登陆成功，处理登录成功相关事宜
     def login(self):
         if len(self.redirect_uri) < 4:
             print ('[ERROR] Login failed due to network problem, please try again.')
@@ -1119,9 +1119,9 @@ class WXBot:
         r = self.session.get(self.redirect_uri)
         r.encoding = 'utf-8'
         data = r.text
-        doc = xml.dom.minidom.parseString(data)
+        doc = xml.dom.minidom.parseString(data)# 转字符串
         root = doc.documentElement
-
+        # 获取四大基本登录Key以及id
         for node in root.childNodes:
             if node.nodeName == 'skey':
                 self.skey = node.childNodes[0].data
@@ -1134,7 +1134,7 @@ class WXBot:
 
         if '' in (self.skey, self.sid, self.uin, self.pass_ticket):
             return False
-
+        # 生成基本请求码
         self.base_request = {
             'Uin': self.uin,
             'Sid': self.sid,
@@ -1142,7 +1142,7 @@ class WXBot:
             'DeviceID': self.device_id,
         }
         return True
-
+    # 登陆后初始化
     def init(self):
         url = self.base_uri + '/webwxinit?r=%i&lang=en_US&pass_ticket=%s' % (int(time.time()), self.pass_ticket)
         params = {
@@ -1151,38 +1151,38 @@ class WXBot:
         r = self.session.post(url, data=json.dumps(params))
         r.encoding = 'utf-8'
         dic = json.loads(r.text)
-        self.sync_key = dic['SyncKey']
-        self.my_account = dic['User']
+        self.sync_key = dic['SyncKey']# 获得同步Key
+        self.my_account = dic['User']# 获得我的账户
         self.sync_key_str = '|'.join([str(keyVal['Key']) + '_' + str(keyVal['Val'])
-                                      for keyVal in self.sync_key['List']])
-        return dic['BaseResponse']['Ret'] == 0
-
+                                      for keyVal in self.sync_key['List']])# KV，键值对，转为字符串
+        return dic['BaseResponse']['Ret'] == 0 # 获取操作结果
+    # 第五步告知状态
     def status_notify(self):
         url = self.base_uri + '/webwxstatusnotify?lang=zh_CN&pass_ticket=%s' % self.pass_ticket
-        self.base_request['Uin'] = int(self.base_request['Uin'])
+        self.base_request['Uin'] = int(self.base_request['Uin']) # int
         params = {
             'BaseRequest': self.base_request,
             "Code": 3,
             "FromUserName": self.my_account['UserName'],
-            "ToUserName": self.my_account['UserName'],
-            "ClientMsgId": int(time.time())
+            "ToUserName": self.my_account['UserName'],# 自己发给自己
+            "ClientMsgId": int(time.time())# 当前时间
         }
         r = self.session.post(url, data=json.dumps(params))
         r.encoding = 'utf-8'
         dic = json.loads(r.text)
-        return dic['BaseResponse']['Ret'] == 0
-
+        return dic['BaseResponse']['Ret'] == 0 # 返回结果
+    # 处理消息前先处理同步检查
     def test_sync_check(self):
         for host1 in ['webpush.', 'webpush2.']:
             self.sync_host = host1+self.base_host
             try:
-                retcode = self.sync_check()[0]
+                retcode = self.sync_check()[0]# 返回recode
             except:
                 retcode = -1
-            if retcode == '0':
-                return True
+            if retcode == '0':# 如果是0 则是成功
+                return True# 直接返回
         return False
-
+    # 同步检查
     def sync_check(self):
         params = {
             'r': int(time.time()),
@@ -1204,7 +1204,7 @@ class WXBot:
             return [retcode, selector]
         except:
             return [-1, -1]
-
+    # 返回真正的同步消息
     def sync(self):
         url = self.base_uri + '/webwxsync?sid=%s&skey=%s&lang=en_US&pass_ticket=%s' \
                               % (self.sid, self.skey, self.pass_ticket)
@@ -1218,10 +1218,10 @@ class WXBot:
             r.encoding = 'utf-8'
             dic = json.loads(r.text)
             if dic['BaseResponse']['Ret'] == 0:
-                self.sync_key = dic['SyncCheckKey']
+                self.sync_key = dic['SyncCheckKey']# 更新
                 self.sync_key_str = '|'.join([str(keyVal['Key']) + '_' + str(keyVal['Val'])
-                                              for keyVal in self.sync_key['List']])
-            return dic
+                                              for keyVal in self.sync_key['List']])# 更新
+            return dic# 返回同步结果
         except:
             return None
 

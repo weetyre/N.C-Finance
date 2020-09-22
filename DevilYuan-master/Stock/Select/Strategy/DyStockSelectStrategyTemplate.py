@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 
-
+# 选股策略模板
 class DyStockSelectStrategyTemplate(object):
     """ 所有选股策略的父类。
         对每个选出的股票，添加额外的数据列
@@ -18,7 +18,7 @@ class DyStockSelectStrategyTemplate(object):
     param = None
 
     # 不管个股所对应的日线数据DF有没有，全推所有股票的日线数据。比如高送转策略，需要遍历所有股票的代码但不管所对应的周期有没有日线数据
-    # 默认只推个股有所对应的日线数据
+    # 默认只推个股 有 所对应的日线数据
     fullyPushDays = False
 
     # 相对载入数据时，由于股票停牌，统一时间切片时导致个股日线数据未载满。
@@ -36,7 +36,7 @@ class DyStockSelectStrategyTemplate(object):
     __baseColNames = ['当日价格', '当日涨幅(%)', '当日指数涨幅(%)', '流通市值(亿)']
     __nDays = 0 # 后@__nDays日个股涨幅和指数涨幅，看起来比较鸡肋，所以去掉
 
-
+    # 先执行模板初始化
     def __init__(self, param, info):
         self._info = info
 
@@ -51,10 +51,10 @@ class DyStockSelectStrategyTemplate(object):
         self.__baseDate = None # 私有变量
 
     #---------- 类方法 ----------
-    def getAutoColName():
+    def getAutoColName():# 自动前景列的列名
         return DyStockSelectStrategyTemplate.__baseColNames[1]# 当日涨幅
 
-    #---------- 只被引擎调用 ----------
+    #---------- 只被引擎调用 ----------# 这里由引擎调用
     def onPostDaysLoad(self, startDate, baseDate, n=0):
         """ 设置基准日期，并返回载入数据的日期，由引擎调用 """
         self.__baseDate = baseDate
@@ -63,16 +63,16 @@ class DyStockSelectStrategyTemplate(object):
         if isinstance(startDate, int) and startDate == 0:
             startDate = -1
 
-        return [startDate, baseDate, max(self.__nDays, n)]
-
+        return [startDate, baseDate, max(self.__nDays, n)]# __nDays 默认是0
+    # 返回策略结果
     def onDoneForEngine(self, dataEngine, errorDataEngine):
         """ 返回策略的选股结果，由引擎调用 """
-        self._result.insert(0, self.colNames.copy())
+        self._result.insert(0, self.colNames.copy())# 添加一个代码，记住这个result，子类是可以赋值修改的
 
         self.__adjust(dataEngine.daysEngine, errorDataEngine.daysEngine)
 
-        return self._result
-
+        return self._result# 返回最终的结果
+    # 生成策略实盘选股结果到JSON文件，由引擎调用
     def toTrade(self):
         """ 生成策略实盘选股结果到JSON文件，由引擎调用 """
         if self._forTrade and not self._forTradeNoJson:
@@ -91,7 +91,7 @@ class DyStockSelectStrategyTemplate(object):
         """
         return [x[0] for x in self._result]
 
-    #---------- 子类改写 ----------
+    #---------- 子类改写 ----------#
     def onCodes(self):
         """ 返回策略需要载入的股票代码，指数默认载入。返回None，全部载入。"""
         return None
@@ -102,7 +102,7 @@ class DyStockSelectStrategyTemplate(object):
             返回None, None则说明不做日线数据载入。
         """
         return None, None
-
+    # 返回None, None则说明不做Tick数据载入。
     def onTicksLoad(self):
         """
             返回策略需要载入分笔数据的日期范围
@@ -118,11 +118,11 @@ class DyStockSelectStrategyTemplate(object):
         """
         pass
 
-    # 日线级别
+    # 日线级别，处理指数日线（Loop执行）
     def onIndexDays(self, code, df):
         """ 指数日线数据 """
         pass
-
+    # ETF日线数据（Loop执行）
     def onEtfDays(self, code, df):
         """ ETF日线数据 """
         pass
@@ -165,17 +165,17 @@ class DyStockSelectStrategyTemplate(object):
                 return group
 
         return None
-
+    # 结果调节，主要是为了加了四行，给那四行给数据
     #---------- 私有方法 ----------
-    def __adjust(self, daysEngine, errorDaysEngine):
+    def __adjust(self, daysEngine, errorDaysEngine):# 调节
         for i, stock in enumerate(self._result):
             if i == 0: # header
-                stock.extend(self.__baseColNames)
+                stock.extend(self.__baseColNames)# 增加列名
                 continue
 
             # 当日价格
-            price = self.__stockCurPrice(stock[0], daysEngine)
-            stock.append(price)
+            price = self.__stockCurPrice(stock[0], daysEngine)# stock[0]
+            stock.append(price)# 添加当日价格，往后扩充行，或者说是对应列的数据
 
             #----- 当日涨幅 -----
             # 个股
@@ -186,7 +186,7 @@ class DyStockSelectStrategyTemplate(object):
             increase = self.__indexCurIncrease(daysEngine.getIndex(stock[0]), daysEngine)
             stock.append('') if increase is None else stock.append(increase)
 
-            #----- @nDays涨幅 -----
+            #----- @nDays涨幅 ----- 特别鸡肋的功能，先不用
             if self.__nDays > 0:
                 # 个股
                 increase = self.__stockIncrease(stock[0], daysEngine)
@@ -196,9 +196,9 @@ class DyStockSelectStrategyTemplate(object):
                 increase = self.__indexIncrease(daysEngine.getIndex(stock[0]), daysEngine)
                 stock.append('') if increase is None else stock.append(increase)
 
-            # 流通市值
+            # 流通市值，基于baseday
             floatMarketValue = self.__floatMarketValue(stock[0], daysEngine)
-            stock.append('') if floatMarketValue is None else stock.append(floatMarketValue)
+            stock.append('') if floatMarketValue is None else stock.append(floatMarketValue)# 空值处理
 
     def __getTDays(self, daysEngine):
         """ @return: base tDay, start tDay, end tDay in @nDays """
@@ -236,7 +236,7 @@ class DyStockSelectStrategyTemplate(object):
             increase = np.nan
 
         return None if np.isnan(increase) else increase
-
+    # 流通市值
     def __floatMarketValue(self, code, daysEngine):
         baseDay = daysEngine.tDaysOffset(self.__baseDate, 0)
 
@@ -306,7 +306,7 @@ class DyStockSelectStrategyTemplate(object):
             increase = np.nan
 
         return None if np.isnan(increase) else increase
-
+    # """ 生成策略实盘选股结果到JSON文件，由引擎调用 """
     def __toJson(self):
         return
 
@@ -330,7 +330,7 @@ class DyStockSelectStrategyTemplate(object):
         fileName = path + '\\' + date + '.json'
         with open(fileName, 'w') as f:
             f.write(json.dumps(self._resultForTrade, indent=4))
-
+    # 股票当日涨幅
     def __stockCurIncrease(self, code, daysEngine, errorDaysEngine):
         """ 股票当日涨幅 """
 
@@ -344,22 +344,22 @@ class DyStockSelectStrategyTemplate(object):
 
             # get close at @baseTDay
             close = df.ix[baseDay, 'close']
-            if type(close) is pd.Series:
+            if type(close) is pd.Series:# 处理bug
                 close = close[0]
 
             # previous close
-            baseDayPos = df.index.get_loc(baseDay)
+            baseDayPos = df.index.get_loc(baseDay)# 获得索引，或者说是第几天，方便下main获取昨日价格
             preClose = df.ix[baseDayPos - 1, 'close']
             if type(preClose) is pd.Series:
                 preClose = preClose[0]
 
-            increase = (close - preClose)*100/preClose
+            increase = (close - preClose)*100/preClose# 计算
 
         except Exception as ex:
             increase = np.nan
 
         return None if np.isnan(increase) else increase
-
+    # 股票当日价格
     def __stockCurPrice(self, code, daysEngine):
         """ 股票当日价格 """
 

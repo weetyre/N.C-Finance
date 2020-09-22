@@ -76,18 +76,18 @@ class DyStockSelectSelectEngine(object):
             return True # 由策略控制载入数据的日期范围，也就是说策略必须要实现onLoadDays和onLoadTicks中的一个。
 
         # 策略需要补全缺失的日线数据，从策略返回的原始日期范围数据
-        if self._strategy.autoFillDays:
+        if self._strategy.autoFillDays:# 自动载入，输入自动载入区间
             self._onDaysLoadDates = [startDate, endDate]
 
         self._startDay = startDate
         self._endDay = endDate
 
-        # 相对日期载入数据, 得到[startDate, baseDate, n]序列
+        # 相对日期载入数据, 得到[startDate, baseDate, n]序列，对于高换手，end = -1
         if isinstance(endDate, int):
 
             # 策略需要补全缺失的日线数据并且是相对载入
             if self._onDaysLoadDates is not None:
-                self._expectedDaysSize = abs(endDate) + 1
+                self._expectedDaysSize = abs(endDate) + 1# 这个来决定之后是否要自动补全
 
             if endDate < 0:
                 baseDate = startDate
@@ -106,7 +106,7 @@ class DyStockSelectSelectEngine(object):
         dates = self._strategy.onPostDaysLoad(startDate, baseDate, n)
 
         # 从股票数据引擎载入数据. 如果策略指定了codes，则优先codes
-        if not self._daysEngine.load(dates, codes=self._testedStocks if self._codes is None else self._codes):# 如果策略关注代码为空，这个codes是刚才调用之前设置好的
+        if not self._daysEngine.load(dates, codes=self._testedStocks if self._codes is None else self._codes):# 如果策略关注代码为空，这个codes是刚才调用之前设置好的，none载入全部股票
             return False
 
         # 设置日线相关数据
@@ -128,7 +128,7 @@ class DyStockSelectSelectEngine(object):
     # 载入tick数据
     def _onLoadTicks(self):
         # 获取策略需要载入数据的日期范围
-        startDate, endDate = self._strategy.onTicksLoad()
+        startDate, endDate = self._strategy.onTicksLoad()# 返回None, None则说明不做Tick数据载入。
         if startDate is None:
             return True # 由策略控制载入数据的日期范围，也就是说策略必须要实现onLoadDays和onLoadTicks中的一个
 
@@ -168,7 +168,7 @@ class DyStockSelectSelectEngine(object):
     # 第三步调用load函数
     def _onLoad(self):
         # get loaded codes
-        self._codes = self._strategy.onCodes()# 先载入策略需要的代码
+        self._codes = self._strategy.onCodes()# 先载入策略需要的代码，返回None 全部载入
 
         # days
         if not self._onLoadDays():
@@ -186,7 +186,7 @@ class DyStockSelectSelectEngine(object):
             @orgDf: 原始切片日线数据
         """
         # 数据是完整的
-        if orgDf is not None and orgDf.shape[0] == self._expectedDaysSize:
+        if orgDf is not None and orgDf.shape[0] == self._expectedDaysSize:# 就是几天
             return orgDf
 
         # 策略优化自动补全日线数据
@@ -210,7 +210,7 @@ class DyStockSelectSelectEngine(object):
 
         # index loop
         for index in self._daysEngine.stockIndexes:# 指数4支
-            df = self._daysEngine.getDataFrame(index, self._startDay, self._endDay)
+            df = self._daysEngine.getDataFrame(index, self._startDay, self._endDay)# 之后都是更具这个自动载入日计算
             if df is not None:
                 self._strategy.onIndexDays(index, df)
 
@@ -230,15 +230,15 @@ class DyStockSelectSelectEngine(object):
 
             # 策略需要补全数据
             if self._expectedDaysSize is not None:
-                df = self._autoFillDays(code, df)# 会输入df进行验证
+                df = self._autoFillDays(code, df)# 会输入df进行验证，进行数据补全，有的时候无法补全数据
 
             if df is not None or self._strategy.fullyPushDays:
                 try:
-                    self._strategy.onStockDays(code, df)
+                    self._strategy.onStockDays(code, df)# 每一个股票，固定周期遍历
                 except AssertionError:
                     raise
                 except Exception as ex:
-                    if DyStockSelectCommon.enableSelectEngineException:# 是否打卡股票选股异常的捕捉
+                    if DyStockSelectCommon.enableSelectEngineException:# 是否打卡股票选股异常的捕捉，不打开
                         self._info.print('{0}[{1}]: onStockDays异常:{2}'.format(code, self._daysEngine.stockAllCodes[code], repr(ex)), DyLogData.error)
 
             self._progress.update()
@@ -298,10 +298,10 @@ class DyStockSelectSelectEngine(object):
         self._strategy.onDone()
 
         # done for Engine
-        self._result = self._strategy.onDoneForEngine(self._dataEngine, self._errorDataEngine)# 策略要给引擎返回结果
+        self._result = self._strategy.onDoneForEngine(self._dataEngine, self._errorDataEngine)# 这里是最终的结果
 
         # to trade
-        self._resultForTrade = self._strategy.toTrade()# 为了实盘选股的结果
+        self._resultForTrade = self._strategy.toTrade()# 为了实盘选股的结果，一般为false
 
         return True
     #
@@ -330,7 +330,7 @@ class DyStockSelectSelectEngine(object):
 
         # run
         if self._run():
-            # ack
+            # ack，之后返回结果
             event = DyEvent(DyEventType.stockSelectStrategySelectAck)# 运行完之后就确认
             event.data['class'] = strategyCls
             event.data['result'] = self._result
@@ -349,7 +349,7 @@ class DyStockSelectSelectEngine(object):
             ret = False
 
         return ret
-    # 获取策略类以及参数运行策略，其他地方put一个请求事件就开始运行
+    # 获取策略类以及参数运行策略，其他地方put一个请求事件就开始运行，一按下按钮就开始在这里运行
     def _stockSelectStrategySelectReqHandler(self, event):
         # unpack
         strategyCls = event.data['class']

@@ -1,0 +1,39 @@
+{
+    "pos": {
+        "603393.SH": {
+            "datetime": "2020-03-17 14:55:00",
+            "code": "603393.SH",
+            "name": "\u65b0\u5929\u7136\u6c14",
+            "cost": 36.2419599090909,
+            "high": 37.87,
+            "closeHigh": 36.39,
+            "totalVolume": 5500.0,
+            "holdingPeriod": 1,
+            "xrd": false,
+            "price": 36.39,
+            "reserved": null
+        }
+    },
+    "capital": 1000814.2205,
+    "cash": 800669.2205,
+    "deal": [
+        {
+            "entrustDatetime": null,
+            "datetime": "2020-03-17 14:55:00",
+            "type": "\u4e70\u5165",
+            "code": "603393.SH",
+            "name": "\u65b0\u5929\u7136\u6c14",
+            "price": 36.23,
+            "volume": 5500.0,
+            "strategyCls": "\u5747\u7ebf\u6e38\u8d70",
+            "dyDealId": "simu2.2020-03-17_14:55:00.7402441",
+            "brokerDealId": "2020-03-17_1",
+            "pnl": null,
+            "pnlRatio": null,
+            "holdingPeriod": null,
+            "xrd": null,
+            "sellReason": null
+        }
+    ],
+    "riskGuardCount": 0
+}

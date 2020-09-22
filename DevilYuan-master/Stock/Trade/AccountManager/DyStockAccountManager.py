@@ -9,7 +9,7 @@ from EventEngine.DyEvent import *
 from .DyStockPos import *
 from ...Trade.Market.DyStockMarketFilter import *
 
-
+# 实盘股票账户管理，主要对接券商接口。
 class DyStockAccountManager:
     """
         实盘股票账户管理，主要对接券商接口。
@@ -76,14 +76,14 @@ class DyStockAccountManager:
     @property
     def curCash(self):
         return self._curCash
-
+    # 新委托，更新当日委托计数器
     def newCurEntrustCount(self):
         """
             生成系统唯一个委托计数器
         """
         self._curEntrustCount += 1
 
-        return datetime.now().strftime("%H:%M:%S.%f") + str(self._curEntrustCount)
+        return datetime.now().strftime("%H:%M:%S.%f") + str(self._curEntrustCount)#  返回一个时间加委托号
 
     def newCurDealCount(self):
         """
@@ -92,7 +92,7 @@ class DyStockAccountManager:
         self._curDealCount += 1
 
         return datetime.now().strftime("%H:%M:%S.%f") + str(self._curDealCount)
-
+    # 当日初始化
     def _curInit(self, tDay=None):
         """ 当日初始化 """
         self._curCash = 0 # 默认0，账户启动比策略慢，要考虑交易时间启动策略时的同步问题
@@ -111,14 +111,14 @@ class DyStockAccountManager:
 
         self._curPosSyncData = None # 当日持仓同步数据，None表示还没有收到券商接口的持仓同步事件。
                                     # {code: {'adjFactor': x, 'cost': x}}, 'adjFactor' is 持仓复权因子。
-
+    # 券商管理者开始运行准备
     def onOpen(self, date):
         self._curInit(date)
 
         # read saved information for market daily closed
         self._load()
 
-        self._filter = DyStockMarketFilter(list(self._curPos))
+        self._filter = DyStockMarketFilter(list(self._curPos))# 新增股票市场过滤器，只管理持仓
 
     def onTicks(self, ticks):
         ticks = self._filter.filter(ticks)
@@ -146,7 +146,7 @@ class DyStockAccountManager:
             posSavedData[code] = pos.getSavedData()
 
         return posSavedData
-
+    # 然后恢复持仓
     def _restorePosSavedData(self, savedData):
         """
             恢复从磁盘保存的持仓数据
@@ -194,7 +194,7 @@ class DyStockAccountManager:
             data.append(dealDict)
 
         return data
-
+    # 载入每天闭市后的数据
     def _load(self):
         path = DyCommon.createPath('Stock/Program/AccountManager/{}'.format(self.brokerName))
 
@@ -233,7 +233,7 @@ class DyStockAccountManager:
 
         # save to disk
         self._save()
-
+    # 判断是否可以生成新的委托
     def _canNewEntrust(self, type, datetime, strategyCls, code, name, price, volume):
         if self.buySellMatchedByBrokerEntrustId:
             return True
@@ -241,7 +241,7 @@ class DyStockAccountManager:
         # check if there's same code and type of entrust not done for different strategy
         entrusts = self._curEntrusts.get(code)
         if entrusts is None:
-            return True
+            return True # 如果现在委托没有在当日委托，就可以新委托
         
         for entrust in entrusts:
             if (not entrust.isDone()) and entrust.type == type and entrust.strategyCls != strategyCls:
@@ -255,7 +255,7 @@ class DyStockAccountManager:
                 return False
 
         return True
-
+    # 生成新的委托
     def _newEntrust(self, type, datetime, strategyCls, code, name, price, volume):
         """
             生成新的委托，并向交易接口发送委托事件
@@ -264,9 +264,9 @@ class DyStockAccountManager:
             return None
 
         # create a new entrust
-        curEntrustCount = self.newCurEntrustCount()
+        curEntrustCount = self.newCurEntrustCount()# 返回一个新的委托计数器
 
-        entrust = DyStockEntrust(datetime, type, code, name, price, volume)
+        entrust = DyStockEntrust(datetime, type, code, name, price, volume)# 生成的委托状态就是未成
         entrust.dyEntrustId = '{0}.{1}_{2}'.format(self.broker, self._curTDay, curEntrustCount)
         entrust.strategyCls = strategyCls
 
@@ -283,10 +283,10 @@ class DyStockAccountManager:
 
         # put buy/sell event
         eventType = DyEventType.stockBuy if type == DyStockOpType.buy else DyEventType.stockSell
-        event = DyEvent(eventType + self.broker)
+        event = DyEvent(eventType + self.broker)# 加broker英文名
         event.data = copy.copy(entrust)
 
-        self._eventEngine.put(event)
+        self._eventEngine.put(event) # 在这里要发送一个买的事件
 
         return entrust
 
@@ -306,7 +306,7 @@ class DyStockAccountManager:
         self._curDeals[brokerDealId] = deal
 
         return deal
-
+    # 实盘交易账户买
     def buy(self, datetime, strategyCls, code, name, price, volume, signalInfo=None):
         if volume < 100:
             return None # 至少买一手
@@ -359,7 +359,7 @@ class DyStockAccountManager:
             return None
 
         return self.sell(datetime, pos.strategyCls, code, price, pos.availVolume, sellReason, signalInfo)
-
+    # 取消委托
     def cancel(self, cancelEntrust):
         """
             取消委托
@@ -370,21 +370,21 @@ class DyStockAccountManager:
             return False
 
         for entrust in entrusts:
-            if entrust.dyEntrustId == cancelEntrust.dyEntrustId:
+            if entrust.dyEntrustId == cancelEntrust.dyEntrustId:# 找到那个应该撤销的委托
                 break
         else:
             return False
 
-        if entrust.isDone():
+        if entrust.isDone():# 他已完成，就不能撤销了
             self._info.print('{}: 撤销委托失败: {}'.format(self.__class__.__name__, entrust.__dict__, DyLogData.warning))
             return False
-
-        if entrust.brokerEntrustId is None:
-            self._curWorkingCancelEntrusts.append(entrust)
+        # 网络正常，那就是从券商撤了，不正常直接从账户管理撤了
+        if entrust.brokerEntrustId is None:# 空的话就是由于网络的问题导致的废单
+            self._curWorkingCancelEntrusts.append(entrust)# 如果券商ID不空，直接添加
             return True
 
         # put cancel event
-        event = DyEvent(DyEventType.stockCancel + self.broker)
+        event = DyEvent(DyEventType.stockCancel + self.broker)# 调用虚拟券商或者券商取消
         event.data = copy.copy(entrust)
 
         self._eventEngine.put(event)
@@ -429,7 +429,7 @@ class DyStockAccountManager:
             获取当前股票持仓成本
         """
         return self._curPos[code].cost if code in self._curPos else None
-    #
+    # 向股票市场发送 监控持仓 的股票
     def _putStockMarketMonitorEvent(self):
         """
             向股票市场发送 监控持仓 的股票
@@ -457,18 +457,18 @@ class DyStockAccountManager:
 
     def exit(self):
         self._unregisterEvent()
-
+    # 紧接着同步策略持仓
     def syncStrategyPos(self, strategy):
         """
             主动同步策略持仓，启动策略时由引擎调用
         """
         assert strategy.broker == self.broker
 
-        if self._curPosSyncData is None:
+        if self._curPosSyncData is None:# 当日同步数据为空，那就先不同步，因为由于异步原因，还没有和券商同步
             return
 
-        strategy.syncPos(self._curPosSyncData)
-
+        strategy.syncPos(self._curPosSyncData)# 同步策略持仓
+    # 撤销委托的装饰器
     def curWorkingCancelEntrustsWrapper(func):
         """
             当前要撤销委托的装饰器。
@@ -480,9 +480,9 @@ class DyStockAccountManager:
 
             # 撤销委托
             cancelEntrusts = []
-            for entrust in self._curWorkingCancelEntrusts:
+            for entrust in self._curWorkingCancelEntrusts: #当日要撤销的委托，由于券商获取委托号的异步性导致
                 if entrust.brokerEntrustId is not None:
-                    self.cancel(entrust)
+                    self.cancel(entrust)# TF不理会，主要为了有些要券商撤销
                     cancelEntrusts.append(entrust)
 
                 else:
@@ -491,7 +491,7 @@ class DyStockAccountManager:
 
             # remove from list of current working cancel entrusts
             for entrust in cancelEntrusts:
-                self._curWorkingCancelEntrusts.remove(entrust)
+                self._curWorkingCancelEntrusts.remove(entrust)# 最终删了
 
         return wrapper
 
@@ -504,31 +504,31 @@ class DyStockAccountManager:
         """
         updatedEntrust = event.data
 
-        entrusts = self._curEntrusts.get(updatedEntrust.code)
+        entrusts = self._curEntrusts.get(updatedEntrust.code)# 当前账户的委托
         if entrusts is None:
             return
 
         for entrust in entrusts:
-            if entrust.dyEntrustId != updatedEntrust.dyEntrustId:
+            if entrust.dyEntrustId != updatedEntrust.dyEntrustId:# 如果id对上，需要跟新
                 continue
 
             isUpdated = False
-            if entrust.status != updatedEntrust.status:
+            if entrust.status != updatedEntrust.status:# 如果状态不等，需要跟新
                 entrust.status = updatedEntrust.status
                 isUpdated = True
 
-            if entrust.brokerEntrustId != updatedEntrust.brokerEntrustId:
+            if entrust.brokerEntrustId != updatedEntrust.brokerEntrustId:# 如果不等，需要跟新
                 entrust.brokerEntrustId = updatedEntrust.brokerEntrustId
                 isUpdated = True
 
             if isUpdated: # @isUpdated should be True
-                event = DyEvent(DyEventType.stockOnEntrust)
+                event = DyEvent(DyEventType.stockOnEntrust)# 策略持仓以及UI
                 event.data = [copy.copy(entrust)]
 
                 self._eventEngine.put(event)
 
             break
-
+    # 收到来自券商接口的账户资产更新事件
     def _stockCapitalUpdateHandler(self, event):
         """
             收到来自券商接口的账户资产更新事件
@@ -538,7 +538,7 @@ class DyStockAccountManager:
 
         balance = rows[0]
 
-        self._curCash = float(balance[header.index(self.headerNameMap['capital']['availCash'])])
+        self._curCash = float(balance[header.index(self.headerNameMap['capital']['availCash'])])# 当前余额
     #获得当前持仓
     def _stockPositionUpdateHandler(self, event):
         """
@@ -563,14 +563,14 @@ class DyStockAccountManager:
             cost = float(data[header.index(self.headerNameMap['position']['cost'])])
 
             # get position
-            if code in self._curPos:
+            if code in self._curPos:# 如果是已有的
                 pos = self._curPos[code]
-                codes.remove(code)
+                codes.remove(code)# 先删了，提高效率，代表在券商接口里
             else:
                 # new pos, we just take time now without accuracy
                 if totalVolume > 0:
                     pos = DyStockPos(datetime.now(), None, code, name, price, totalVolume, 0)
-                    pos.sync = True
+                    pos.sync = True# 新的持仓直接新建，并且已经同步
                 else:
                     continue
 
@@ -589,17 +589,17 @@ class DyStockAccountManager:
             del self._curPos[code]
 
         # 发送行情监控事件
-        self._putStockMarketMonitorEvent()
+        self._putStockMarketMonitorEvent()# 要更新持仓
 
         # 发送券商账户股票持仓更新事件
-        event = DyEvent(DyEventType.stockOnPos)
+        event = DyEvent(DyEventType.stockOnPos)# 跟新策略持仓，以及UI
         event.data['broker'] = self.broker
         event.data['pos'] = copy.deepcopy(self._curPos)
 
         self._eventEngine.put(event)
-
+    # 委托商的状态转为系统的状态
     def _convertEntrustStatus(self, status):
-        """ 把券商的委托状态转换成DevilYuan委托的状态 """
+        """ 把券商的委托状态转换成NcSystem委托的状态 """
 
         if status == '部成':
             return DyStockEntrust.Status.partDealed
@@ -611,14 +611,14 @@ class DyStockAccountManager:
             return DyStockEntrust.Status.cancelled
         else:
             return DyStockEntrust.Status.notDealed
-
+    # 根据Key值匹配当日委托
     def _getEntrustByBrokerId(self, entrusts, brokerEntrustId):
-        for entrust in entrusts:
+        for entrust in entrusts:# 会递归匹配
             if entrust.brokerEntrustId == brokerEntrustId:
                 return entrust
 
         return None
-
+    #  根据key值匹配券商的委托
     def _getEntrust(self, code, type, price, totalVolume, brokerEntrustId):
         """
             根据key值匹配券商的委托
@@ -633,7 +633,7 @@ class DyStockAccountManager:
             return entrust
 
         # 通过委托价格，委托数量，委托类型，优先匹配最近的
-        for entrust in entrusts[::-1]:
+        for entrust in entrusts[::-1]:# 倒着递归，确保匹配的是最新的
             if entrust.brokerEntrustId is not None: # 已经匹配过了
                 continue
 
@@ -641,10 +641,10 @@ class DyStockAccountManager:
                 return entrust
 
         return None
-
+    # 根据券商的委托，更新 NcSystem 系统里的委托
     def _updateEntrust(self, entrust, dealedVolume, status, brokerEntrustId):
         """
-            根据券商的委托，更新DevilYuan系统里的委托
+            根据券商的委托，更新 NcSystem系统里的委托
             从券商的当日委托看，委托状态有变化或者是从券商首次获取对应的委托
             @return: update or not
         """
@@ -674,7 +674,7 @@ class DyStockAccountManager:
             isUpdated = True
         
         return isUpdated
-
+    # 收到来自券商接口的当日委托更新事件
     @curWorkingCancelEntrustsWrapper
     def _stockCurEntrustsUpdateHandler(self, event):
         """
@@ -711,11 +711,11 @@ class DyStockAccountManager:
             event = DyEvent(DyEventType.stockOnEntrust)
             event.data = updatedEntrusts
 
-            self._eventEngine.put(event)
+            self._eventEngine.put(event)# 执行策略 OnTrust 以及 更新到 UI
 
     def _matchDyEntrustByBrokerDeal(self, dyEntrust, dealType, dealedVolume, brokerEntrustId=None):
         """
-            根据券商的成交单匹配DevilYuan系统的委托单。
+            根据券商的成交单匹配 NcSystem 系统的委托单。
             !!!这里只匹配有成交的委托单，也就是说发生金钱交易，撤单成交则不考虑。
             子类可以重载此函数
         """
@@ -793,7 +793,7 @@ class DyStockAccountManager:
 
         # 向引擎推送成交回报
         self._putDealsEvent(newDeals)
-
+    # 收到来自券商接口的持仓同步事件
     def _stockPosSyncFromBrokerHandler(self, event):
         """
             收到来自券商接口的持仓同步事件
@@ -818,8 +818,8 @@ class DyStockAccountManager:
             cost = float(data[header.index(self.headerNameMap['position']['cost'])])
 
             # get position
-            pos = self._curPos.get(code)
-            if pos is None:
+            pos = self._curPos.get(code)# 这是账户策略持仓
+            if pos is None:# 也得是同步已有的持仓
                 continue
 
             # 检查价格复权因子。正常情况，如果送股，会导致成本价变低。
@@ -859,7 +859,7 @@ class DyStockAccountManager:
         self._putStockMarketMonitorEvent()
 
         # 发送股票持仓同步事件
-        event = DyEvent(DyEventType.stockPosSyncFromAccountManager)
+        event = DyEvent(DyEventType.stockPosSyncFromAccountManager)# 为了策略的持仓同步。启动券商接口或者启动策略会触发此事件。
         event.data['broker'] = self.broker
         event.data['data'] = self._curPosSyncData
 

@@ -7,16 +7,16 @@ from DyCommon.DyCommon import *
 from EventEngine.DyEvent import *
 from ..DyStockTradeCommon import *
 
-
+# 股票新浪引用
 class DyStockSinaQuotation(object):
     """ 被动类，也就是说本身不会注册事件。有个例外，注册了UI的proxy的配置事件。
         这个事件本身没有数据互斥的影响。
     """
 
     maxNum = 800
-    grep_detail = re.compile(r'(\w+)=([^\s][^,]+?)%s%s' % (r',([\.\d]+)' * 29, r',([-\.\d:]+)' * 2))
-    stock_api = 'http://hq.sinajs.cn/?format=text&list='
-
+    grep_detail = re.compile(r'(\w+)=([^\s][^,]+?)%s%s' % (r',([\.\d]+)' * 29, r',([-\.\d:]+)' * 2)) # 字符串查找
+    stock_api = 'http://hq.sinajs.cn/?format=text&list='# 新浪股票接口
+    # 四大指数
     cybSinaIndex = 'sz399006'
     cybzSinaIndex = 'sz399102'
     zxbSinaIndex = 'sz399005'
@@ -31,14 +31,14 @@ class DyStockSinaQuotation(object):
 
         self._stockList = [] # include indexes
         self._sessions = []
-
+    # 初始化
     def init(self):
-        for s in self._sessions:
+        for s in self._sessions:# 先关闭所有的session
             s.close()
 
         self._stockList = [] # include indexes
         self._sessions = []
-
+    # 激活代理
     def _enableProxyHandler(self, event):
         # Note: Should start proxy firstly, it's much tricky that this flag is updated by other hand, not stockSianQuotation hand.
         # The situation is that if without proxy, it will take some time for http visiting failed.
@@ -50,25 +50,25 @@ class DyStockSinaQuotation(object):
 
         # set flag
         self._enableProxy = event.data
-        
+    # 注册代理事件
     def _registerEvent(self, eventEngine):
         # Note: not stockSianQuotation hand
         eventEngine.register(DyEventType.enableProxy, self._enableProxyHandler)
-
+    # add之后，加入list
     def _add2List(self, stockCodes):
         # stored list
         allStocks = []
 
-        for stock in self._stockList:
+        for stock in self._stockList:# 刚开始是空
             allStocks += stock.split(',')
 
         # combine with new stocks
-        allStocks += stockCodes
+        allStocks += stockCodes# list
 
         # generate new stock list
         self._stockList = []
-        for i in range(0, len(allStocks), self.maxNum):
-            self._stockList.append(','.join(allStocks[i:i + self.maxNum]))
+        for i in range(0, len(allStocks), self.maxNum):# 后面的是步长，也就是800支
+            self._stockList.append(','.join(allStocks[i:i + self.maxNum]))# [‘...,...,...’(最多800个)，‘...,...,...’]，然后放到list
 
     def addIndexes(self, indexes):
         indexes = list(
@@ -76,17 +76,17 @@ class DyStockSinaQuotation(object):
                     indexes))
 
         self._add2List(indexes)
-
+    # 添加
     def add(self, stockCodes):
         sinaStocks = list(
                 map(lambda stockCode: ('sh%s' if stockCode.startswith(('5', '6', '9')) else 'sz%s') % stockCode[:-3],
-                    stockCodes))
+                    stockCodes))# 做了一下新浪数据格式转换
 
         self._add2List(sinaStocks)
-
+    # 获取数据
     def get(self):
-        return self._get_stock_data(self._stockList)
-
+        return self._get_stock_data(self._stockList)# 字典返回结果数据，通过协程的方式获取
+    # 协程装饰器 这是启用代理的情况下运行的函数
     @asyncio.coroutine
     def _get_stocks_by_range_with_proxy(self, i, params):
         response_text = urllib.request.urlopen(self.stock_api + params).read().decode('GBK')
@@ -108,19 +108,19 @@ class DyStockSinaQuotation(object):
         response_text = yield from r.text()
 
         return response_text
-
+    # 获取股票数据
     def _get_stock_data(self, stock_list):
         if not stock_list:
             return {}
 
         # async run
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_event_loop()# python 协程，实现并发，获取时间循环
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            loop = asyncio.new_event_loop()# 错误新建 时间循环
+            asyncio.set_event_loop(loop)# 并且设置
 
-        # coroutines
+        # coroutines # 确认获取函数
         get_stocks_by_range_func =  self._get_stocks_by_range_with_proxy if self._enableProxy else self._get_stocks_by_range
         coroutines = []
         for i, params in enumerate(stock_list):
@@ -128,19 +128,19 @@ class DyStockSinaQuotation(object):
             coroutines.append(coroutine)
 
         try:
-            res = loop.run_until_complete(asyncio.gather(*coroutines))
+            res = loop.run_until_complete(asyncio.gather(*coroutines))# 运行直到结束
         except Exception as ex:
             self._info.print("获取新浪股票实时行情异常: {0}".format(repr(ex)), DyLogData.warning)
             return {}
 
-        return self._format_response_data(res)
-
+        return self._format_response_data(res)# 格式返回数据，字典返回
+    # 格式返回数据
     def _format_response_data(self, rep_data):
-        stocks_detail = ''.join(rep_data)
+        stocks_detail = ''.join(rep_data)# 变成了字符串
         result = self.grep_detail.finditer(stocks_detail)
         stock_dict = dict()
         for stock_match_object in result:
-            stock = stock_match_object.groups()
+            stock = stock_match_object.groups()# 转成Set,逗号分隔
             stock_dict[stock[0]] = dict(
                     name=stock[1],
                     open=float(stock[2]),
@@ -178,15 +178,15 @@ class DyStockSinaQuotation(object):
 
         # 调整创小板的成交量和成交额
         # 创业板
-        cyb = stock_dict.get(self.cybSinaIndex)
-        cybz = stock_dict.get(self.cybzSinaIndex)
+        cyb = stock_dict.get(self.cybSinaIndex)# 创业板指
+        cybz = stock_dict.get(self.cybzSinaIndex)# 创业板宗
         if cyb and cybz:
             cyb['volume'] = cybz['volume']
             cyb['amount'] = cybz['amount']
 
         # 中小板
-        zxb = stock_dict.get(self.zxbSinaIndex)
-        zxbz = stock_dict.get(self.zxbzSinaIndex)
+        zxb = stock_dict.get(self.zxbSinaIndex)# 中小板指
+        zxbz = stock_dict.get(self.zxbzSinaIndex)# 中小板综
         if zxb and zxbz:
             zxb['volume'] = zxbz['volume']
             zxb['amount'] = zxbz['amount']

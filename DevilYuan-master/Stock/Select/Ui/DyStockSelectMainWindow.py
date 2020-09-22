@@ -26,7 +26,7 @@ from ..Engine.Regression.DyStockSelectRegressionEngine import *
 
 from Stock.Select.Ui.Basic import DyStockSelectStrategyClsMap
 
-
+# UI
 class DyStockSelectMainWindow(DyBasicMainWindow):
     name = 'DyStockSelectMainWindow'
 
@@ -34,13 +34,13 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
 
     def __init__(self, parent=None):
         
-        self._mainEngine = DyStockSelectMainEngine()
+        self._mainEngine = DyStockSelectMainEngine()# 先调用选股总引擎
 
         super().__init__(self._mainEngine.eventEngine, self._mainEngine.info, parent)
         
         self._initUi()
 
-        self._registerEvent()
+        self._registerEvent()# 注册绘图事件
 
     def _initUi(self):
         """ 初始化界面 """
@@ -300,7 +300,7 @@ class DyStockSelectMainWindow(DyBasicMainWindow):
         # change UI
         self._startRunningMutexAction(self._stockSelectAction)
 
-        event = DyEvent(DyEventType.stockSelectStrategySelectReq)
+        event = DyEvent(DyEventType.stockSelectStrategySelectReq)# 开始选股请求
         event.data['class'] = strategyCls
         event.data['param'] = param
 

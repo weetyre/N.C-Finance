@@ -1,4 +1,4 @@
-#
+#股票市场锅过滤器
 class DyStockMarketFilter(object):
     #
     def __init__(self, monitoredStocks=None):

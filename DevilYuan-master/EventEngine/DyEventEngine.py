@@ -88,7 +88,7 @@ class DyEventHand(threading.Thread):
     def _processOtherEvent(self, event):
         if event.type in self._handlers:
             for handler in self._handlers[event.type]:
-                handler(event)#handler 是具体的每一个函数
+                handler(event)#handler 是具体的每一个函数，同一个事件类型，可以挂载多个函数
 
 
 class DyEventEngine(threading.Thread):
@@ -106,7 +106,7 @@ class DyEventEngine(threading.Thread):
             也就是说，不同的timer interval，相同的handler和hand，是可以注册成功的。
             支持注销不存在的timer监听。
     """
-    enableTimerLog = False
+    enableTimerLog = False # 是否打开Timer日志
 
 
     def __init__(self, handNbr, timer=True):

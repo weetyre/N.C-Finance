@@ -1,6 +1,6 @@
 from ..Common.DyStockCommon import *
 
-
+# 股票实盘建议的线程类型，5线程，并且分别赋值不同的引擎
 class DyStockTradeEventHandType:
     stockCtaEngine = 0
     stockSinaQuotation = 1
@@ -12,7 +12,7 @@ class DyStockTradeEventHandType:
     other = 4
     nbr = 5
 
-
+# 股票实盘交易公用
 class DyStockTradeCommon:
     enableTimerLog = False # 打开Timer日志，主要是调试新浪的Tick数据
     enableSinaTickOptimization = True # 打开新浪Tick数据的优化，主要是调试新浪的Tick数据
@@ -30,8 +30,8 @@ class DyStockTradeCommon:
     buyPrice = 'askPrice1' # 买入使用价，即五档的卖盘
     sellPrice = 'bidPrice1' # 卖出使用价，即五档的买盘
 
-    # 如果剩余资金不足总资产的@allPosPreliminaryRatio%，则满仓。
-    # 同样，为了防止小单买入，如果买入资金不足@allPosPreliminaryRatio%，则不买入。
+    # 如果 剩余资金 不足总资产的@allPosPreliminaryRatio%，则满仓。（资金操作全部买入股票）
+    # 同样，为了防止小单买入，如果 买入资金 不足@allPosPreliminaryRatio%，则不买入。
     #!!! 这个参数是很重要的仓控参数，决定着仓位分配的粒度。资金的大小，这个参数也不一样。
     allPosPreliminaryRatio = 8
 
@@ -75,9 +75,9 @@ class DyStockTradeCommon:
         brokerageCommission = max(5, price*volume*DyStockTradeCommon.brokerageCommissionRatio)
 
         return stampTax + transferFee + brokerageCommission
-    #
+    # 获得买入股数
     def getBuyVol(cash, code, price):
-        volume = ((cash/price)//100)*100
+        volume = ((cash/price)//100)*100# 先计算出一个最大的
 
         while volume > 0:
             tradeCost = DyStockTradeCommon.getTradeCost(code, DyStockOpType.buy, price, volume)
@@ -87,29 +87,29 @@ class DyStockTradeCommon:
             volume -= 100 # 买都是 100手 买一次
 
         return volume
-
+    # 获得卖出股数
     def getSellVol(cash, code, price):
         """
             获取需要卖的数量
             @cash: 卖出后的现金
         """
-        volume = ((cash/price + 99)//100)*100
+        volume = ((cash/price + 99)//100)*100# 先计算出能卖的最小的
 
         while True:
             tradeCost = DyStockTradeCommon.getTradeCost(code, DyStockOpType.sell, price, volume)
-            if price*volume - tradeCost >= cash:
+            if price*volume - tradeCost >= cash:# 大于可卖现金（我就想卖这么多钱）的时候停（如果没进来代表，现在的股数还没到呢）
                 break
 
             volume += 100
 
         return volume
 
-#
+# 股票操纵类型
 class DyStockOpType:
     buy = '买入'
     sell = '卖出'
 
-#
+# 卖的原因
 class DyStockSellReason:
     stopLoss = '止损'
     stopLossStep = '阶梯止损'
@@ -119,7 +119,7 @@ class DyStockSellReason:
     strategy = '策略' # 策略主动卖出
     manualSell = '手工卖出'
 
-#
+# 股票成交单
 class DyStockDeal:
     """
         股票成交单

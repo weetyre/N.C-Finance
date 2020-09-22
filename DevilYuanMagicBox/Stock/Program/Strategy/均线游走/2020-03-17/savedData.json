@@ -1,0 +1,17 @@
+{
+    "pos": {
+        "603393.SH": {
+            "datetime": "2020-03-17 14:55:00",
+            "code": "603393.SH",
+            "name": "\u65b0\u5929\u7136\u6c14",
+            "cost": 36.2419599090909,
+            "high": 36.23,
+            "closeHigh": 36.23,
+            "totalVolume": 5500.0,
+            "holdingPeriod": 1,
+            "xrd": false,
+            "price": 36.23,
+            "reserved": null
+        }
+    }
+}

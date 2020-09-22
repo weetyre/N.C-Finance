@@ -10,7 +10,7 @@ from ..Trade.Broker.YhNew.YhTrader import YhTrader
 from ..Trade.Broker.Ths.ThsTrader import ThsTrader
 from ..Data.Gateway.DyStockDataGateway import DyStockDataGateway
 
-
+# 股票配置类
 class DyStockConfig(object):
     """
         Read configs from files and then set to corresponding variables

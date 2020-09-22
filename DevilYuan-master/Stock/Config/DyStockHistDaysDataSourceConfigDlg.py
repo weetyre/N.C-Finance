@@ -80,12 +80,12 @@ class DyStockHistDaysDataSourceConfigDlg(QDialog):
         grid.addWidget(self._tuShareProTokenPushButton, 4, 0)
         grid.addWidget(self._tuShareProTokenLineEdit, 5, 0)
 
-        grid.addWidget(textEdit, 6, 0)
+        # grid.addWidget(textEdit, 6, 0)
 
         grid.addWidget(QLabel("                                                                 "), 7, 0)
         grid.addWidget(QLabel("交易日数据模式"), 8, 0)
         grid.addWidget(self._tradeDaysComboBox, 9, 0)
-        grid.addWidget(tradeDaysTextEdit, 10, 0)
+        # grid.addWidget(tradeDaysTextEdit, 10, 0)
 
         grid.addWidget(QLabel("                                                                 "), 11, 0)
         grid.addWidget(QLabel("TuShare日线数据下载间隔时间(秒)"), 12, 0)

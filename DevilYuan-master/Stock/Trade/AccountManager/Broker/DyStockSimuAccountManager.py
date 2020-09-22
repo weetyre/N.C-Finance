@@ -1,6 +1,6 @@
 from .DyStockGtjaAccountManager import *
 
-
+# 模拟券商账户，继承国泰明安
 class DyStockSimuAccountManager(DyStockGtjaAccountManager):
     """
         模拟券商账户管理，参照的是国泰君安
@@ -8,13 +8,13 @@ class DyStockSimuAccountManager(DyStockGtjaAccountManager):
     broker = 'simu'
     brokerName = '模拟'
 
-
+    # 初始化
     def __init__(self, eventEngine, info):
         super().__init__(eventEngine, info)
 
     def _matchDyEntrustByBrokerDeal(self, dyEntrust, dealType, dealedVolume, brokerEntrustId=None):
         """
-            根据券商的成交单匹配DevilYuan系统的委托单
+            根据券商的成交单匹配NcSystem系统的委托单
             子类可以重载此函数
         """
         return DyStockAccountManager._matchDyEntrustByBrokerDeal(self, dyEntrust, dealType, dealedVolume, brokerEntrustId)

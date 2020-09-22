@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from DyCommon.Ui.DyTableWidget import *
 from EventEngine.DyEvent import *
 
-
+# 股票交易账户资金状况窗口
 class DyStockTradeCapitalWidget(DyTableWidget):
     """
         股票交易账户资金状况窗口
@@ -24,17 +24,17 @@ class DyStockTradeCapitalWidget(DyTableWidget):
 
     def _signalEmitWrapper(self, event):
         self.signal.emit(event)
-
+    # 不管是资金更新还是资金TICK更新都注册的同一个函数
     def _registerEvent(self):
         self.signal.connect(self._stockCapitalUpdateHandler)
         self._eventEngine.register(DyEventType.stockCapitalUpdate + self._broker, self._signalEmitWrapper)
         self._eventEngine.register(DyEventType.stockCapitalTickUpdate + self._broker, self._signalEmitWrapper)
-
+    #
     def _unregisterEvent(self):
         self.signal.disconnect(self._stockCapitalUpdateHandler)
         self._eventEngine.unregister(DyEventType.stockCapitalUpdate + self._broker, self._signalEmitWrapper)
         self._eventEngine.unregister(DyEventType.stockCapitalTickUpdate + self._broker, self._signalEmitWrapper)
-        
+    # 更新资金UI
     def _stockCapitalUpdateHandler(self, event):
         header = event.data['header']
         rows = event.data['rows']

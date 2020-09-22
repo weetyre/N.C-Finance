@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
 #进行页面布局设置，因为有很多小器件#
 class DyTreeWidget(QTreeWidget):
     """description of class"""
-
+    # 初始化目录树结构，为了显示
     def __init__(self, fields, parent=None):
         """
         @fields foramt:
@@ -33,14 +33,14 @@ class DyTreeWidget(QTreeWidget):
         self._leafIdMap = {} # {"leaf_id":tree widget item}, for restore tree item state from config file
 
 
-        self.__InitFields(self, self._fields)
+        self.__InitFields(self, self._fields)# 递归初始化叶子节点，并且实例化对应的目录
         self.setHeaderHidden(True)
 
-        self.expandAll()
+        self.expandAll()# 展开全部
 
-        self.itemClicked.connect(self.on_itemClicked)
-        self.itemChanged.connect(self.on_itemChanged)
-        self.currentItemChanged.connect(self.on_currentItemChanged)
+        self.itemClicked.connect(self.on_itemClicked)# 点击项目
+        self.itemChanged.connect(self.on_itemChanged)# 项目改变
+        self.currentItemChanged.connect(self.on_currentItemChanged)# 现在的item改变
 
     def __GetFieldByShowName(self, fields, name):
         for field in fields:
@@ -81,15 +81,15 @@ class DyTreeWidget(QTreeWidget):
 
         return fields
 
-
+    # 实例化每一个item
     def __InitFieldItem(self, parent, item):
-        treeItem = QTreeWidgetItem(parent)
+        treeItem = QTreeWidgetItem(parent)# 实例化ITEM
         treeItem.setText(0, item)
         treeItem.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
         treeItem.setCheckState(0, Qt.Unchecked)
 
         return treeItem
-
+    # 获得叶子节点
     def _getLeafId(self, leaf):
         leafId = None
         while leaf is not self and leaf is not None:
@@ -98,21 +98,21 @@ class DyTreeWidget(QTreeWidget):
             leaf = leaf.parent()
 
         return leafId
-
+    # 初始化域（递归）
     def __InitFields(self, parent, fields):
-        for i, field in enumerate(fields):
-            if isinstance(field, str):
-                if i == 0:
-                    parent = self.__InitFieldItem(parent, field)
+        for i, field in enumerate(fields):# 一层一层拨开，只要执行这个，外面少一个[],遍历里面的具体项目
+            if isinstance(field, str):# 如CTA，必须是到字符串才能实例化
+                if i == 0:# 那就是CTA这样的父目录，然后在递归，相对父亲，但不是叶子节点
+                    parent = self.__InitFieldItem(parent, field)# 开始初始化这个field
                 else: # leaf ID specified by user
-                    self._leafIdMap[field] = parent
+                    self._leafIdMap[field] = parent# 添加映射
             else:
-                self.__InitFields(parent, field)
+                self.__InitFields(parent, field)# 回归
 
         if i == 0: # dafault leaf ID
             leafId = self._getLeafId(parent)
             if leafId is not None:
-                self._leafIdMap[leafId] = parent
+                self._leafIdMap[leafId] = parent# 具体运行或者监控的那个实例
 
     def __UpdateChild(self, parent):
         for i in range(parent.childCount()):# 这个树枝下面还有没有树叶

@@ -9,7 +9,7 @@ from ...DyStockTradeCommon import *
 from ....Data.Engine.DyStockDataDaysEngine import *
 from ....Data.Engine.DyStockMongoDbEngine import *
 
-
+# 模拟券商Web接口，参照的是国泰君安
 class SimuTrader(WebTrader):
     """
         模拟券商Web接口，参照的是国泰君安
@@ -31,7 +31,7 @@ class SimuTrader(WebTrader):
 
     def __init__(self, eventEngine, info):
         super().__init__(eventEngine, info)
-
+    #
     def _preLogin(self):
         self._startTime = datetime.now()
 
@@ -43,20 +43,20 @@ class SimuTrader(WebTrader):
         self._simuCurEntrusts = []
 
         self._curNoTickCodes = set() # 当日没有Tick数据的股票代码，可能停牌
-
+    # 模拟没有登出后处理
     def _postLogout(self):
         pass
 
     @classmethod
     def __constructErrorDaysEngine(cls, eventEngine):
-        errorInfo = DyErrorInfo(eventEngine)
+        errorInfo = DyErrorInfo(eventEngine)# 只打印错误的log
         mongoDbEngine = DyStockMongoDbEngine(errorInfo)
 
         errorDaysEngine = DyStockDataDaysEngine(eventEngine, mongoDbEngine, None, errorInfo, registerEvent=False)
 
         return errorDaysEngine
 
-    @classmethod
+    @classmethod# 读取账户数据
     def __readAccountFile(cls):
         data = {}
         date = None
@@ -64,11 +64,11 @@ class SimuTrader(WebTrader):
         try:
             # get latest account file
             path = DyCommon.createPath(cls.accountPath)
-            for _, _, files in os.walk(path):
+            for _, _, files in os.walk(path):# 读取保存的json数据
                 break
 
-            files = sorted(files)
-            accountFile = os.path.join(path, files[-1])
+            files = sorted(files)# 时间升序排序
+            accountFile = os.path.join(path, files[-1])# 选择最新的那个文件
 
             # read
             with open(accountFile) as f:
@@ -81,8 +81,8 @@ class SimuTrader(WebTrader):
 
         return date, data
 
-    @classmethod
-    def updatePosClose(cls, eventEngine, info, dateFromDb=None):
+    @classmethod# 更新收盘价到文件
+    def updatePosClose(cls, eventEngine, info, dateFromDb=None):# 这是昨日的日期
         """
             更新持仓收盘价到文件，为了除复权
         """
@@ -122,24 +122,24 @@ class SimuTrader(WebTrader):
 
         accountFile = os.path.join(DyCommon.createPath(cls.accountPath), '{}.json'.format(date))
         with open(accountFile, 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(data, indent=4))# 只更新那个收盘价
 
         info.print('交易接口[{}]: 持仓数据[{}]的收盘价[{}]更新完成'.format(cls.brokerName, date, closeDate), DyLogData.ind1)
 
         return True
-
+    # 从数据库中获取数据，昨日收盘价
     def __getDateFromDb(self):
         errorDaysEngine = self.__constructErrorDaysEngine(self._eventEngine)
-        dateFromDb = errorDaysEngine.tDaysOffsetInDb(DyTime.getDateStr(self._curDay, -1), 0)
+        dateFromDb = errorDaysEngine.tDaysOffsetInDb(DyTime.getDateStr(self._curDay, -1), 0)# 获取前一天，这里是系统的日子
         return dateFromDb
-
+    # 验证保存数据的日期正确性
     def __verifyAccountFileDate(self, date):
         if date is None:
             return True
 
         # 用户没有通过UI指定策略准备数据的日期, 即前一交易日
         if DyStockTradeCommon.strategyPreparedDataDay is None:
-            if self._curDay == date:
+            if self._curDay == date:# 没有指定，就是从文件里读即可
                 return True
 
             elif self._curDay > date: # 实盘
@@ -163,7 +163,7 @@ class SimuTrader(WebTrader):
             else:
                 self._info.print('交易接口[{0}]: 保存的持仓数据日期[{1}]跟用户指定的日期[{2}]不相同'.format(self.brokerName, date, DyStockTradeCommon.strategyPreparedDataDay), DyLogData.error)
                 return False
-
+    # 从文件载入账户数据
     def __loadAccount(self):
         """
             Read latest account data
@@ -175,8 +175,8 @@ class SimuTrader(WebTrader):
             return False
 
         # 收盘数据不是昨天(最新)的并且还没更新过持仓的收盘价，则需要更新持仓的收盘价到文件
-        dateFromDb = self.__getDateFromDb()
-        if date is not None and ((dateFromDb == date and data.get('posClose') is None) or dateFromDb > date):
+        dateFromDb = self.__getDateFromDb()# 昨日日期
+        if date is not None and ((dateFromDb == date and data.get('posClose') is None) or dateFromDb > date):# 还是昨天的数据，且收盘价是空的，或者是更昨天的数据
             self._info.print('交易接口[{}]: 保存的持仓数据[{}]的收盘价不是最新或者没有，更新到最新收盘价'.format(self.brokerName, date), DyLogData.ind)
 
             # update close of pos
@@ -184,17 +184,17 @@ class SimuTrader(WebTrader):
                 return False
 
             # read file again to get close of pos
-            date, data = self.__readAccountFile()
+            date, data = self.__readAccountFile()# 之后在读文件，读到最新的数据。
 
         # 持久性数据
         self._balance = data.get('balance', [self.initCash, 0, self.initCash])
         self._positions = data.get('pos', [])
         self._posDate = dateFromDb if date is not None and dateFromDb > date else date # 持仓收盘价保存的日期
-        self._posCloses = data.get('posClose', {}) # 持仓的收盘价，为了除权除息
+        self._posCloses = data.get('posClose', {}) # 持仓的收盘价，为了除权除息，如果是今天的数据，收盘价先不需要更新
         self._posSync = False
 
         # 当日相关的数据
-        if self._curDay == date:
+        if self._curDay == date:# 如果是当日相关的数据
             self._curDealNo = data.get('curDealNo', 0)
             self._curEntrustNo = data.get('curEntrustNo', 0)
 
@@ -202,7 +202,7 @@ class SimuTrader(WebTrader):
             self._simuCurEntrusts = data.get('curEntrusts', [])
 
         return True
-
+    # 保存账户
     def __saveAccount(self, close=True):
         """
             @close: 收盘了
@@ -217,7 +217,7 @@ class SimuTrader(WebTrader):
                 if pos[2] > 0:
                     positions.append(pos)
 
-            self._positions = positions
+            self._positions = positions# 更新持仓
 
         # save
         accountFile = os.path.join(DyCommon.createPath(self.accountPath), '{}.json'.format(self._curDay))
@@ -230,8 +230,8 @@ class SimuTrader(WebTrader):
                     'curEntrusts': self._simuCurEntrusts
                     }
 
-            f.write(json.dumps(data, indent=4))
-
+            f.write(json.dumps(data, indent=4))# 保存到文件
+    # 调用的SimuTrader的login
     def _login(self):
         """
             登录到券商的Web页面
@@ -246,7 +246,7 @@ class SimuTrader(WebTrader):
         # 主要原因是如果交易时间启动交易系统，由于异步，股票CTA引擎如果需要实时计算准备数据，则对应的持仓没法发送给市场引擎。
         if self._positions:
             event = DyEvent(DyEventType.stockMarketMonitor)
-            event.data = [pos[0] for pos in self._positions]
+            event.data = [pos[0] for pos in self._positions]# 只发送，持仓的代码
 
             self._eventEngine.put(event)
 
@@ -262,7 +262,7 @@ class SimuTrader(WebTrader):
             @return: 委托状态变化，所有委托都完成
         """
         return True, True
-
+    # 获取当日成交
     def getCurDeals(self):
         """
             获取当日成交
@@ -273,9 +273,9 @@ class SimuTrader(WebTrader):
     @WebTrader.retryWrapper
     def buy(self, code, name, price, volume):
         # check if have enough cash to buy
-        tradeCost = DyStockTradeCommon.getTradeCost(code, DyStockOpType.buy, price, volume)
+        tradeCost = DyStockTradeCommon.getTradeCost(code, DyStockOpType.buy, price, volume)# 买入价
         dealAmount = tradeCost + price*volume
-        availCash = self._balance[0] - dealAmount
+        availCash = self._balance[0] - dealAmount# 模拟券商资金减生
         if availCash < 0:
             self._info.print('交易接口[{0}]: 买入[{1}: {2}], 委托价格{3}元, {4}股, 超出可用余额'.format(self.brokerName, code, name, price, volume), DyLogData.warning)
             return False
@@ -286,15 +286,15 @@ class SimuTrader(WebTrader):
         self._curEntrustNo += 1
         entrustNo = '{0}_{1}'.format(self._curDay, self._curEntrustNo)
 
-        self._simuCurEntrusts.append([entrustNo, code, name, '买入', price, volume, time, volume, '已成'])
+        self._simuCurEntrusts.append([entrustNo, code, name, '买入', price, volume, time, volume, '已成'])# 直接是已成状态
 
         # deal
         self._curDealNo += 1
         dealNo = '{0}_{1}'.format(self._curDay, self._curDealNo)
         
-        self._simuCurDeals.append([name, code, dealNo, '买入', price, volume, dealAmount - tradeCost, time])
+        self._simuCurDeals.append([name, code, dealNo, '买入', price, volume, dealAmount - tradeCost, time])# 瞬间有deal
 
-        # position
+        # position 更新（券商）
         for pos in self._positions:
             if pos[0] == code:
                 totalVolume = pos[2] + volume
@@ -321,20 +321,20 @@ class SimuTrader(WebTrader):
         self._balance[2] -= tradeCost
 
         return True
-
+    # 获取当日委托，轮询函数的比较会用
     def getCurEntrusts(self):
         """
             获取当日委托
             @return: header, [[item]]
         """
         return self.entrustHeader, self._simuCurEntrusts
-
+    # 直接返回false
     @WebTrader.retryWrapper
     def cancel(self, entrust):
         """ 撤销委托 """
         self._info.print('交易接口[{0}]: 撤销委托({1}), 券商返回错误: 委托已成交，无法撤销'.format(self.brokerName, entrust.brokerEntrustId), DyLogData.warning)
         return False
-
+    # 卖也是直接已成
     @WebTrader.retryWrapper
     def sell(self, code, name, price, volume):
         # check if have enough volume to sell
@@ -348,12 +348,12 @@ class SimuTrader(WebTrader):
                     self._info.print('交易接口[{0}]: 卖出[{1}: {2}], 委托价格{3}元, {4}股, 可用数量不足'.format(self.brokerName, code, name, price, volume), DyLogData.warning)
                     return False
 
-                break
+                break# 完全退出for循环，包括后面的break
         else:
             self._info.print('交易接口[{0}]: 卖出[{1}: {2}], 委托价格{3}元, {4}股, 没有持仓'.format(self.brokerName, code, name, price, volume), DyLogData.warning)
             return False
 
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")# 时间是当前时间
 
         # entrust
         self._curEntrustNo += 1
@@ -384,19 +384,19 @@ class SimuTrader(WebTrader):
 
         # balance
         self._balance[0] = availCash
-        self._balance[1] -= price*volume
+        self._balance[1] -= price*volume# 减去持仓市值
         self._balance[2] -= tradeCost
 
         return True
 
     @WebTrader.retryWrapper
     def _logout(self, oneKeyHangUp=False):
-        if not oneKeyHangUp:
-            self.__saveAccount(close=False)
+        if not oneKeyHangUp:# 如果不是一件挂机，那就保存
+            self.__saveAccount(close=False)# 还没有收盘
 
         return True
 
-    @WebTrader.retryWrapper
+    @WebTrader.retryWrapper# 装饰器会到这里
     def getBalance(self, parse=True, fromBroker=True):
         """
             获取账户资金状况
@@ -404,7 +404,7 @@ class SimuTrader(WebTrader):
             @return: header, [[item]]
         """
         return self.balanceHeader, [self._balance]
-
+    # 获取持仓（虚拟券商接口）
     def getPositions(self, fromBroker=True):
         """
             获取账户持仓
@@ -426,7 +426,7 @@ class SimuTrader(WebTrader):
 
             self._isClosed = True
             self.__saveAccount(close=True)
-
+    # 每Ticks更新，计算balence相关，且更新券商position
     def __updatePerTicks(self, ticks):
         """
             每Ticks更新
@@ -440,8 +440,8 @@ class SimuTrader(WebTrader):
                     self._curNoTickCodes.add(pos[0])
                     self._info.print('交易接口[{0}]: 无法获取{1}({2})的Tick数据，可能停牌'.format(self.brokerName, pos[0], pos[1]), DyLogData.warning)
 
-                marketValue += pos[4]
-                continue
+                marketValue += pos[4] # 计算市场总额
+                continue# 下一循环，不更新
 
             if pos[0] in self._curNoTickCodes:
                 self._curNoTickCodes.remove(pos[0])
@@ -457,7 +457,7 @@ class SimuTrader(WebTrader):
         # balance
         self._balance[1] = marketValue
         self._balance[2] = self._balance[0] + marketValue
-
+    # 同步模拟账户持仓
     def __syncPos(self, ticks):
         # 已经同步过持仓了
         if self._posSync:
@@ -468,7 +468,7 @@ class SimuTrader(WebTrader):
         if tick is None:
             return
 
-        if self._posDate is not None and tick.date <= self._posDate:
+        if self._posDate is not None and tick.date <= self._posDate:# tick是以前的，或者是今天的（就是老数据）
             return
 
         # 确保现在是有效交易时间
@@ -493,7 +493,7 @@ class SimuTrader(WebTrader):
             pos[3] /= adjFactor
             pos[6] *= adjFactor
 
-            pos[9] = '否' if adjFactor == 1 else '是'
+            pos[9] = '否' if adjFactor == 1 else '是'# 做过除复权
 
         # If xrxd, need to update again
         # Here for simplicity, no matter xrxd or not, always update.
@@ -501,23 +501,23 @@ class SimuTrader(WebTrader):
 
         # trigger synchronize positions event
         self._posSync = True
-        super().syncPos()
-
+        super().syncPos()# 更新持仓后推送让其他相关也更新
+    # 更新tick股票价格相关数据
     def onTicks(self, ticks):
         """
             For UI
             update stock price related data, e.g. stock market value, stock price, PnL
         """
-        self.__updatePerTicks(ticks)
+        self.__updatePerTicks(ticks)# 更新balence ,且更新position
         
-        self.__syncPos(ticks)
-
+        self.__syncPos(ticks)# 就是持仓他有很多子数据，需要这两个函数一起更新才能完
+    # 同步持仓
     def syncPos(self):
         """
             模拟账户的持仓只能根据实时行情计算
         """
         # 有持仓，则需要根据实时tick才能同步持仓
-        if self._posCloses:
+        if self._posCloses:#{}会返回false，因为为空
             return
 
         # 没有持仓，则直接认为同步成功。
@@ -537,7 +537,7 @@ class SimuTrader1(SimuTrader):
     def __init__(self, eventEngine, info):
         super().__init__(eventEngine, info)
 
-
+# 模拟2
 class SimuTrader2(SimuTrader):
     brokerName = '模拟2'
     broker = 'simu2'

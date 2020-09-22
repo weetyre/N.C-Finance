@@ -47,7 +47,7 @@ class DyStockDataML(object):
         regr.fit(bottomEquation[['decrease', 'increase']], bottomEquation['amount'])
 
         # predict
-        predictOutcome = regr.predict([[-7, 3]])
+        predictOutcome = regr.predict([[-7, 3]])# 降7升3的交易量
 
         return predictOutcome
     #稳定性检验

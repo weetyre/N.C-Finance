@@ -44,7 +44,7 @@ class DyStockHistTicksAckData:
                 ],
                 以下类确定了获取数据的指标，以及规定了默认的数据源
 """
-class DyStockDataCommon:
+class DyStockDataCommon:# 默认的日线指标
     # Wind的volume是成交量，单位是股数。数据库里的成交量也是股数。
     dayIndicators = ['open', 'high', 'low', 'close', 'volume', 'amt', 'turn', 'adjfactor']
     adjFactor = 'adjfactor'#股票复权因子

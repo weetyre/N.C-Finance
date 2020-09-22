@@ -1110,7 +1110,7 @@ class DyTableWidget(QTableWidget):
             self.setItem(row, 0, item)# 先是行索引，后是列索引
 
             item.setData(self._role, row + 1)# 设置那一个编号
-
+    # 清楚全部行
     def clearAllRows(self):
         self._clearVisualEffects()
 
@@ -1258,7 +1258,7 @@ class DyTableWidget(QTableWidget):
                 itemData = item.data(self._role)
                 for text, color in colors:
                     if isinstance(itemData, str) and text in itemData:
-                        item.setForeground(color)
+                        item.setForeground(color)# 设置这一个ietm的前景色
                         break
 
     def filter(self, filter, highlight=False):

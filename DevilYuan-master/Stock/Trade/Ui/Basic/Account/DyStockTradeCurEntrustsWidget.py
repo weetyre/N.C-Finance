@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from DyCommon.Ui.DyTableWidget import *
 from EventEngine.DyEvent import *
 
-
+# 股票交易账户当日委托窗口
 class DyStockTradeCurEntrustsWidget(DyTableWidget):
     """ 股票交易账户当日委托窗口 """
 

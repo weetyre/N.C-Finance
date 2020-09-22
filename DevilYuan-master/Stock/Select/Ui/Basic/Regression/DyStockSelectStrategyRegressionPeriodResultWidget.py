@@ -23,7 +23,7 @@ class DyStockSelectStrategyRegressionPeriodResultWidget(DyStockTableWidget):
         action.triggered.connect(self._bayesianStatsAct)
         menu.addAction(action)
         action.setEnabled(hasattr(self._strategyCls, 'bayesianStats'))
-    # 添加行
+    # 添加行，在这里调用，最终添加行成功（彻底结束）
     def append(self, date, rows):
         for i, row in enumerate(rows):
             if i == 0:

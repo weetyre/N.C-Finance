@@ -16,7 +16,7 @@ from ..Engine.DyStockTradeMainEngine import *
 from ..DyStockTradeCommon import *
 from .DyStockTradeOneKeyHangUp import DyStockTradeOneKeyHangUp
 
-
+# 股票实盘主窗口
 class DyStockTradeMainWindow(DyBasicMainWindow):
     name = 'DyStockTradeMainWindow'
 
@@ -41,7 +41,7 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         self._initToolBar()
 
         self._loadWindowSettings()
-        
+    # 初始化中心区域
     def _initCentral(self):
         """ 初始化中心区域 """
         widgetStrategyMarket, dockStrategyMarket = self._createDock(DyStockTradeStrategiesMarketMonitorWidget, '策略行情', Qt.RightDockWidgetArea, self._mainEngine.eventEngine)
@@ -52,24 +52,24 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         widgeAccount, dockAccount = self._createDock(DyStockTradeAccountWidget, '账户', Qt.RightDockWidgetArea, self._mainEngine.eventEngine)
 
         self.tabifyDockWidget(dockLog, dockAccount)
-    
+    # 启用代理
     def _enableProxy(self):
-        enableProxy =  self._proxyAction.isChecked()
+        enableProxy =  self._proxyAction.isChecked()# 判断是否启用代理
 
         # put event
-        event = DyEvent(DyEventType.enableProxy)
+        event = DyEvent(DyEventType.enableProxy)# 激活代理
         event.data = enableProxy
 
         self._mainEngine.eventEngine.put(event)
-
+    # 策略数据准备日期
     def _strategyDataPrepareDateAct(self):
         data = {}
         if DySingleEditDlg(data, '策略数据准备日期', '策略数据准备日期', datetime.now().strftime("%Y-%m-%d"), self).exec_():
             date = data['data']
             if not date: date = None
 
-            DyStockTradeCommon.strategyPreparedDataDay = date
-
+            DyStockTradeCommon.strategyPreparedDataDay = date # 是一个单独的日期，而不是日期时间段
+    # （仅设置菜单）
     def _initMenu(self):
         """ 初始化菜单 """
         # 创建操作
@@ -93,7 +93,7 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         self._mainEngine.exit()
 
         return super().closeEvent(event)
-
+    # 初始化工具栏
     def _initToolBar(self):
         """ 初始化工具栏 """
         # 添加工具栏
@@ -110,7 +110,7 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         toolBar.addAction(self._wxTestAction)
 
         toolBar.addSeparator()
-
+        # 先不启用，微信足够
         # QQ
         self._QQMsgAction = QAction('开启QQ提醒', self)
         self._QQMsgAction.triggered.connect(self._QQMsgAct)
@@ -151,11 +151,11 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         toolBar.addAction(self._t1Action)
 
         toolBar.addSeparator()
-
+        # 远程过程调用，先不启用----------------------------------------------------
         # RPC
         self._rpcAction = QAction('开启RPC', self)
         self._rpcAction.triggered.connect(self._rpcAct)
-        toolBar.addAction(self._rpcAction)
+        # toolBar.addAction(self._rpcAction)
 
         self._rpcAction.setEnabled(False)
 
@@ -170,13 +170,14 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         action = QAction('远程服务器', self)
         action.triggered.connect(self._startRpcWithRemoteServerAct)
         self._rpcMenu.addAction(action)
+        # toolBar.addAction(self._rpcMenu)
 
         self._rpcTestAction = QAction('开启RPC测试', self)
         self._rpcTestAction.triggered.connect(self._startRpcTestAct)
-        toolBar.addAction(self._rpcTestAction)
+        # toolBar.addAction(self._rpcTestAction)
 
         self._rpcTestAction.setEnabled(False)
-
+        # ------------------------------------------------------------------------------------------
         toolBar.addSeparator()
 
         self._oneKeyHangUpAction = QAction('开启一键挂机', self)
@@ -221,13 +222,13 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
             # put event
             event = DyEvent(DyEventType.stopStockRpc)
             self._mainEngine.eventEngine.put(event)
-
+    # 一键挂机
     def _oneKeyHangUpAct(self):
         """
             !!!一键挂机，务必启动好所有的策略执行此操作。
         """
-        def _run(self):
-            if self._oneKeyHangUp.start():
+        def _run(self):# 紧接着运行此函数
+            if self._oneKeyHangUp.start():# 启动
                 self._oneKeyHangUpAction.setText('关闭一键挂机')
             else:
                 self._oneKeyHangUpAction.setText('开启一键挂机')
@@ -237,9 +238,9 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         text = self._oneKeyHangUpAction.text()
 
         if text == '开启一键挂机':
-            self._oneKeyHangUpAction.setEnabled(False)
+            self._oneKeyHangUpAction.setEnabled(False)# 进来就代表开启
 
-            threading.Thread(target=_run, args=(self,)).start()
+            threading.Thread(target=_run, args=(self,)).start()# 通过多线程运行，又添加一个线程进行运行
         else:
             self._oneKeyHangUp.stop()
 
@@ -284,7 +285,7 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         event.data = text
 
         self._mainEngine.eventEngine.put(event)
-
+    # 微信提醒按钮相关操作
     def _wxAct(self):
         text = self._wxAction.text()
 
@@ -292,16 +293,16 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
             self._wxAction.setText('停止微信提醒')
 
             # put event
-            event = DyEvent(DyEventType.startStockWx)
+            event = DyEvent(DyEventType.startStockWx)# put 开始
             self._mainEngine.eventEngine.put(event)
 
         else:
-            self._wxAction.setText('开启微信提醒')
+            self._wxAction.setText('开启微信提醒')# 重新设置文字
 
             # put event
-            event = DyEvent(DyEventType.stopStockWx)
+            event = DyEvent(DyEventType.stopStockWx)# stop 属性更改，并没有真正退出，不然麻烦
             self._mainEngine.eventEngine.put(event)
-
+    # 发送测试微信
     def _wxTestAct(self):
         text = '测试消息:\n{0}'.format(datetime.now())
 
@@ -310,7 +311,7 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
         event.data = text
 
         self._mainEngine.eventEngine.put(event)
-
+    # 打开Timer 日志，为了调试用
     def _enableTimerLogAct(self):
         text = self._enableTimerLogAction.text()
 
@@ -318,47 +319,47 @@ class DyStockTradeMainWindow(DyBasicMainWindow):
             self._enableTimerLogAction.setText('关闭Timer日志')
 
             DyEventEngine.enableTimerLog = True
-            DyStockTradeCommon.enableTimerLog = True
+            DyStockTradeCommon.enableTimerLog = True  # 打开Timer日志，主要是调试新浪的Tick数据
 
         else:
             self._enableTimerLogAction.setText('打开Timer日志')
 
             DyEventEngine.enableTimerLog = False
             DyStockTradeCommon.enableTimerLog = False
-
+    # Tick优化，默认打开，调式得关闭
     def _enableSinaTickOptimizationAct(self):
         text = self._enableSinaTickOptimizationAction.text()
 
         if text == '关闭新浪Tick优化':
             self._enableSinaTickOptimizationAction.setText('打开新浪Tick优化')
 
-            DyStockTradeCommon.enableSinaTickOptimization = False
+            DyStockTradeCommon.enableSinaTickOptimization = False # 主要是调试新浪的Tick数据
 
         else:
             self._enableSinaTickOptimizationAction.setText('关闭新浪Tick优化')
 
             DyStockTradeCommon.enableSinaTickOptimization = True
-
+    # CTA优化
     def _enableCtaEngineTickOptimizationAct(self):
         text = self._enableCtaEngineTickOptimizationAction.text()
 
         if text == '关闭CTA引擎Tick优化':
             self._enableCtaEngineTickOptimizationAction.setText('打开CTA引擎Tick优化')
 
-            DyStockTradeCommon.enableCtaEngineTickOptimization = False
+            DyStockTradeCommon.enableCtaEngineTickOptimization = False# 为了调试策略数据
 
         else:
             self._enableCtaEngineTickOptimizationAction.setText('关闭CTA引擎Tick优化')
 
             DyStockTradeCommon.enableCtaEngineTickOptimization = True
-
+    # 是否开启T+1，主要为了
     def _t1Act(self):
         text = self._t1Action.text()
 
         if text == 'T+1':
             self._t1Action.setText('T+0')
 
-            DyStockTradeCommon.T1 = False
+            DyStockTradeCommon.T1 = False# T+0 模式
 
         else:
             self._t1Action.setText('T+1')

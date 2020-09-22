@@ -24,20 +24,20 @@ class DyStockTradeCurDealsWidget(DyTableWidget):
         """ !!!Note: The value of signal.emit will always be changed each time you getting.
         """
         self.signal.emit(event)
-
+    # 注册当日成交更新
     def _registerEvent(self):
         self.signal.connect(self._stockCurDealsUpdateHandler)
         self._eventEngine.register(DyEventType.stockCurDealsUpdate + self._broker, self._signalEmitWrapper)
-
+    # 解除当日成交更新
     def _unregisterEvent(self):
         self.signal.disconnect(self._stockCurDealsUpdateHandler)
         self._eventEngine.unregister(DyEventType.stockCurDealsUpdate + self._broker, self._signalEmitWrapper)
-        
+    # 股票当日成交更新
     def _stockCurDealsUpdateHandler(self, event):
         header = event.data['header']
         rows = event.data['rows']
 
-        if not self._headerSet:
+        if not self._headerSet:# 默认是 F 就是有没有header集合
             self.setColNames(header)
             self._headerSet = True
 

@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QTabWidget, QFileDialog
 from .DyStockSelectStrategySelectResultWidget import *
 from EventEngine.DyEvent import *
 
-# 选股结果的界面
+# 选股结果的界面，完成大事件的注册
 class DyStockSelectSelectResultWidget(QTabWidget):
 
     stockSelectStrategySelectAckSignal = QtCore.pyqtSignal(type(DyEvent()))
@@ -62,7 +62,7 @@ class DyStockSelectSelectResultWidget(QTabWidget):
             window.showMaximized()
 
             self._newWindows.append(window)
-    #
+    # 最后这里再把选股结果放到界面上
     def _stockSelectStrategySelectAckHandler(self, event):
         # unpack
         strategyCls = event.data['class']
@@ -89,7 +89,7 @@ class DyStockSelectSelectResultWidget(QTabWidget):
         if self._registerSelectAckEvent:# 注册选股确认事件
             self.stockSelectStrategySelectAckSignal.connect(self._stockSelectStrategySelectAckHandler)
             self._eventEngine.register(DyEventType.stockSelectStrategySelectAck, self._stockSelectStrategySelectAckSignalEmitWrapper)
-    # 事件解注册
+    # 事件解注册 #
     def _unregisterEvent(self):
         if self._registerSelectAckEvent:
             self.stockSelectStrategySelectAckSignal.disconnect(self._stockSelectStrategySelectAckHandler)

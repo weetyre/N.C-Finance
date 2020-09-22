@@ -7,7 +7,7 @@ from .DyStockTradeStrategyMarketMonitorWidget import *
 from .Other.DyStockTradeStrategyBuyDlg import *
 from .Other.DyStockTradeStrategySellDlg import *
 
-
+# 策略行情窗口，或者是实时监控窗口 策略行情窗口(里面还要内陷，一个承载（数据，指示）的窗口)
 class DyStockTradeStrategiesMarketMonitorWidget(QTabWidget):
     """
         所有策略的实时监控窗口
@@ -25,12 +25,12 @@ class DyStockTradeStrategiesMarketMonitorWidget(QTabWidget):
         self._initTabBarMenu()
 
         self._registerEvent()
-
+    # 初始化Tab右键菜单
     def _initTabBarMenu(self):
         """ 初始化表头右键菜单 """
         # 设置Tab右键菜单事件
         tabBar = self.tabBar()
-        tabBar.setContextMenuPolicy(Qt.CustomContextMenu)
+        tabBar.setContextMenuPolicy(Qt.CustomContextMenu)# 还是自定义的菜单
         tabBar.customContextMenuRequested.connect(self._showTabContextMenu)
 
         # 创建TabBar菜单
@@ -43,37 +43,37 @@ class DyStockTradeStrategiesMarketMonitorWidget(QTabWidget):
         action = QAction('卖出...', self)
         action.triggered.connect(self._sellAct)
         self._tabBarMenu.addAction(action)
-
+    # 自定义菜单的显示规则
     def _showTabContextMenu(self, position):
         self._rightClickedTabIndex = self.tabBar().tabAt(position)
 
         self._tabBarMenu.popup(QCursor.pos())
-
+    # 买入
     def _buyAct(self):
-        tabText = self.tabText(self._rightClickedTabIndex)
+        tabText = self.tabText(self._rightClickedTabIndex)#获取策略名
 
-        strategyCls = self._strategyMarketMonitorWidgets[tabText][1]
+        strategyCls = self._strategyMarketMonitorWidgets[tabText][1]# 获取策略类
 
         DyStockTradeStrategyBuyDlg(self._eventEngine, strategyCls).exec_()
-
+    # 卖出
     def _sellAct(self):
         tabText = self.tabText(self._rightClickedTabIndex)
 
         strategyCls = self._strategyMarketMonitorWidgets[tabText][1]
 
         DyStockTradeStrategySellDlg(self._eventEngine, strategyCls).exec_()
-
+    # 开始策略，添加数据tab
     def _startStockCtaStrategyHandler(self, event):
         strategyCls = event.data['class']
         strategyState = event.data['state']
 
         # 添加策略行情窗口到Tab窗口
         widget = DyStockTradeStrategyMarketMonitorWidget(self._eventEngine, strategyCls, strategyState)
-        self.addTab(widget, strategyCls.chName)
+        self.addTab(widget, strategyCls.chName)# tab 加tab，策略开始才会真正的显示
 
         # save
         self._strategyMarketMonitorWidgets[strategyCls.chName] = (widget, strategyCls)
-
+    # 关闭子TAB
     def _stopStockCtaStrategyHandler(self, event):
         strategyCls = event.data['class']
 
