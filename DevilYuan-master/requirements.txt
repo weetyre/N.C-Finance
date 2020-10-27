@@ -9,7 +9,7 @@ chardet==3.0.4
 Click==7.0
 comtypes==1.1.7
 crypto==1.4.1
-cryptography==2.8
+cryptography==3.2
 cycler==0.10.0
 datrie==0.8
 gunicorn==19.9.0
